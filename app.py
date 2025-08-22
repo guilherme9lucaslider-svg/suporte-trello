@@ -1,155 +1,126 @@
-from flask import Flask, request, render_template_string
+from flask import Flask, render_template, request, jsonify
+import requests
+import os
 
 app = Flask(__name__)
 
-html_form = """
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <title>Abertura de Chamado</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background: #f4f4f9; }
-        .wrap { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h2 { text-align: center; margin-bottom: 20px; }
-        label { display: block; margin-top: 15px; font-weight: bold; }
-        input, select, textarea, button { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; }
-        button { background: #007BFF; color: white; border: none; cursor: pointer; margin-top: 20px; }
-        button:hover { background: #0056b3; }
-        .error { border: 2px solid red; background-color: #ffe6e6; }
-    </style>
-    <script>
-        function capitalizeWords(input) {
-            input.value = input.value.replace(/\\b\\w/g, char => char.toUpperCase());
-        }
+# ===== CONFIG VIA VARIÁVEIS DE AMBIENTE =====
+API_KEY   = os.getenv("TRELLO_KEY", "")
+TOKEN     = os.getenv("TRELLO_TOKEN", "")
+BOARD_ID  = os.getenv("TRELLO_BOARD", "fGQqUBuw")
+LIST_NAME = os.getenv("TRELLO_LIST", "Chamados abertos")
+# ============================================
 
-        function validateForm() {
-            let requiredFields = ["cliente", "suporte", "representante", "sistema", "modulo", "ocorrencia", "tipo", "descricao"];
-            let valid = true;
+TRELLO_BASE = "https://api.trello.com/1"
+TIMEOUT = 15  # s
 
-            requiredFields.forEach(function(id) {
-                let field = document.getElementById(id);
-                if (!field.value.trim()) {
-                    field.classList.add("error");
-                    valid = false;
-                } else {
-                    field.classList.remove("error");
-                }
-            });
 
-            return valid;
-        }
-    </script>
-</head>
-<body>
-    <div class="wrap">
-        <h2>Abertura de Chamado</h2>
-        <form method="post" onsubmit="return validateForm()">
-            <label for="cliente">Nome do Cliente:</label>
-            <input type="text" id="cliente" name="cliente" oninput="capitalizeWords(this)">
+def trello_get(path: str, params: dict | None = None):
+    p = {"key": API_KEY, "token": TOKEN}
+    if params: p.update(params)
+    r = requests.get(f"{TRELLO_BASE}{path}", params=p, timeout=TIMEOUT)
+    if not r.ok:
+        raise RuntimeError(f"[TRELLO][GET {path}] {r.status_code}: {r.text[:300]}")
+    try:
+        return r.json()
+    except Exception:
+        raise RuntimeError(f"[TRELLO][GET {path}] Resposta não-JSON: {r.text[:300]}")
 
-            <label for="suporte">Nome do Suporte:</label>
-            <input type="text" id="suporte" name="suporte" oninput="capitalizeWords(this)">
 
-            <label for="representante">Representante:</label>
-            <select id="representante" name="representante">
-                <option value="">Selecione...</option>
-                <option>João</option>
-                <option>Maria</option>
-                <option>Carlos</option>
-            </select>
+def trello_post(path: str, params: dict | None = None):
+    p = {"key": API_KEY, "token": TOKEN}
+    if params: p.update(params)
+    r = requests.post(f"{TRELLO_BASE}{path}", params=p, timeout=TIMEOUT)
+    if not r.ok:
+        raise RuntimeError(f"[TRELLO][POST {path}] {r.status_code}: {r.text[:300]}")
+    try:
+        return r.json()
+    except Exception:
+        raise RuntimeError(f"[TRELLO][POST {path}] Resposta não-JSON: {r.text[:300]}")
 
-            <label for="sistema">Sistema:</label>
-            <select id="sistema" name="sistema">
-                <option value="">Selecione...</option>
-                <option>WebLíder</option>
-                <option>WebNotas</option>
-                <option>PDV</option>
-            </select>
 
-            <label for="modulo">Módulo:</label>
-            <select id="modulo" name="modulo">
-                <option value="">Selecione...</option>
-                <option>Cadastro</option>
-                <option>Relatórios</option>
-                <option>Financeiro</option>
-            </select>
+def get_board_refs():
+    if not API_KEY or not TOKEN:
+        raise RuntimeError("[CONFIG] Defina TRELLO_KEY e TRELLO_TOKEN nas variáveis de ambiente.")
 
-            <label for="ocorrencia">Ocorrência:</label>
-            <select id="ocorrencia" name="ocorrencia">
-                <option value="">Selecione...</option>
-                <option>Erro</option>
-                <option>Dúvida</option>
-                <option>Solicitação</option>
-            </select>
+    lists = trello_get(f"/boards/{BOARD_ID}/lists", {})
+    list_id = next((l["id"] for l in lists if l.get("name") == LIST_NAME), None)
+    if not list_id:
+        nomes = ", ".join(l.get("name", "?") for l in lists)
+        raise RuntimeError(f'[TRELLO] Lista "{LIST_NAME}" não encontrada. Disponíveis: {nomes}')
 
-            <label for="tipo">Tipo:</label>
-            <select id="tipo" name="tipo">
-                <option value="">Selecione...</option>
-                <option>Dúvida</option>
-                <option>Melhoria</option>
-                <option>Bug</option>
-            </select>
+    labels = trello_get(f"/boards/{BOARD_ID}/labels", {})
+    label_ids = {
+        "Alta":  next((lb["id"] for lb in labels if lb.get("color") == "red"), None),
+        "Média": next((lb["id"] for lb in labels if lb.get("color") == "yellow"), None),
+        "Baixa": next((lb["id"] for lb in labels if lb.get("color") == "green"), None),
+    }
+    print("[TRELLO] LIST_ID:", list_id)
+    print("[TRELLO] LABEL_IDS:", label_ids)
+    return list_id, label_ids
 
-            <label for="descricao">Descrição / Solicitação:</label>
-            <textarea id="descricao" name="descricao" rows="4"></textarea>
 
-            <button type="submit">Salvar Chamado</button>
-        </form>
-    </div>
-</body>
-</html>
-"""
+# Resolve referências ao iniciar (falha cedo se credenciais/IDs inválidos)
+LIST_ID, LABEL_IDS = get_board_refs()
 
-success_page = """
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <title>Chamado Salvo</title>
-    <style>
-        body { font-family: Arial, sans-serif; display:flex; justify-content:center; align-items:center; height:100vh; background:#f4f4f9; }
-        .box { background:#fff; padding:40px; border-radius:8px; text-align:center; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
-        button { margin:10px; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; }
-        .btn-exit { background:#dc3545; color:#fff; }
-        .btn-new { background:#28a745; color:#fff; }
-    </style>
-    <script>
-        function sair() {
-            window.close();
-        }
-        function novoChamado() {
-            window.location.href = "/";
-        }
-    </script>
-</head>
-<body>
-    <div class="box">
-        <h2>Chamado Salvo com Sucesso!</h2>
-        <button class="btn-exit" onclick="sair()">Sair</button>
-        <button class="btn-new" onclick="novoChamado()">Abrir Novo Chamado</button>
-    </div>
-</body>
-</html>
-"""
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/")
 def index():
-    if request.method == "POST":
-        cliente = request.form.get("cliente")
-        suporte = request.form.get("suporte")
-        representante = request.form.get("representante")
-        sistema = request.form.get("sistema")
-        modulo = request.form.get("modulo")
-        ocorrencia = request.form.get("ocorrencia")
-        tipo = request.form.get("tipo")
-        descricao = request.form.get("descricao")
+    return render_template("index.html")
 
-        if not all([cliente, suporte, representante, sistema, modulo, ocorrencia, tipo, descricao]):
-            return render_template_string(html_form)
 
-        return render_template_string(success_page)
-    return render_template_string(html_form)
+@app.route("/salvar", methods=["POST"])
+def salvar():
+    data = request.json or {}
+
+    # Campos
+    nome          = (data.get("nome") or "").strip()
+    contato       = (data.get("contato") or "").strip()
+    representante = (data.get("representante") or "").strip()
+    suporte       = (data.get("suporte") or "").strip()
+    sistema       = (data.get("sistema") or "").strip()
+    modulo        = (data.get("modulo") or "").strip()
+    ocorrencia    = (data.get("ocorrencia") or "").strip()
+    tipo          = (data.get("tipo") or "").strip()             # NOVO: Tipo (Dúvida/Melhoria/Bug)
+    descricao     = (data.get("descricao") or "").strip()
+    observacao    = (data.get("observacao") or "").strip()
+    prioridade    = (data.get("prioridade") or "").strip()
+
+    # Obrigatórios (inclui tipo e descricao)
+    obrig = [nome, contato, representante, suporte, sistema, modulo, ocorrencia, tipo, descricao, prioridade]
+    if not all(obrig):
+        return jsonify(success=False, message="Campos obrigatórios faltando."), 400
+
+    # Normalizações simples
+    nome = nome.title()
+    suporte = suporte.title()
+
+    titulo = f"{nome} - {sistema} ({ocorrencia})"
+    desc = (
+        f"**Nome:** {nome}\n"
+        f"**Contato:** {contato}\n"
+        f"**Representante:** {representante}\n"
+        f"**Suporte:** {suporte}\n"
+        f"**Sistema:** {sistema}\n"
+        f"**Módulo:** {modulo}\n"
+        f"**Ocorrência:** {ocorrencia}\n"
+        f"**Tipo:** {tipo}\n"
+        f"**Prioridade:** {prioridade}\n\n"
+        f"**Descrição/Solicitação:**\n{descricao or '-'}\n\n"
+        f"**Observação:**\n{observacao or '-'}\n"
+    )
+
+    params = {"idList": LIST_ID, "name": titulo, "desc": desc}
+    if LABEL_IDS.get(prioridade):
+        params["idLabels"] = LABEL_IDS[prioridade]
+
+    try:
+        trello_post("/cards", params)
+        return jsonify(success=True, message="Chamado criado com sucesso no Trello!")
+    except Exception as e:
+        return jsonify(success=False, message=str(e)), 400
+
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.getenv("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
