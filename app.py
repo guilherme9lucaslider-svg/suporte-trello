@@ -1,204 +1,110 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Cadastro de Chamado</title>
-  <style>
-    :root{--primary:#006056;--secondary:#FF7E00;--bg:#f6f8f7;--ink:#1f2a2a;--muted:#6b7a7a;--stroke:#e6ecea;--radius:14px;--shadow:0 10px 30px rgba(0,0,0,.08)}
-    *{box-sizing:border-box} html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial}
-    .wrap{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:28px;background:
-      radial-gradient(90% 70% at 10% 0%, rgba(255,126,0,.12) 0%, rgba(255,126,0,0) 60%),
-      radial-gradient(70% 60% at 100% 100%, rgba(0,96,86,.12) 0%, rgba(0,96,86,0) 60%)}
-    .card{width:100%;max-width:900px;background:#fff;border:1px solid var(--stroke);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
-    .card__header{display:flex;align-items:center;gap:14px;padding:16px 18px;border-bottom:1px solid var(--stroke);
-      background:linear-gradient(180deg, rgba(0,96,86,.06), rgba(0,96,86,0))}
-    .brand{display:flex;align-items:center;gap:12px}
-    .brand img{width:40px;height:40px;object-fit:contain;border-radius:10px;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.06)}
-    .brand__title{font-weight:700;letter-spacing:.3px;color:var(--primary)}
-    .brand__subtitle{font-size:12px;color:var(--muted);margin-top:2px}
-    .card__body{padding:22px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
-    @media (max-width:900px){.card__body{grid-template-columns:1fr}}
-    label{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.3px}
-    input,select,textarea{width:100%;margin-top:6px;padding:12px;border:1px solid var(--stroke);border-radius:10px;background:#fcfdfc;font-size:14px;outline:none;transition:.15s ease}
-    input:focus,select:focus,textarea:focus{border-color:color-mix(in oklab, var(--primary) 65%, white);box-shadow:0 0 0 4px color-mix(in oklab, var(--primary) 15%, transparent);background:#fff}
-    textarea{min-height:90px;resize:vertical}
-    .span-2{grid-column:span 2} @media (max-width:900px){.span-2{grid-column:span 1}}
-    .segmented{display:flex;gap:8px;background:#f4f7f6;border:1px solid var(--stroke);border-radius:12px;padding:8px}
-    .chip{position:relative;flex:1;text-align:center;padding:10px 12px;border-radius:8px;cursor:pointer;font-weight:600;border:1px dashed transparent;user-select:none;transition:.15s ease}
-    .chip input{position:absolute;opacity:0;pointer-events:none}
-    .chip[data-color="Alta"]{--c:#e03131}.chip[data-color="Média"]{--c:#fab005}.chip[data-color="Baixa"]{--c:#2f9e44}
-    .chip:hover{background:#fff;border-color:var(--stroke)}
-    .chip input:checked + span{background:color-mix(in oklab, var(--c) 12%, white);color:#111;border-radius:8px;padding:8px 10px;display:block;box-shadow:inset 0 0 0 2px color-mix(in oklab, var(--c) 65%, white)}
-    .actions{display:flex;justify-content:flex-end;gap:12px;padding:16px 18px;border-top:1px solid var(--stroke);background:linear-gradient(180deg, rgba(255,126,0,.05), rgba(255,126,0,0))}
-    .btn{border:0;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer;transition:.15s ease}
-    .btn--ghost{background:#fff;border:1px solid var(--stroke)} .btn--ghost:hover{border-color:#d7dfdd;transform:translateY(-1px)}
-    .btn--primary{background:linear-gradient(180deg, var(--primary), color-mix(in oklab, var(--primary) 80%, black));color:white;box-shadow:0 6px 20px rgba(0,96,86,.25)}
-    .btn--primary:hover{transform:translateY(-1px);filter:saturate(1.05)} .btn--primary:active{transform:translateY(0)}
-    .helper{font-size:12px;color:var(--muted);margin-top:6px}
+from flask import Flask, render_template, request, jsonify
+import requests
+import os
 
-    /* Tela de sucesso */
-    .success{display:none;min-height:100dvh;align-items:center;justify-content:center;padding:28px}
-    .success__box{max-width:560px;background:#fff;border:1px solid var(--stroke);border-radius:16px;box-shadow:var(--shadow);padding:28px;text-align:center}
-    .success__title{font-weight:800;color:var(--primary);font-size:20px;margin-bottom:8px}
-    .success__msg{color:var(--muted);margin-bottom:20px}
-    .success__actions{display:flex;gap:12px;justify-content:center}
-    .btn--secondary{background:linear-gradient(180deg, var(--secondary), color-mix(in oklab, var(--secondary) 85%, black));color:white}
-    .btn--secondary:hover{transform:translateY(-1px);filter:saturate(1.05)}
-  </style>
-</head>
-<body>
-  <div class="wrap" id="formView">
-    <div class="card" role="form" aria-labelledby="titulo">
-      <div class="card__header">
-        <div class="brand">
-          <img src="/static/logo.png" alt="Logo" />
-          <div>
-            <div class="brand__title" id="titulo">Cadastro de Chamado</div>
-            <div class="brand__subtitle">Suporte a Representantes</div>
-          </div>
-        </div>
-      </div>
+app = Flask(__name__)
 
-      <div class="card__body">
-        <div><label for="nome">NOME</label><input id="nome" required placeholder="Nome do cliente"/></div>
-        <div><label for="contato">CONTATO</label><input id="contato" required placeholder="Telefone, WhatsApp ou e-mail"/></div>
+# ===== CONFIG VIA VARIÁVEIS DE AMBIENTE =====
+API_KEY   = os.getenv("TRELLO_KEY", "")
+TOKEN     = os.getenv("TRELLO_TOKEN", "")
+BOARD_ID  = os.getenv("TRELLO_BOARD", "fGQqUBuw")
+LIST_NAME = os.getenv("TRELLO_LIST", "Chamados abertos")
+# ============================================
 
-        <!-- Representante (select) -->
-        <div class="span-2" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-          <div>
-            <label for="representante">REPRESENTANTE</label>
-            <select id="representante" required></select>
-          </div>
-          <div>
-            <label for="suporte">SUPORTE (quem está abrindo)</label>
-            <input id="suporte" required placeholder="Seu nome" />
-          </div>
-        </div>
+TRELLO_BASE = "https://api.trello.com/1"
+TIMEOUT = 15  # s
 
-        <div><label for="sistema">SISTEMA</label><select id="sistema" required></select></div>
-        <div><label for="modulo">MÓDULO</label><select id="modulo" required></select></div>
-        <div class="span-2"><label for="ocorrencia">OCORRÊNCIA</label><select id="ocorrencia" required></select></div>
+def trello_get(path: str, params: dict | None = None):
+    p = {"key": API_KEY, "token": TOKEN}
+    if params: p.update(params)
+    r = requests.get(f"{TRELLO_BASE}{path}", params=p, timeout=TIMEOUT)
+    if not r.ok:
+        raise RuntimeError(f"[TRELLO][GET {path}] {r.status_code}: {r.text[:300]}")
+    try:
+        return r.json()
+    except Exception:
+        raise RuntimeError(f"[TRELLO][GET {path}] Resposta não-JSON: {r.text[:300]}")
 
-        <div class="span-2"><label for="descricao">DESCRIÇÃO / SOLICITAÇÃO</label><textarea id="descricao" placeholder="Descreva o problema ou pedido"></textarea></div>
-        <div class="span-2"><label for="observacao">OBSERVAÇÃO</label><textarea id="observacao" placeholder="Observações adicionais (opcional)"></textarea></div>
+def trello_post(path: str, params: dict | None = None):
+    p = {"key": API_KEY, "token": TOKEN}
+    if params: p.update(params)
+    r = requests.post(f"{TRELLO_BASE}{path}", params=p, timeout=TIMEOUT)
+    if not r.ok:
+        raise RuntimeError(f"[TRELLO][POST {path}] {r.status_code}: {r.text[:300]}")
+    try:
+        return r.json()
+    except Exception:
+        raise RuntimeError(f"[TRELLO][POST {path}] Resposta não-JSON: {r.text[:300]}")
 
-        <div class="span-2">
-          <label>PRIORIDADE</label>
-          <div class="segmented" role="radiogroup">
-            <label class="chip" data-color="Alta"><input type="radio" name="prioridade" value="Alta" required><span>Alta</span></label>
-            <label class="chip" data-color="Média"><input type="radio" name="prioridade" value="Média"><span>Média</span></label>
-            <label class="chip" data-color="Baixa"><input type="radio" name="prioridade" value="Baixa"><span>Baixa</span></label>
-          </div>
-          <div class="helper"></div>
-        </div>
-      </div>
+def get_board_refs():
+    if not API_KEY or not TOKEN:
+        raise RuntimeError("[CONFIG] Defina TRELLO_KEY e TRELLO_TOKEN nas variáveis de ambiente.")
 
-      <div class="actions">
-        <button class="btn btn--ghost" type="reset">Limpar</button>
-        <button class="btn btn--primary" id="btnSalvar">Salvar Chamado</button>
-      </div>
-    </div>
-  </div>
+    lists = trello_get(f"/boards/{BOARD_ID}/lists", {})
+    list_id = next((l["id"] for l in lists if l.get("name") == LIST_NAME), None)
+    if not list_id:
+        nomes = ", ".join(l.get("name","?") for l in lists)
+        raise RuntimeError(f'[TRELLO] Lista "{LIST_NAME}" não encontrada. Disponíveis: {nomes}')
 
-  <!-- Tela de sucesso -->
-  <div class="success" id="successView">
-    <div class="success__box">
-      <div class="success__title">Chamado enviado com sucesso! 🎉</div>
-      <div class="success__msg">Seu chamado foi criado no Trello em “Chamados abertos”.</div>
-      <div class="success__actions">
-        <button class="btn btn--secondary" id="btnNovo">Abrir novo chamado</button>
-        <button class="btn btn--ghost" id="btnSair">Sair</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const representantes = ["Host.com","2RTI Soluções","MT Solutions","Unai System","Multitech","Mad Automação","Tecnuve Soluções","GoSystem Automação","RJ Soluções","Raizes Tecnologia","Webside Sistemas","Web System Norte","Online Soluções","Delane","Supriserv","MS Tech Soluções","Use Tecnologia","Unity Automação","Digital RF Tecnologia","Connecta Informática","R.A Soluções"].sort((a,b)=>a.localeCompare(b));
-    const data = {
-      "WebLider":{"Cadastro":["Geral","Veículos","Outros"],"Movimento":["Pedido","Orçamento","Ordem de Serviço","Outros"],"Financeiro":["Movimentos","Contas a Receber","Contas a Pagar","Caixa","Comissão","Utilitários","Outros"],"Documentos Fiscais":["Entrada","Saída (Emissão)","Arquivos","Estoque","Outros"],"Relatório":["Pessoa","Conta","Financeiro","Produto","Veículo","Controle de Viagens","Relação de Documentos Fiscais","Pedido","Serviço","Restaurante","Consignação","Ordem de Serviço","Orçamento","Pedido de Compra","Outros"],"Utilitários":["Configurações","Usuários","Exportação","Etiqueta","Auditoria","Integração","Outros"]},
-      "Lider PDV":{"NFC-e":["Emissão","Cancelamento","Contingência","Impressão"],"Pedido":["Emissão","Cancelamento","Duplicidade","Impressão"],"Restaurante":["Abertura/fechamento de mesa","Servidor de Impressão","Itens"],"Delivery":["Cadastro de Cliente","Impressão","Integração"],"Integração":["Integração Parada"],"Financeiro":["Fechamento de Caixa","Espelho de Caixa","Despesa","Sangria","Suprimento"]},
-      "Força de Vendas":{"Venda":["Relatórios"],"Pedidos":["Emissão","Cancelamento","Envio"],"Clientes":["Cadastro","Edição","Pesquisa"],"Produtos":["Consulta","Estoque"]},
-      "Web Comandas":{"Mesas":["Abertura de Mesa/Comanda","Itens","Finalização de Mesa","Impressão"]},
-      "WebPay":{"NFC-e":["Emissão","Cancelamento","Contingência","Impressão"],"Pedido":["Emissão","Cancelamento","Impressão"],"Clientes":["Consulta","Cadastro"],"Financeiro":["Fechamento de Caixa","Espelho de Caixa","Despesa","Sangria","Suprimento"],"Relatório":["Relatório de Vendas"]},
-      "WebLider (Mobile)":{"Pessoas":["Consulta"],"Vendas":["Relatórios","Gráficos"],"Contas a Pagar":["Títulos","Gráficos"],"Contas a Receber":["Títulos","Gráficos"],"Estatísticas":["Gráficos Estatísticos"]}
-    };
-
-    const repSelect=document.getElementById('representante');
-    const sistemaSelect=document.getElementById('sistema');
-    const moduloSelect=document.getElementById('modulo');
-    const ocorrenciaSelect=document.getElementById('ocorrencia');
-    const btnSalvar=document.getElementById('btnSalvar');
-
-    repSelect.innerHTML='<option value="" disabled selected>Selecione o representante</option>';
-    representantes.forEach(r=>{const o=document.createElement('option');o.value=r;o.textContent=r;repSelect.appendChild(o);});
-
-    sistemaSelect.innerHTML='<option value="" disabled selected>Selecione o sistema</option>';
-    Object.keys(data).forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sistemaSelect.appendChild(o);});
-
-    sistemaSelect.addEventListener('change',()=>{
-      moduloSelect.innerHTML='<option value="" disabled selected>Selecione o módulo</option>';
-      ocorrenciaSelect.innerHTML='<option value="" disabled selected>Selecione a ocorrência</option>';
-      Object.keys(data[sistemaSelect.value]).forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;moduloSelect.appendChild(o);});
-    });
-
-    moduloSelect.addEventListener('change',()=>{
-      ocorrenciaSelect.innerHTML='<option value="" disabled selected>Selecione a ocorrência</option>';
-      data[sistemaSelect.value][moduloSelect.value].forEach(oc=>{const o=document.createElement('option');o.value=oc;o.textContent=oc;ocorrenciaSelect.appendChild(o);});
-    });
-
-    function showSuccess(){
-      document.getElementById('formView').style.display='none';
-      const s = document.getElementById('successView');
-      s.style.display='flex';
-
-      // Ações
-      document.getElementById('btnNovo').onclick = ()=>{
-        // reset e volta pro formulário
-        document.querySelector('form')?.reset?.();
-        // limpar selects dependentes
-        sistemaSelect.value = "";
-        moduloSelect.innerHTML = '<option value="" disabled selected>Selecione o módulo</option>';
-        ocorrenciaSelect.innerHTML = '<option value="" disabled selected>Selecione a ocorrência</option>';
-        document.querySelector('input[name="prioridade"]:checked')?.checked = false;
-        s.style.display='none';
-        document.getElementById('formView').style.display='flex';
-        window.scrollTo({top:0, behavior:'smooth'});
-      };
-
-      document.getElementById('btnSair').onclick = ()=>{
-        // tenta fechar a aba (pode ser bloqueado pelo navegador)
-        window.close();
-        // fallback: redireciona para página em branco
-        setTimeout(()=>{ window.location.href = "about:blank"; }, 200);
-      };
+    labels = trello_get(f"/boards/{BOARD_ID}/labels", {})
+    label_ids = {
+        "Alta":  next((lb["id"] for lb in labels if lb.get("color") == "red"), None),
+        "Média": next((lb["id"] for lb in labels if lb.get("color") == "yellow"), None),
+        "Baixa": next((lb["id"] for lb in labels if lb.get("color") == "green"), None),
     }
+    print("[TRELLO] LIST_ID:", list_id)
+    print("[TRELLO] LABEL_IDS:", label_ids)
+    return list_id, label_ids
 
-    btnSalvar.addEventListener('click', (e)=>{
-      e.preventDefault();
-      const prioridade=(document.querySelector('input[name="prioridade"]:checked')||{}).value;
-      const payload={
-        nome:document.getElementById('nome').value.trim(),
-        contato:document.getElementById('contato').value.trim(),
-        representante:repSelect.value,
-        suporte:document.getElementById('suporte').value.trim(),
-        sistema:sistemaSelect.value,
-        modulo:moduloSelect.value,
-        ocorrencia:ocorrenciaSelect.value,
-        descricao:document.getElementById('descricao').value.trim(),
-        observacao:document.getElementById('observacao').value.trim(),
-        prioridade:prioridade
-      };
-      if(!payload.nome||!payload.contato||!payload.representante||!payload.suporte||!payload.sistema||!payload.modulo||!payload.ocorrencia||!payload.prioridade){
-        alert('Preencha todos os campos obrigatórios.');return;
-      }
-      fetch('/salvar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
-        .then(r=>r.json()).then(res=>{
-          if(res.success){ showSuccess(); }
-          else{ alert(res.message||'Erro ao salvar'); }
-        })
-        .catch(err=>alert('Erro na comunicação: '+err));
-    });
-  </script>
-</body>
-</html>
+# Resolve referências ao iniciar (falha cedo se credenciais/IDs inválidos)
+LIST_ID, LABEL_IDS = get_board_refs()
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+@app.route("/salvar", methods=["POST"])
+def salvar():
+    data = request.json or {}
+    nome          = (data.get("nome") or "").strip()
+    contato       = (data.get("contato") or "").strip()
+    representante = (data.get("representante") or "").strip()
+    suporte       = (data.get("suporte") or "").strip()
+    sistema       = (data.get("sistema") or "").strip()
+    modulo        = (data.get("modulo") or "").strip()
+    ocorrencia    = (data.get("ocorrencia") or "").strip()
+    descricao     = (data.get("descricao") or "").strip()
+    observacao    = (data.get("observacao") or "").strip()
+    prioridade    = (data.get("prioridade") or "").strip()
+
+    obrig = [nome, contato, representante, suporte, sistema, modulo, ocorrencia, prioridade]
+    if not all(obrig):
+        return jsonify(success=False, message="Campos obrigatórios faltando."), 400
+
+    titulo = f"{nome} - {sistema} ({ocorrencia})"
+    desc = (
+        f"**Nome:** {nome}\n"
+        f"**Contato:** {contato}\n"
+        f"**Representante:** {representante}\n"
+        f"**Suporte:** {suporte}\n"
+        f"**Sistema:** {sistema}\n"
+        f"**Módulo:** {modulo}\n"
+        f"**Ocorrência:** {ocorrencia}\n"
+        f"**Prioridade:** {prioridade}\n\n"
+        f"**Descrição/Solicitação:**\n{descricao or '-'}\n\n"
+        f"**Observação:**\n{observacao or '-'}\n"
+    )
+
+    params = {"idList": LIST_ID, "name": titulo, "desc": desc}
+    if LABEL_IDS.get(prioridade):
+        params["idLabels"] = LABEL_IDS[prioridade]
+
+    try:
+        trello_post("/cards", params)
+        return jsonify(success=True, message="Chamado criado com sucesso no Trello!")
+    except Exception as e:
+        return jsonify(success=False, message=str(e)), 400
+
+if __name__ == "__main__":
+    port = int(os.getenv("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
