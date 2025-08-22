@@ -9,9 +9,8 @@ app = Flask(__name__)
 #   TRELLO_KEY, TRELLO_TOKEN, (opcional) TRELLO_BOARD, TRELLO_LIST
 API_KEY   = os.getenv("TRELLO_KEY", "")
 TOKEN     = os.getenv("TRELLO_TOKEN", "")
-BOARD_ID  = os.getenv("TRELLO_BOARD", "fGQqUBuw")
+BOARD_ID  = os.getenv("TRELLO_BOARD", "fGQqUBuw")  # shortLink do board por padrão
 LIST_NAME = os.getenv("TRELLO_LIST", "Chamados abertos")
-
 # =====================================================================================
 
 TRELLO_BASE = "https://api.trello.com/1"
@@ -85,6 +84,7 @@ def salvar():
     nome          = (data.get("nome") or "").strip()
     contato       = (data.get("contato") or "").strip()
     representante = (data.get("representante") or "").strip()
+    suporte       = (data.get("suporte") or "").strip()
     sistema       = (data.get("sistema") or "").strip()
     modulo        = (data.get("modulo") or "").strip()
     ocorrencia    = (data.get("ocorrencia") or "").strip()
@@ -92,7 +92,7 @@ def salvar():
     observacao    = (data.get("observacao") or "").strip()
     prioridade    = (data.get("prioridade") or "").strip()
 
-    obrig = [nome, contato, representante, sistema, modulo, ocorrencia, prioridade]
+    obrig = [nome, contato, representante, suporte, sistema, modulo, ocorrencia, prioridade]
     if not all(obrig):
         return jsonify(success=False, message="Campos obrigatórios faltando."), 400
 
@@ -100,7 +100,10 @@ def salvar():
     desc = (
         f"**Nome:** {nome}\n"
         f"**Contato:** {contato}\n"
-        f"**Representante:** {representante}\n"
+        f"**Representante:** {representante}
+"
+        f"**Suporte:** {suporte}
+"
         f"**Sistema:** {sistema}\n"
         f"**Módulo:** {modulo}\n"
         f"**Ocorrência:** {ocorrencia}\n"
