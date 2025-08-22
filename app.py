@@ -9,8 +9,9 @@ app = Flask(__name__)
 #   TRELLO_KEY, TRELLO_TOKEN, (opcional) TRELLO_BOARD, TRELLO_LIST
 API_KEY   = os.getenv("TRELLO_KEY", "")
 TOKEN     = os.getenv("TRELLO_TOKEN", "")
-BOARD_ID  = os.getenv("TRELLO_BOARD", "fGQqUBuw")  # shortLink do board por padrão
+BOARD_ID  = os.getenv("TRELLO_BOARD", "fGQqUBuw")
 LIST_NAME = os.getenv("TRELLO_LIST", "Chamados abertos")
+
 # =====================================================================================
 
 TRELLO_BASE = "https://api.trello.com/1"
