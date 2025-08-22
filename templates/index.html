@@ -50,6 +50,9 @@
     .invalid{border-color:#e03131!important;background:rgba(224,49,49,.06)!important;box-shadow:0 0 0 4px rgba(224,49,49,.12)!important}
     .field-hint{font-size:12px;color:#e03131;margin-top:6px;display:none}
     .field-hint.show{display:block}
+
+    /* Exibição: capitalizar enquanto digita */
+    #nome, #suporte { text-transform: capitalize; }
   </style>
 </head>
 <body>
@@ -232,10 +235,19 @@
     };
     const clearHint = hintId => document.getElementById(hintId)?.classList.remove('show');
 
-    // Remove erro ao editar
+    // Capitalização real (valor enviado)
+    function capitalizarPalavras(str){
+      // transforma tudo em minúsculas, depois capitaliza cada palavra (\b = início de palavra)
+      return (str || "").toLowerCase().replace(/\b\w/g, letra => letra.toUpperCase());
+    }
+
+    // Remove erro ao editar + capitaliza ao sair do campo
     ['nome','contato','suporte'].forEach(id => {
       const el = document.getElementById(id);
       el.addEventListener('input', ()=>{ clearInvalid(el); clearHint('hint-'+id); });
+      if(id === 'nome' || id === 'suporte'){
+        el.addEventListener('blur', ()=>{ el.value = capitalizarPalavras(el.value); });
+      }
     });
     [repSelect, sistemaSelect, moduloSelect, ocorrenciaSelect].forEach(el=>{
       el.addEventListener('change', ()=>{ clearInvalid(el); clearHint('hint-'+el.id); });
@@ -309,10 +321,10 @@
 
       const prioridade = (document.querySelector('input[name="prioridade"]:checked')||{}).value;
       const payload = {
-        nome:document.getElementById('nome').value.trim(),
+        nome:capitalizarPalavras(document.getElementById('nome').value.trim()),
         contato:document.getElementById('contato').value.trim(),
         representante:repSelect.value,
-        suporte:suporteInp.value.trim(),
+        suporte:capitalizarPalavras(suporteInp.value.trim()),
         sistema:sistemaSelect.value,
         modulo:moduloSelect.value,
         ocorrencia:ocorrenciaSelect.value,
