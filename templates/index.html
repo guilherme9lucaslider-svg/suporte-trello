@@ -121,9 +121,22 @@
           <div class="field-hint" id="hint-ocorrencia">Selecione uma ocorrência.</div>
         </div>
 
+        <!-- NOVO: Tipo -->
+        <div class="span-2">
+          <label for="tipo">TIPO</label>
+          <select id="tipo" required>
+            <option value="" disabled selected>Selecione o tipo</option>
+            <option value="Dúvida">Dúvida</option>
+            <option value="Melhoria">Melhoria</option>
+            <option value="Bug">Bug</option>
+          </select>
+          <div class="field-hint" id="hint-tipo">Selecione um tipo.</div>
+        </div>
+
         <div class="span-2">
           <label for="descricao">DESCRIÇÃO / SOLICITAÇÃO</label>
-          <textarea id="descricao" placeholder="Descreva o problema ou pedido"></textarea>
+          <textarea id="descricao" required placeholder="Descreva o problema ou pedido"></textarea>
+          <div class="field-hint" id="hint-descricao">Informe a descrição/solicitação.</div>
         </div>
 
         <div class="span-2">
@@ -139,7 +152,7 @@
             <label class="chip" data-color="Baixa"><input type="radio" name="prioridade" value="Baixa"><span>Baixa</span></label>
           </div>
           <div class="field-hint" id="hint-prioridade">Escolha uma prioridade.</div>
-          <div class="helper"> </div>
+          <div class="helper"></div>
         </div>
       </div>
 
@@ -224,6 +237,8 @@
     const sistemaSelect = document.getElementById('sistema');
     const moduloSelect = document.getElementById('modulo');
     const ocorrenciaSelect = document.getElementById('ocorrencia');
+    const tipoSelect = document.getElementById('tipo');
+    const descricaoTxt = document.getElementById('descricao');
     const btnSalvar = document.getElementById('btnSalvar');
     const btnLimpar = document.getElementById('btnLimpar');
 
@@ -235,43 +250,36 @@
     };
     const clearHint = hintId => document.getElementById(hintId)?.classList.remove('show');
 
-    // Capitalização real (valor enviado)
     function capitalizarPalavras(str){
-      // transforma tudo em minúsculas, depois capitaliza cada palavra (\b = início de palavra)
       return (str || "").toLowerCase().replace(/\b\w/g, letra => letra.toUpperCase());
     }
 
-    // Remove erro ao editar + capitaliza ao sair do campo
-    ['nome','contato','suporte'].forEach(id => {
+    // Limpar erro ao digitar + capitalizar ao sair (nome/suporte)
+    ['nome','contato','suporte','descricao'].forEach(id => {
       const el = document.getElementById(id);
       el.addEventListener('input', ()=>{ clearInvalid(el); clearHint('hint-'+id); });
       if(id === 'nome' || id === 'suporte'){
         el.addEventListener('blur', ()=>{ el.value = capitalizarPalavras(el.value); });
       }
     });
-    [repSelect, sistemaSelect, moduloSelect, ocorrenciaSelect].forEach(el=>{
+    [repSelect, sistemaSelect, moduloSelect, ocorrenciaSelect, tipoSelect].forEach(el=>{
       el.addEventListener('change', ()=>{ clearInvalid(el); clearHint('hint-'+el.id); });
     });
 
-    // --- Popular Representantes ---
-    (function fillRep(){
-      representantes.forEach(r=>{
-        const o = document.createElement('option'); o.value=r; o.textContent=r;
-        repSelect.appendChild(o);
-      });
-    })();
+    // Popular representantes
+    representantes.forEach(r=>{
+      const o = document.createElement('option'); o.value=r; o.textContent=r;
+      repSelect.appendChild(o);
+    });
 
-    // --- Popular Sistemas ---
-    (function fillSistemas(){
-      Object.keys(data).forEach(s=>{
-        const o = document.createElement('option'); o.value=s; o.textContent=s;
-        sistemaSelect.appendChild(o);
-      });
-    })();
+    // Popular sistemas
+    Object.keys(data).forEach(s=>{
+      const o = document.createElement('option'); o.value=s; o.textContent=s;
+      sistemaSelect.appendChild(o);
+    });
 
-    // --- Cascata Módulo/ Ocorrência ---
+    // Cascata módulo/ocorrência
     sistemaSelect.addEventListener('change', ()=>{
-      // reset módulo/ocorrência
       moduloSelect.innerHTML = '<option value="" disabled selected>Selecione o módulo</option>';
       ocorrenciaSelect.innerHTML = '<option value="" disabled selected>Selecione a ocorrência</option>';
       const mods = Object.keys(data[sistemaSelect.value] || {});
@@ -290,15 +298,14 @@
       });
     });
 
-    // --- Validação e envio ---
+    // Validação e envio
     function validarCampos(){
       let ok = true;
       const nome = document.getElementById('nome');
       const contato = document.getElementById('contato');
       const prioridade = (document.querySelector('input[name="prioridade"]:checked')||{}).value;
 
-      // limpar dicas
-      ['nome','contato','representante','suporte','sistema','modulo','ocorrencia','prioridade'].forEach(h=>clearHint('hint-'+h));
+      ['nome','contato','representante','suporte','sistema','modulo','ocorrencia','tipo','descricao','prioridade'].forEach(h=>clearHint('hint-'+h));
 
       if(!nome.value.trim()){ markInvalid(nome,'hint-nome'); ok=false; }
       if(!contato.value.trim()){ markInvalid(contato,'hint-contato'); ok=false; }
@@ -307,9 +314,10 @@
       if(!sistemaSelect.value){ markInvalid(sistemaSelect,'hint-sistema'); ok=false; }
       if(!moduloSelect.value){ markInvalid(moduloSelect,'hint-modulo'); ok=false; }
       if(!ocorrenciaSelect.value){ markInvalid(ocorrenciaSelect,'hint-ocorrencia'); ok=false; }
+      if(!tipoSelect.value){ markInvalid(tipoSelect,'hint-tipo'); ok=false; }
+      if(!descricaoTxt.value.trim()){ markInvalid(descricaoTxt,'hint-descricao'); ok=false; }
       if(!prioridade){ document.getElementById('hint-prioridade').classList.add('show'); ok=false; }
 
-      // foco no primeiro inválido
       const firstInvalid = document.querySelector('.invalid');
       if(firstInvalid){ firstInvalid.focus({preventScroll:false}); firstInvalid.scrollIntoView({behavior:'smooth',block:'center'}); }
       return ok;
@@ -328,7 +336,8 @@
         sistema:sistemaSelect.value,
         modulo:moduloSelect.value,
         ocorrencia:ocorrenciaSelect.value,
-        descricao:document.getElementById('descricao').value.trim(),
+        tipo:tipoSelect.value,
+        descricao:descricaoTxt.value.trim(),
         observacao:document.getElementById('observacao').value.trim(),
         prioridade:prioridade
       };
@@ -341,14 +350,11 @@
       .then(r=>r.json())
       .then(res=>{
         if(res.success){
-          // sucesso -> mostrar tela de sucesso
           document.getElementById('formView').style.display='none';
           const s = document.getElementById('successView');
           s.style.display='flex';
 
-          // Ações
           document.getElementById('btnNovo').onclick = ()=>{
-            // reset form
             document.querySelectorAll('.invalid').forEach(el=>el.classList.remove('invalid'));
             document.querySelectorAll('.field-hint.show').forEach(h=>h.classList.remove('show'));
             document.getElementById('nome').value='';
@@ -358,6 +364,8 @@
             sistemaSelect.value='';
             moduloSelect.innerHTML = '<option value="" disabled selected>Selecione o módulo</option>';
             ocorrenciaSelect.innerHTML = '<option value="" disabled selected>Selecione a ocorrência</option>';
+            tipoSelect.value='';
+            descricaoTxt.value='';
             const checked = document.querySelector('input[name="prioridade"]:checked'); if(checked) checked.checked=false;
 
             s.style.display='none';
