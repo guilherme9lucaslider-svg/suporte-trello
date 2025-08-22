@@ -10,7 +10,7 @@
     .wrap{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:28px;background:
       radial-gradient(90% 70% at 10% 0%, rgba(255,126,0,.12) 0%, rgba(255,126,0,0) 60%),
       radial-gradient(70% 60% at 100% 100%, rgba(0,96,86,.12) 0%, rgba(0,96,86,0) 60%)}
-    .card{width:100%;max-width:760px;background:#fff;border:1px solid var(--stroke);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .card{width:100%;max-width:900px;background:#fff;border:1px solid var(--stroke);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
     .card__header{display:flex;align-items:center;gap:14px;padding:16px 18px;border-bottom:1px solid var(--stroke);
       background:linear-gradient(180deg, rgba(0,96,86,.06), rgba(0,96,86,0))}
     .brand{display:flex;align-items:center;gap:12px}
@@ -18,12 +18,12 @@
     .brand__title{font-weight:700;letter-spacing:.3px;color:var(--primary)}
     .brand__subtitle{font-size:12px;color:var(--muted);margin-top:2px}
     .card__body{padding:22px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
-    @media (max-width:720px){.card__body{grid-template-columns:1fr}}
+    @media (max-width:900px){.card__body{grid-template-columns:1fr}}
     label{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.3px}
     input,select,textarea{width:100%;margin-top:6px;padding:12px;border:1px solid var(--stroke);border-radius:10px;background:#fcfdfc;font-size:14px;outline:none;transition:.15s ease}
     input:focus,select:focus,textarea:focus{border-color:color-mix(in oklab, var(--primary) 65%, white);box-shadow:0 0 0 4px color-mix(in oklab, var(--primary) 15%, transparent);background:#fff}
     textarea{min-height:90px;resize:vertical}
-    .span-2{grid-column:span 2} @media (max-width:720px){.span-2{grid-column:span 1}}
+    .span-2{grid-column:span 2} @media (max-width:900px){.span-2{grid-column:span 1}}
     .segmented{display:flex;gap:8px;background:#f4f7f6;border:1px solid var(--stroke);border-radius:12px;padding:8px}
     .chip{position:relative;flex:1;text-align:center;padding:10px 12px;border-radius:8px;cursor:pointer;font-weight:600;border:1px dashed transparent;user-select:none;transition:.15s ease}
     .chip input{position:absolute;opacity:0;pointer-events:none}
@@ -36,10 +36,19 @@
     .btn--primary{background:linear-gradient(180deg, var(--primary), color-mix(in oklab, var(--primary) 80%, black));color:white;box-shadow:0 6px 20px rgba(0,96,86,.25)}
     .btn--primary:hover{transform:translateY(-1px);filter:saturate(1.05)} .btn--primary:active{transform:translateY(0)}
     .helper{font-size:12px;color:var(--muted);margin-top:6px}
+
+    /* Tela de sucesso */
+    .success{display:none;min-height:100dvh;align-items:center;justify-content:center;padding:28px}
+    .success__box{max-width:560px;background:#fff;border:1px solid var(--stroke);border-radius:16px;box-shadow:var(--shadow);padding:28px;text-align:center}
+    .success__title{font-weight:800;color:var(--primary);font-size:20px;margin-bottom:8px}
+    .success__msg{color:var(--muted);margin-bottom:20px}
+    .success__actions{display:flex;gap:12px;justify-content:center}
+    .btn--secondary{background:linear-gradient(180deg, var(--secondary), color-mix(in oklab, var(--secondary) 85%, black));color:white}
+    .btn--secondary:hover{transform:translateY(-1px);filter:saturate(1.05)}
   </style>
 </head>
 <body>
-  <div class="wrap">
+  <div class="wrap" id="formView">
     <div class="card" role="form" aria-labelledby="titulo">
       <div class="card__header">
         <div class="brand">
@@ -54,12 +63,26 @@
       <div class="card__body">
         <div><label for="nome">NOME</label><input id="nome" required placeholder="Nome do cliente"/></div>
         <div><label for="contato">CONTATO</label><input id="contato" required placeholder="Telefone, WhatsApp ou e-mail"/></div>
-        <div class="span-2"><label for="representante">REPRESENTANTE</label><select id="representante" required></select></div>
+
+        <!-- Representante (select) -->
+        <div class="span-2" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div>
+            <label for="representante">REPRESENTANTE</label>
+            <select id="representante" required></select>
+          </div>
+          <div>
+            <label for="suporte">SUPORTE (quem está abrindo)</label>
+            <input id="suporte" required placeholder="Seu nome" />
+          </div>
+        </div>
+
         <div><label for="sistema">SISTEMA</label><select id="sistema" required></select></div>
         <div><label for="modulo">MÓDULO</label><select id="modulo" required></select></div>
         <div class="span-2"><label for="ocorrencia">OCORRÊNCIA</label><select id="ocorrencia" required></select></div>
+
         <div class="span-2"><label for="descricao">DESCRIÇÃO / SOLICITAÇÃO</label><textarea id="descricao" placeholder="Descreva o problema ou pedido"></textarea></div>
         <div class="span-2"><label for="observacao">OBSERVAÇÃO</label><textarea id="observacao" placeholder="Observações adicionais (opcional)"></textarea></div>
+
         <div class="span-2">
           <label>PRIORIDADE</label>
           <div class="segmented" role="radiogroup">
@@ -74,6 +97,18 @@
       <div class="actions">
         <button class="btn btn--ghost" type="reset">Limpar</button>
         <button class="btn btn--primary" id="btnSalvar">Salvar Chamado</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tela de sucesso -->
+  <div class="success" id="successView">
+    <div class="success__box">
+      <div class="success__title">Chamado enviado com sucesso! 🎉</div>
+      <div class="success__msg">Seu chamado foi criado no Trello em “Chamados abertos”.</div>
+      <div class="success__actions">
+        <button class="btn btn--secondary" id="btnNovo">Abrir novo chamado</button>
+        <button class="btn btn--ghost" id="btnSair">Sair</button>
       </div>
     </div>
   </div>
@@ -112,6 +147,33 @@
       data[sistemaSelect.value][moduloSelect.value].forEach(oc=>{const o=document.createElement('option');o.value=oc;o.textContent=oc;ocorrenciaSelect.appendChild(o);});
     });
 
+    function showSuccess(){
+      document.getElementById('formView').style.display='none';
+      const s = document.getElementById('successView');
+      s.style.display='flex';
+
+      // Ações
+      document.getElementById('btnNovo').onclick = ()=>{
+        // reset e volta pro formulário
+        document.querySelector('form')?.reset?.();
+        // limpar selects dependentes
+        sistemaSelect.value = "";
+        moduloSelect.innerHTML = '<option value="" disabled selected>Selecione o módulo</option>';
+        ocorrenciaSelect.innerHTML = '<option value="" disabled selected>Selecione a ocorrência</option>';
+        document.querySelector('input[name="prioridade"]:checked')?.checked = false;
+        s.style.display='none';
+        document.getElementById('formView').style.display='flex';
+        window.scrollTo({top:0, behavior:'smooth'});
+      };
+
+      document.getElementById('btnSair').onclick = ()=>{
+        // tenta fechar a aba (pode ser bloqueado pelo navegador)
+        window.close();
+        // fallback: redireciona para página em branco
+        setTimeout(()=>{ window.location.href = "about:blank"; }, 200);
+      };
+    }
+
     btnSalvar.addEventListener('click', (e)=>{
       e.preventDefault();
       const prioridade=(document.querySelector('input[name="prioridade"]:checked')||{}).value;
@@ -119,6 +181,7 @@
         nome:document.getElementById('nome').value.trim(),
         contato:document.getElementById('contato').value.trim(),
         representante:repSelect.value,
+        suporte:document.getElementById('suporte').value.trim(),
         sistema:sistemaSelect.value,
         modulo:moduloSelect.value,
         ocorrencia:ocorrenciaSelect.value,
@@ -126,9 +189,14 @@
         observacao:document.getElementById('observacao').value.trim(),
         prioridade:prioridade
       };
-      if(!payload.nome||!payload.contato||!payload.representante||!payload.sistema||!payload.modulo||!payload.ocorrencia||!payload.prioridade){alert('Preencha todos os campos obrigatórios.');return;}
+      if(!payload.nome||!payload.contato||!payload.representante||!payload.suporte||!payload.sistema||!payload.modulo||!payload.ocorrencia||!payload.prioridade){
+        alert('Preencha todos os campos obrigatórios.');return;
+      }
       fetch('/salvar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
-        .then(r=>r.json()).then(res=>{alert(res.message||'OK');if(res.success)document.querySelector('form')?.reset();})
+        .then(r=>r.json()).then(res=>{
+          if(res.success){ showSuccess(); }
+          else{ alert(res.message||'Erro ao salvar'); }
+        })
         .catch(err=>alert('Erro na comunicação: '+err));
     });
   </script>
