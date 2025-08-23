@@ -100,10 +100,8 @@ def salvar():
     desc = (
         f"**Nome:** {nome}\n"
         f"**Contato:** {contato}\n"
-        f"**Representante:** {representante}
-"
-        f"**Suporte:** {suporte}
-"
+        f"**Representante:** {representante}\n"
+        f"**Suporte:** {suporte}\n"
         f"**Sistema:** {sistema}\n"
         f"**Módulo:** {modulo}\n"
         f"**Ocorrência:** {ocorrencia}\n"
