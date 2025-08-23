@@ -4,63 +4,71 @@ import os
 
 app = Flask(__name__)
 
-# ===== CONFIG VIA VARIÁVEIS DE AMBIENTE =====
+# ===================== CONFIG TRELLO (via variáveis de ambiente) =====================
+# NUNCA deixe KEY/TOKEN hardcoded em código público. Configure como ENV VARS:
+#   TRELLO_KEY, TRELLO_TOKEN, (opcional) TRELLO_BOARD, TRELLO_LIST
 API_KEY   = os.getenv("TRELLO_KEY", "")
 TOKEN     = os.getenv("TRELLO_TOKEN", "")
-BOARD_ID  = os.getenv("TRELLO_BOARD", "fGQqUBuw")
+BOARD_ID  = os.getenv("TRELLO_BOARD", "fGQqUBuw")  # shortLink do board por padrão
 LIST_NAME = os.getenv("TRELLO_LIST", "Chamados abertos")
-# ============================================
+# =====================================================================================
 
 TRELLO_BASE = "https://api.trello.com/1"
-TIMEOUT = 15  # s
+TIMEOUT = 15  # segundos
 
 
-def trello_get(path: str, params: dict | None = None):
+def trello_get(path: str, params: dict):
+    """GET com checagem de erro e mensagens claras."""
     p = {"key": API_KEY, "token": TOKEN}
-    if params: p.update(params)
-    r = requests.get(f"{TRELLO_BASE}{path}", params=p, timeout=TIMEOUT)
-    if not r.ok:
-        raise RuntimeError(f"[TRELLO][GET {path}] {r.status_code}: {r.text[:300]}")
+    p.update(params or {})
+    url = f"{TRELLO_BASE}{path}"
+    resp = requests.get(url, params=p, timeout=TIMEOUT)
+    if not resp.ok:
+        raise RuntimeError(f"[TRELLO][GET {path}] {resp.status_code}: {resp.text[:300]}")
     try:
-        return r.json()
+        return resp.json()
     except Exception:
-        raise RuntimeError(f"[TRELLO][GET {path}] Resposta não-JSON: {r.text[:300]}")
+        raise RuntimeError(f"[TRELLO][GET {path}] Resposta não é JSON: {resp.text[:300]}")
 
 
-def trello_post(path: str, params: dict | None = None):
+def trello_post(path: str, params: dict):
     p = {"key": API_KEY, "token": TOKEN}
-    if params: p.update(params)
-    r = requests.post(f"{TRELLO_BASE}{path}", params=p, timeout=TIMEOUT)
-    if not r.ok:
-        raise RuntimeError(f"[TRELLO][POST {path}] {r.status_code}: {r.text[:300]}")
+    p.update(params or {})
+    url = f"{TRELLO_BASE}{path}"
+    resp = requests.post(url, params=p, timeout=TIMEOUT)
+    if not resp.ok:
+        raise RuntimeError(f"[TRELLO][POST {path}] {resp.status_code}: {resp.text[:300]}")
     try:
-        return r.json()
+        return resp.json()
     except Exception:
-        raise RuntimeError(f"[TRELLO][POST {path}] Resposta não-JSON: {r.text[:300]}")
+        raise RuntimeError(f"[TRELLO][POST {path}] Resposta não é JSON: {resp.text[:300]}")
 
 
 def get_board_refs():
     if not API_KEY or not TOKEN:
         raise RuntimeError("[CONFIG] Defina TRELLO_KEY e TRELLO_TOKEN nas variáveis de ambiente.")
 
-    lists = trello_get(f"/boards/{BOARD_ID}/lists", {})
+    # Descobrir ID da lista desejada
+    lists = trello_get(f"/boards/{BOARD_ID}/lists", params={})
     list_id = next((l["id"] for l in lists if l.get("name") == LIST_NAME), None)
     if not list_id:
         nomes = ", ".join(l.get("name", "?") for l in lists)
         raise RuntimeError(f'[TRELLO] Lista "{LIST_NAME}" não encontrada. Disponíveis: {nomes}')
 
-    labels = trello_get(f"/boards/{BOARD_ID}/labels", {})
+    # Mapear labels por cor
+    labels = trello_get(f"/boards/{BOARD_ID}/labels", params={})
     label_ids = {
         "Alta":  next((lb["id"] for lb in labels if lb.get("color") == "red"), None),
         "Média": next((lb["id"] for lb in labels if lb.get("color") == "yellow"), None),
         "Baixa": next((lb["id"] for lb in labels if lb.get("color") == "green"), None),
     }
+
     print("[TRELLO] LIST_ID:", list_id)
     print("[TRELLO] LABEL_IDS:", label_ids)
     return list_id, label_ids
 
 
-# Resolve referências ao iniciar (falha cedo se credenciais/IDs inválidos)
+# Resolve referências ao iniciar o app (falha cedo se houver problema de permissão/ID)
 LIST_ID, LABEL_IDS = get_board_refs()
 
 
@@ -73,7 +81,6 @@ def index():
 def salvar():
     data = request.json or {}
 
-    # Campos
     nome          = (data.get("nome") or "").strip()
     contato       = (data.get("contato") or "").strip()
     representante = (data.get("representante") or "").strip()
@@ -81,41 +88,43 @@ def salvar():
     sistema       = (data.get("sistema") or "").strip()
     modulo        = (data.get("modulo") or "").strip()
     ocorrencia    = (data.get("ocorrencia") or "").strip()
-    tipo          = (data.get("tipo") or "").strip()             # NOVO: Tipo (Dúvida/Melhoria/Bug)
     descricao     = (data.get("descricao") or "").strip()
     observacao    = (data.get("observacao") or "").strip()
     prioridade    = (data.get("prioridade") or "").strip()
 
-    # Obrigatórios (inclui tipo e descricao)
-    obrig = [nome, contato, representante, suporte, sistema, modulo, ocorrencia, tipo, descricao, prioridade]
+    obrig = [nome, contato, representante, suporte, sistema, modulo, ocorrencia, prioridade]
     if not all(obrig):
         return jsonify(success=False, message="Campos obrigatórios faltando."), 400
-
-    # Normalizações simples
-    nome = nome.title()
-    suporte = suporte.title()
 
     titulo = f"{nome} - {sistema} ({ocorrencia})"
     desc = (
         f"**Nome:** {nome}\n"
         f"**Contato:** {contato}\n"
-        f"**Representante:** {representante}\n"
-        f"**Suporte:** {suporte}\n"
+        f"**Representante:** {representante}
+"
+        f"**Suporte:** {suporte}
+"
         f"**Sistema:** {sistema}\n"
         f"**Módulo:** {modulo}\n"
         f"**Ocorrência:** {ocorrencia}\n"
-        f"**Tipo:** {tipo}\n"
         f"**Prioridade:** {prioridade}\n\n"
         f"**Descrição/Solicitação:**\n{descricao or '-'}\n\n"
         f"**Observação:**\n{observacao or '-'}\n"
     )
 
-    params = {"idList": LIST_ID, "name": titulo, "desc": desc}
-    if LABEL_IDS.get(prioridade):
-        params["idLabels"] = LABEL_IDS[prioridade]
+    params = {
+        "idList": LIST_ID,
+        "name": titulo,
+        "desc": desc,
+    }
+
+    # Aplica label de prioridade, se existir no board
+    label_id = LABEL_IDS.get(prioridade)
+    if label_id:
+        params["idLabels"] = label_id
 
     try:
-        trello_post("/cards", params)
+        _ = trello_post("/cards", params=params)
         return jsonify(success=True, message="Chamado criado com sucesso no Trello!")
     except Exception as e:
         return jsonify(success=False, message=str(e)), 400
