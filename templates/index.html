@@ -43,7 +43,50 @@
     .field-hint{font-size:12px;color:#e03131;margin-top:6px;display:none}
     .field-hint.show{display:block}
     #nome, #suporte { text-transform: capitalize; }
-  </style>
+  
+  /* ===== Modal de sucesso: centralizado e OCULTO por padrão ===== */
+  #successView{
+    position: fixed;
+    inset: 0;
+    display: none;                 /* começa oculto */
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,.45);   /* backdrop */
+    z-index: 9999;
+  }
+  #successView .success__box{
+    width: min(560px, 92vw);
+    background: #fff;
+    border: 1px solid var(--stroke, #e5e7eb);
+    border-radius: var(--radius, 12px);
+    box-shadow: var(--shadow, 0 10px 30px rgba(0,0,0,.08));
+    padding: 28px 22px;
+    text-align: center;
+    animation: pop .18s ease-out;
+  }
+  #successView .success__title{ 
+    font-size: 22px; 
+    font-weight: 800; 
+    color: var(--primary, #0d6efd); 
+    margin-bottom: 6px;
+  }
+  #successView .success__msg{ 
+    color: var(--muted, #6b7280); 
+    margin-bottom: 18px; 
+    line-height: 1.45;
+  }
+  #successView .success__actions{ 
+    display: flex; 
+    gap: 10px; 
+    justify-content: center; 
+    flex-wrap: wrap; 
+  }
+  @keyframes pop{ 
+    from{ transform: scale(.98); opacity: 0 } 
+    to{ transform: scale(1); opacity: 1 } 
+  }
+
+</style>
 </head>
 <body>
   <div class="wrap" id="formView">
@@ -171,6 +214,9 @@
   </div>
 
   <script>
+  // Garantia de ocultar o modal de sucesso ao carregar
+  document.getElementById('successView').style.display = 'none';
+
   document.addEventListener('DOMContentLoaded', function () {
     // ---------- Dados ----------
     const representantes = [
