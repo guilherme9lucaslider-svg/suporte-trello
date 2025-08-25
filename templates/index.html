@@ -7,7 +7,7 @@
   <link rel="icon" type="image/png" href="/static/favicon.png">
 
   <style>
-    :root{--primary:#006056;--secondary:#FF7E00;--bg:#f6f8f7;--ink:#1f2a2a;--muted:#6b7a7a;--stroke:#e6ecea;--radius:14px;--shadow:0 10px 30px rgba(0,0,0,.08)}
+    :root{--primary:#006056;--secondary:#fa8708;--bg:#f6f8f7;--ink:#1f2a2a;--muted:#6b7a7a;--stroke:#e6ecea;--radius:14px;--shadow:0 10px 30px rgba(0,0,0,.08)}
     *{box-sizing:border-box}
     html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial}
     .wrap{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:28px;background:
@@ -220,11 +220,9 @@
       </div>
 
       <div class="actions">
-        {% if show_download %}
           <div class="mr-auto" id="downloadWrap">
             <a class="btn--link" href="/baixar" title="Baixar aplicativo para Windows">Baixar aplicativo ⬇</a>
           </div>
-        {% endif %}
         <button class="btn btn--ghost" id="btnLimpar">Limpar</button>
         <button class="btn btn--primary" id="btnSalvar">Salvar Chamado</button>
       </div>
