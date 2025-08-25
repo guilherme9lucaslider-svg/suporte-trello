@@ -8,7 +8,8 @@
 
   <style>
     :root{--primary:#006056;--secondary:#FF7E00;--bg:#f6f8f7;--ink:#1f2a2a;--muted:#6b7a7a;--stroke:#e6ecea;--radius:14px;--shadow:0 10px 30px rgba(0,0,0,.08)}
-    *{box-sizing:border-box} html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial}
     .wrap{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:28px;background:
       radial-gradient(90% 70% at 10% 0%, rgba(255,126,0,.12) 0%, rgba(255,126,0,0) 60%),
       radial-gradient(70% 60% at 100% 100%, rgba(0,96,86,.12) 0%, rgba(0,96,86,0) 60%)}
@@ -19,39 +20,62 @@
     .brand img{width:40px;height:40px;object-fit:contain;border-radius:10px;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.06)}
     .brand__title{font-weight:700;letter-spacing:.3px;color:var(--primary)}
     .brand__subtitle{font-size:12px;color:var(--muted);margin-top:2px}
+
     .card__body{padding:22px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
     @media (max-width:900px){.card__body{grid-template-columns:1fr}}
+
     label{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.3px}
     input,select,textarea{width:100%;margin-top:6px;padding:12px;border:1px solid var(--stroke);border-radius:10px;background:#fcfdfc;font-size:14px;outline:none;transition:.15s ease}
     input:focus,select:focus,textarea:focus{border-color:#66a39c;box-shadow:0 0 0 4px rgba(0,96,86,.15);background:#fff}
     textarea{min-height:90px;resize:vertical}
-    .span-2{grid-column:span 2} @media (max-width:900px){.span-2{grid-column:span 1}}
+    .span-2{grid-column:span 2}
+    @media (max-width:900px){.span-2{grid-column:span 1}}
+
     .segmented{display:flex;gap:8px;background:#f4f7f6;border:1px solid var(--stroke);border-radius:12px;padding:8px}
     .chip{position:relative;flex:1;text-align:center;padding:12px 16px;border-radius:10px;cursor:pointer;font-weight:700;border:2px solid transparent;user-select:none;transition:all .2s ease;font-size:14px}
     .chip input{position:absolute;opacity:0;pointer-events:none}
-    .chip[data-color="Alta"]{--c:#e03131}.chip[data-color="Média"]{--c:#fab005}.chip[data-color="Baixa"]{--c:#2f9e44}
+    .chip[data-color="Alta"]{--c:#e03131}
+    .chip[data-color="Média"]{--c:#fab005}
+    .chip[data-color="Baixa"]{--c:#2f9e44}
     .chip:hover{background:#fff;border-color:var(--stroke);transform:translateY(-1px)}
     .chip input:checked + span{background:color-mix(in oklab, var(--c) 15%, white);color:var(--c);border-radius:8px;padding:10px 14px;display:block;box-shadow:inset 0 0 0 2px color-mix(in oklab, var(--c) 60%, white);font-weight:800}
-    .actions{display:flex;justify-content:flex-end;gap:12px;padding:16px 18px;border-top:1px solid var(--stroke);background:linear-gradient(180deg, rgba(255,126,0,.05), rgba(255,126,0,0))}
-    .actions .left{margin-right:auto}
+
+    /* Rodapé (ações) */
+    .actions{
+      display:flex;align-items:center;gap:12px;padding:16px 18px;
+      border-top:1px solid var(--stroke);
+      background:linear-gradient(180deg, rgba(255,126,0,.05), rgba(255,126,0,0));
+      justify-content:flex-end; /* mantém à direita por padrão */
+    }
+    .mr-auto{margin-right:auto} /* para o bloco do download empurrar os demais */
+
     .btn{border:0;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer;transition:.15s ease}
-    .btn--ghost{background:#fff;border:1px solid var(--stroke)} .btn--ghost:hover{border-color:#d7dfdd;transform:translateY(-1px)}
+    .btn--ghost{background:#fff;border:1px solid var(--stroke)}
+    .btn--ghost:hover{border-color:#d7dfdd;transform:translateY(-1px)}
     .btn--primary{background:linear-gradient(180deg, var(--primary), #004e47);color:white;box-shadow:0 6px 20px rgba(0,96,86,.25)}
-    .btn--primary:hover{transform:translateY(-1px);filter:saturate(1.05)} .btn--primary:active{transform:translateY(0)}
-    .btn--secondary{background:linear-gradient(180deg, var(--secondary), #cc6400);color:white}
-    .btn--secondary:hover{transform:translateY(-1px);filter:saturate(1.05)}
+    .btn--primary:hover{transform:translateY(-1px);filter:saturate(1.05)}
+    .btn--primary:active{transform:translateY(0)}
+    .btn--link{background:#fff;border:1px solid var(--stroke);padding:10px 14px;border-radius:12px;font-weight:600;color:var(--primary);text-decoration:none}
+    .btn--link:hover{border-color:#d7dfdd;transform:translateY(-1px)}
+
     .invalid{border-color:#e03131!important;background:rgba(224,49,49,.06)!important;box-shadow:0 0 0 4px rgba(224,49,49,.12)!important}
     .field-hint{font-size:12px;color:#e03131;margin-top:6px;display:none}
     .field-hint.show{display:block}
     #nome, #suporte { text-transform: capitalize; }
 
-    /* ===== Modal de sucesso ===== */
-    #successView{position: fixed;inset: 0;display: none;align-items: center;justify-content: center;background: rgba(0,0,0,.45);z-index: 9999;}
-    #successView .success__box{width: min(560px, 92vw);background: #fff;border: 1px solid var(--stroke, #e5e7eb);border-radius: var(--radius, 12px);box-shadow: var(--shadow, 0 10px 30px rgba(0,0,0,.08));padding: 28px 22px;text-align: center;animation: pop .18s ease-out;}
-    #successView .success__title{font-size: 22px;font-weight: 800;color: var(--primary, #0d6efd);margin-bottom: 6px;}
-    #successView .success__msg{color: var(--muted, #6b7280);margin-bottom: 18px;line-height: 1.45;}
-    #successView .success__actions{display: flex;gap: 10px;justify-content: center;flex-wrap: wrap;}
-    @keyframes pop{from{ transform: scale(.98); opacity: 0 } to{ transform: scale(1); opacity: 1 }}
+    /* Anexos */
+    .attachments{display:flex;flex-direction:column;gap:8px}
+    .attachments .bar{display:flex;align-items:center;gap:8px}
+    .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--stroke);background:#fafcfa;border-radius:999px;padding:6px 10px;font-size:12px}
+    .pill button{border:0;background:#eee;border-radius:8px;padding:2px 6px;cursor:pointer}
+
+    /* Modal de sucesso */
+    #successView{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:9999;}
+    #successView .success__box{width:min(560px,92vw);background:#fff;border:1px solid var(--stroke);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px 22px;text-align:center;animation:pop .18s ease-out;}
+    #successView .success__title{font-size:22px;font-weight:800;color:var(--primary);margin-bottom:6px;}
+    #successView .success__msg{color:var(--muted);margin-bottom:18px;line-height:1.45;}
+    #successView .success__actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+    @keyframes pop{from{transform:scale(.98);opacity:0} to{transform:scale(1);opacity:1}}
   </style>
 </head>
 <body>
@@ -141,6 +165,21 @@
           <textarea id="observacao" placeholder="Observações adicionais (opcional)"></textarea>
         </div>
 
+        <!-- ANEXOS (múltiplos + remover antes de enviar) -->
+        <div class="span-2">
+          <div style="padding-bottom:5px;"><label>ANEXOS (opcional)</label></div>
+          <div class="attachments">
+            <div class="bar">
+              <input id="anexos" type="file" multiple
+                     accept="image/*,.pdf,.txt,.csv,.xlsx,.xls,.doc,.docx,.zip,.rar"
+                     style="display:none">
+              <button type="button" class="btn btn--ghost" id="btnSelecionarArquivos">📎 Selecionar arquivos</button>
+            </div>
+            <div id="listaAnexos"></div>
+          </div>
+        </div>
+        <!-- /ANEXOS -->
+
         <div class="span-2">
           <div style="padding-bottom:5px;"><label id="prioridade-label">NÍVEL DE PRIORIDADE</label></div>
           <div id="prioridadeGroup" class="segmented" role="radiogroup" aria-labelledby="prioridade-label">
@@ -162,11 +201,9 @@
       </div>
 
       <div class="actions">
-        <div class="left">
-          {% if show_download %}
-            <a class="btn btn--ghost" href="/baixar" title="Baixar aplicativo para Windows">Baixar aplicativo</a>
-          {% endif %}
-        </div>
+          <div class="mr-auto" id="downloadWrap">
+            <a class="btn--link" href="/baixar" title="Baixar aplicativo para Windows">Baixar aplicativo ⬇</a>
+          </div>
         <button class="btn btn--ghost" id="btnLimpar">Limpar</button>
         <button class="btn btn--primary" id="btnSalvar">Salvar Chamado</button>
       </div>
@@ -255,6 +292,46 @@
     const btnSalvar = document.getElementById('btnSalvar');
     const btnLimpar = document.getElementById('btnLimpar');
 
+    // ---------- ANEXOS ----------
+    const inputAnexos = document.getElementById('anexos');
+    const btnSelecionarArquivos = document.getElementById('btnSelecionarArquivos');
+    const listaAnexosEl = document.getElementById('listaAnexos');
+    /** @type {File[]} */
+    let cestaAnexos = [];
+    const renderAnexos = () => {
+      listaAnexosEl.innerHTML = '';
+      if (!cestaAnexos.length) return;
+      const wrap = document.createElement('div');
+      wrap.style.display='flex';
+      wrap.style.flexWrap='wrap';
+      wrap.style.gap='8px';
+      cestaAnexos.forEach((file, idx) => {
+        const pill = document.createElement('span');
+        pill.className = 'pill';
+        const sizeKB = Math.round(file.size/1024);
+        pill.innerHTML = `
+          <span title="${file.name}">${file.name}</span>
+          <small style="color:#6b7a7a">${sizeKB} KB</small>
+          <button type="button" data-i="${idx}" aria-label="Remover anexo">remover</button>
+        `;
+        wrap.appendChild(pill);
+      });
+      listaAnexosEl.appendChild(wrap);
+    };
+    btnSelecionarArquivos.addEventListener('click', ()=> inputAnexos.click());
+    inputAnexos.addEventListener('change', ()=>{
+      for (const f of inputAnexos.files) cestaAnexos.push(f);
+      inputAnexos.value = ''; // permite reescolher o mesmo arquivo
+      renderAnexos();
+    });
+    listaAnexosEl.addEventListener('click', (e)=>{
+      const btn = e.target.closest('button[data-i]');
+      if (!btn) return;
+      const i = Number(btn.getAttribute('data-i'));
+      cestaAnexos.splice(i,1);
+      renderAnexos();
+    });
+
     // ---------- Helpers ----------
     const clearInvalid = el => { el.classList.remove('invalid'); el.removeAttribute('aria-invalid'); };
     const markInvalid = (el, hintId) => {
@@ -321,7 +398,7 @@
       if(!sistemaSelect.value){ markInvalid(sistemaSelect,'hint-sistema'); ok=false; }
       if(!moduloSelect.value){ markInvalid(moduloSelect,'hint-modulo'); ok=false; }
       if(!ocorrenciaSelect.value){ markInvalid(ocorrenciaSelect,'hint-ocorrencia'); ok=false; }
-      if(!document.getElementById('tipo').value){ markInvalid(document.getElementById('tipo'),'hint-tipo'); ok=false; }
+      if(!tipoSelect.value){ markInvalid(tipoSelect,'hint-tipo'); ok=false; }
       if(!descricaoTxt.value.trim()){ markInvalid(descricaoTxt,'hint-descricao'); ok=false; }
       if(!prioridade){
         prioridadeGroup.classList.add('invalid');
@@ -334,53 +411,39 @@
       return ok;
     }
 
-    // ---------- Salvar ----------
+    // ---------- Salvar (via FormData para suportar anexos) ----------
     btnSalvar.addEventListener('click', function (e) {
       e.preventDefault();
       if(!validar()) return;
 
       const prioridade=(document.querySelector('input[name="prioridade"]:checked')||{}).value;
-      const payload = {
-        nome: cap(document.getElementById('nome').value.trim()),
-        contato: document.getElementById('contato').value.trim(),
-        representante: repSelect.value,
-        suporte: cap(suporteInp.value.trim()),
-        sistema: sistemaSelect.value,
-        modulo: moduloSelect.value,
-        ocorrencia: ocorrenciaSelect.value,
-        tipo: document.getElementById('tipo').value,
-        descricao: document.getElementById('descricao').value.trim(),
-        observacao: document.getElementById('observacao').value.trim(),
-        prioridade
-      };
+      const form = new FormData();
+      form.set('nome', cap(document.getElementById('nome').value.trim()));
+      form.set('contato', document.getElementById('contato').value.trim());
+      form.set('representante', repSelect.value);
+      form.set('suporte', cap(suporteInp.value.trim()));
+      form.set('sistema', sistemaSelect.value);
+      form.set('modulo', moduloSelect.value);
+      form.set('ocorrencia', ocorrenciaSelect.value);
+      form.set('tipo', document.getElementById('tipo').value);
+      form.set('descricao', descricaoTxt.value.trim());
+      form.set('observacao', document.getElementById('observacao').value.trim());
+      form.set('prioridade', prioridade);
 
-      fetch('/salvar', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(payload)
-      })
+      for (const f of cestaAnexos) form.append('anexos', f, f.name);
+
+      fetch('/salvar', { method: 'POST', body: form })
       .then(r => r.json())
       .then(res => {
         if(res.success){
-          document.getElementById('formView').style.display='none';
+          formView.style.display='none';
           const s = document.getElementById('successView');
           s.style.display='flex';
 
           document.getElementById('btnNovo').onclick = ()=>{
-            document.querySelectorAll('.invalid').forEach(el=>el.classList.remove('invalid'));
-            document.querySelectorAll('.field-hint.show').forEach(h=>h.classList.remove('show'));
-            document.getElementById('nome').value='';
-            document.getElementById('contato').value='';
-            repSelect.value='';
-            suporteInp.value='';
-            sistemaSelect.value='';
-            document.getElementById('tipo').value='';
-            document.getElementById('descricao').value='';
-            document.getElementById('observacao').value='';
-            document.getElementById('hint-prioridade').classList.remove('show');
-            document.querySelector('input[name="prioridade"]:checked')?.checked=false;
-            document.getElementById('formView').style.display='flex';
+            limparCampos();
             s.style.display='none';
+            formView.style.display='flex';
             window.scrollTo({top:0, behavior:'smooth'});
           };
           document.getElementById('btnSair').onclick = ()=>{
@@ -403,14 +466,22 @@
       repSelect.value='';
       suporteInp.value='';
       sistemaSelect.value='';
+      moduloSelect.innerHTML = '<option value="" disabled selected>Selecione o módulo</option>';
+      ocorrenciaSelect.innerHTML = '<option value="" disabled selected>Selecione a ocorrência</option>';
       document.getElementById('tipo').value='';
-      document.getElementById('descricao').value='';
+      descricaoTxt.value='';
       document.getElementById('observacao').value='';
       document.getElementById('hint-prioridade').classList.remove('show');
-      document.querySelector('input[name="prioridade"]:checked')?.checked=false;
+      prioridadeGroup.classList.remove('invalid');
+      const checked=document.querySelector('input[name="prioridade"]:checked');
+      if(checked) checked.checked=false;
+
+      // limpar anexos
+      cestaAnexos = [];
+      renderAnexos();
     }
 
-    document.getElementById('btnLimpar').addEventListener('click', function(e){
+    btnLimpar.addEventListener('click', function(e){
       e.preventDefault();
       if(confirm('Tem certeza que deseja limpar todos os dados do formulário?')){
         limparCampos();
