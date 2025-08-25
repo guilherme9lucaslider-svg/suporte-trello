@@ -1,7 +1,8 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory, abort, make_response
-import requests, os, json, hashlib, sys
+import requests, os, json, hashlib, sys, re
 from pathlib import Path
 from werkzeug.utils import secure_filename
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -25,6 +26,16 @@ HIDE_DOWNLOAD_BUTTON = (os.getenv("HIDE_DOWNLOAD_BUTTON", "0") == "1")
 IS_DESKTOP = bool(getattr(sys, "frozen", False)) or os.getenv("APP_DESKTOP") == "1"
 
 ALLOWED_EXT = {"png","jpg","jpeg","gif","webp","pdf","txt","csv","xlsx","xls","doc","docx","zip","rar","7z"}
+
+# ===== Mapas de Status (nome da lista -> status do painel) =====
+LIST_STATUS_MAP = {
+    "Chamados abertos": "Em aberto",
+    "Em análise": "Em análise",
+    "Aguardando versão": "Aguardando versão",
+    "Abrir requisição": "Aguardando Requisição",
+    "Resolvidos": "Finalizado",
+    "Descartados": "Descartado",
+}
 
 def _allowed(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXT
@@ -97,6 +108,7 @@ def inject_flags():
     # Disponibiliza no template, caso precise em outros pontos
     return {"is_desktop": IS_DESKTOP}
 
+# ======= Rotas de páginas =======
 @app.route("/")
 def index():
     # Botão aparece somente se:
@@ -105,6 +117,98 @@ def index():
     show_download = (not IS_DESKTOP) and (not HIDE_DOWNLOAD_BUTTON)
     return render_template("index.html", show_download=show_download)
 
+@app.route("/painel")
+def painel():
+    # Página do Painel (PWA). Template: templates/painel.html
+    return render_template("painel.html")
+
+# ======= API do Painel: listar/filtrar chamados =======
+def _parse_rep_from_desc(desc: str) -> str:
+    """
+    Extrai 'Representante' da descrição do card criado pelo formulário.
+    Exemplo de linha: '**Representante:** GoSystem Automação'
+    """
+    if not desc:
+        return ""
+    m = re.search(r"\*\*Representante:\*\*\s*(.+)", desc)
+    return (m.group(1).strip() if m else "").strip()
+
+def _iso_date_only(s: str):
+    # '2025-08-01' -> datetime.date
+    try:
+        return datetime.strptime(s, "%Y-%m-%d").date()
+    except Exception:
+        return None
+
+@app.route("/api/chamados")
+def api_chamados():
+    # ---- filtros (todos opcionais) ----
+    f_rep   = (request.args.get("representante") or "").strip()
+    f_stat  = (request.args.get("status") or "").strip()
+    f_de    = _iso_date_only(request.args.get("de") or "")
+    f_ate   = _iso_date_only(request.args.get("ate") or "")
+    f_q     = (request.args.get("q") or "").strip().lower()
+
+    # ---- ids de listas -> nomes ----
+    lists = trello_get(f"/boards/{BOARD_ID}/lists", params={})
+    id_to_list = {l["id"]: l.get("name","") for l in lists}
+
+    # ---- busca cards do board ----
+    cards = trello_get(
+        f"/boards/{BOARD_ID}/cards",
+        params={
+            "fields": "name,desc,idList,dateLastActivity,shortUrl",
+            "attachments": "false",
+            "members": "false"
+        }
+    )
+
+    items = []
+    for c in cards:
+        titulo = c.get("name","").strip()
+        desc   = c.get("desc","") or ""
+        lista  = id_to_list.get(c.get("idList",""), "")
+        status = LIST_STATUS_MAP.get(lista, "Em aberto")
+        url    = c.get("shortUrl")
+        dt_raw = c.get("dateLastActivity")
+        ultima = dt_raw
+
+        representante = _parse_rep_from_desc(desc)
+
+        # ----- aplica filtros -----
+        if f_rep and representante != f_rep:
+            continue
+        if f_stat and status != f_stat:
+            continue
+
+        if (f_de or f_ate) and dt_raw:
+            try:
+                d = datetime.fromisoformat(dt_raw.replace("Z","+00:00")).date()
+                if f_de and d < f_de:
+                    continue
+                if f_ate and d > f_ate:
+                    continue
+            except Exception:
+                pass
+
+        if f_q:
+            base = (titulo + "\n" + desc).lower()
+            if f_q not in base:
+                continue
+
+        items.append({
+            "titulo": titulo,
+            "descricao": desc,
+            "representante": representante,
+            "lista": lista,
+            "status": status,
+            "url": url,
+            "ultima_atividade": ultima,
+        })
+
+    return jsonify({"total": len(items), "items": items})
+
+# ======= Salvar (formulário) =======
 @app.route("/salvar", methods=["POST"])
 def salvar():
     data = request.form if request.form else (request.json or {})
