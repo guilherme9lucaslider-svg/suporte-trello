@@ -75,7 +75,20 @@
     #successView .success__title{font-size:22px;font-weight:800;color:var(--primary);margin-bottom:6px;}
     #successView .success__msg{color:var(--muted);margin-bottom:18px;line-height:1.45;}
     #successView .success__actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
-    @keyframes pop{from{transform:scale(.98);opacity:0} to{transform:scale(1);opacity:1}}
+    @keyframes pop{from{transform:scale(.98);opacity:0} to{transform:scale(1);opacity:1)}
+
+    /* ===== Overlay de carregamento + blur ===== */
+    .loading-overlay{
+      position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+      background:rgba(255,255,255,.6);backdrop-filter:blur(4px);z-index:9998;
+    }
+    .loading-box{
+      background:#fff;border:1px solid var(--stroke);border-radius:14px;padding:18px 20px;
+      box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;min-width:260px;justify-content:center;text-align:center;
+    }
+    .spinner{width:26px;height:26px;border:3px solid #e6ecea;border-top-color:var(--primary);border-radius:50%;animation:spin .9s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .blur-bg{filter:blur(2px);pointer-events:none;user-select:none}
   </style>
 </head>
 <body>
@@ -222,6 +235,17 @@
     </div>
   </div>
 
+  <!-- Overlay de carregamento -->
+  <div class="loading-overlay" id="loadingOverlay" role="dialog" aria-live="assertive" aria-modal="true" aria-label="Processando envio">
+    <div class="loading-box">
+      <div class="spinner" aria-hidden="true"></div>
+      <div>
+        <div style="font-weight:800;color:var(--primary)">Enviando chamado...</div>
+        <div style="font-size:12px;color:var(--muted)">Aguarde enquanto anexos são enviados</div>
+      </div>
+    </div>
+  </div>
+
   <script>
   // Garante modal oculto ao carregar
   document.getElementById('successView').style.display = 'none';
@@ -291,6 +315,22 @@
     const prioridadeGroup = document.getElementById('prioridadeGroup');
     const btnSalvar = document.getElementById('btnSalvar');
     const btnLimpar = document.getElementById('btnLimpar');
+
+    // ---------- Overlay & blur ----------
+    const overlay = document.getElementById('loadingOverlay');
+    const rootToBlur = document.querySelector('.card');
+    function showLoading(){
+      overlay.style.display='flex';
+      rootToBlur?.classList.add('blur-bg');
+      btnSalvar?.setAttribute('disabled','true');
+      btnLimpar?.setAttribute('disabled','true');
+    }
+    function hideLoading(){
+      overlay.style.display='none';
+      rootToBlur?.classList.remove('blur-bg');
+      btnSalvar?.removeAttribute('disabled');
+      btnLimpar?.removeAttribute('disabled');
+    }
 
     // ---------- ANEXOS ----------
     const inputAnexos = document.getElementById('anexos');
@@ -432,6 +472,9 @@
 
       for (const f of cestaAnexos) form.append('anexos', f, f.name);
 
+      // Mostra overlay (aparece na hora; se quiser, troque por setTimeout(showLoading, 500))
+      showLoading();
+
       fetch('/salvar', { method: 'POST', body: form })
       .then(r => r.json())
       .then(res => {
@@ -454,7 +497,10 @@
           alert(res.message || 'Erro ao salvar');
         }
       })
-      .catch(err => alert('Erro na comunicação: ' + err));
+      .catch(err => alert('Erro na comunicação: ' + err))
+      .finally(() => {
+        hideLoading();
+      });
     });
 
     // ---------- Limpar ----------
