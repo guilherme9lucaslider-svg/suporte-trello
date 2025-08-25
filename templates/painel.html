@@ -5,38 +5,52 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Painel de Chamados</title>
 <style>
-  :root{--ink:#132222;--muted:#5d6a6a;--stroke:#e6ecea;--bg:#f7f9f8;--primary:#006056}
+  :root{
+    --ink:#142222; --muted:#6a7676; --stroke:#e6ecea; --bg:#f7f9f8; --primary:#006056;
+    --shadow:0 10px 30px rgba(0,0,0,.06)
+  }
   *{box-sizing:border-box}
   body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;background:var(--bg);color:var(--ink)}
-  .wrap{max-width:1100px;margin:0 auto;padding:22px}
-  h1{font-size:22px;margin:6px 0 14px;color:var(--primary);display:flex;align-items:center;gap:8px}
+  .wrap{max-width:1100px;margin:0 auto;padding:24px}
+  h1{font-size:24px;margin:6px 0 16px;color:var(--primary);display:flex;align-items:center;gap:10px}
+
+  /* Filtros */
   .filters{
-    display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr 1fr;
-    gap:10px;background:#fff;padding:12px;border:1px solid var(--stroke);
-    border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.04);
+    display:grid;grid-template-columns:1.2fr 0.9fr 0.9fr 0.9fr 1fr;
+    gap:12px;background:#fff;padding:14px;border:1px solid var(--stroke);
+    border-radius:14px;box-shadow:var(--shadow)
   }
   .filters label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600;letter-spacing:.2px}
-  .input, .select{
-    width:100%;padding:10px 12px;border:1px solid var(--stroke);border-radius:10px;
-    background:#fbfdfa;font-size:14px;outline:none;transition:.15s ease;
+  .input,.select{
+    width:100%;padding:11px 12px;border:1px solid var(--stroke);border-radius:10px;background:#fbfdfa;
+    font-size:14px;outline:none;transition:.15s ease
   }
-  .input:focus, .select:focus{border-color:#66a39c;box-shadow:0 0 0 4px rgba(0,96,86,.12);background:#fff}
-  .actions{display:flex;gap:8px;margin-top:10px}
+  .input:focus,.select:focus{border-color:#66a39c;box-shadow:0 0 0 4px rgba(0,96,86,.12);background:#fff}
+  .actions{display:flex;gap:10px;margin-top:12px}
   .btn{border:1px solid var(--stroke);background:#fff;border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:700}
-  .btn--primary{background:linear-gradient(180deg, var(--primary), #004e47);color:#fff;border-color:#004e47}
-  .btn--link{border:1px solid var(--stroke);background:#fff;border-radius:999px;padding:6px 10px;font-weight:700;text-decoration:none}
-  .count{font-size:13px;color:var(--muted);margin-top:8px}
+  .btn--primary{background:linear-gradient(180deg,var(--primary),#004e47);color:#fff;border-color:#004e47}
+  .count{font-size:13px;color:var(--muted);margin-top:10px}
 
-  table{width:100%;border-collapse:collapse;background:#fff;margin-top:12px;border:1px solid var(--stroke);border-radius:12px;overflow:hidden}
-  th,td{padding:12px;border-bottom:1px solid var(--stroke);font-size:14px;vertical-align:top}
-  th{background:#f1f5f4;text-align:left;font-weight:700;color:#0f1a1a}
-  tr:hover td{background:#fbfdfa}
+  /* Tabela */
+  .table-wrap{background:#fff;border:1px solid var(--stroke);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;margin-top:12px}
+  table{width:100%;border-collapse:separate;border-spacing:0}
+  th,td{padding:14px 16px;border-bottom:1px solid var(--stroke);font-size:14px}
+  th{background:#f1f5f4;text-align:left;font-weight:800;color:#0f1a1a}
+  td{vertical-align:middle}
+  tbody tr:hover td{background:#fbfdfa}
 
-  /* pill de status centralizado */
+  /* alinhar centro as colunas de Status e Ações */
+  thead th:nth-child(3), thead th:nth-child(5){text-align:center}
+  tbody td:nth-child(3), tbody td:nth-child(5){text-align:center}
+
+  /* Título enxuto (sem descrição embaixo) */
+  .title{max-width:460px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+
+  /* Pill de status centralizado */
   .status{
     display:inline-flex;align-items:center;justify-content:center;
-    padding:8px 12px;border-radius:999px;border:1px solid var(--stroke);
-    font-size:12px;min-width:160px;text-align:center;line-height:1.1
+    padding:8px 14px;border-radius:999px;border:1px solid var(--stroke);
+    min-width:170px;background:#f5f7f6;font-weight:800;font-size:12px;letter-spacing:.2px
   }
   .s-open{background:#fff7ed}
   .s-analise{background:#fff1f2}
@@ -45,21 +59,29 @@
   .s-ok{background:#ecfdf5}
   .s-drop{background:#f8fafc}
 
-  .muted{color:var(--muted);font-size:12px}
-  .empty{padding:20px;text-align:center;color:var(--muted)}
+  /* Data */
+  .date{color:#243333;font-variant-numeric:tabular-nums}
+  .empty{padding:24px;text-align:center;color:var(--muted)}
 
-  .alert{margin-top:12px;padding:12px;border:1px solid #ffd7d7;background:#fff6f6;color:#6b1a1a;border-radius:10px;font-size:14px}
+  /* Ações em pílulas */
+  .actions-cell{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+  .pill-btn{
+    display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;border:1px solid var(--stroke);
+    background:#fff;font-weight:700;text-decoration:none;cursor:pointer
+  }
+  .pill-btn:hover{transform:translateY(-1px)}
+  .pill-btn--accent{border-color:#e6d8ff;background:#f4efff;color:#5b27b5}
 
   /* Modal de descrição */
   .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:9999}
-  .modal__box{width:min(680px,92vw);max-height:80vh;overflow:auto;background:#fff;border:1px solid var(--stroke);border-radius:14px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.2)}
-  .modal__title{font-weight:800;color:var(--primary);margin:0 0 6px 0}
-  .modal__body{white-space:pre-wrap;border:1px solid var(--stroke);background:#fbfdfa;border-radius:12px;padding:12px;font-family:ui-monospace,Consolas,Menlo,monospace}
-  .modal__actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+  .modal__box{width:min(720px,92vw);max-height:80vh;overflow:auto;background:#fff;border:1px solid var(--stroke);border-radius:14px;padding:20px;box-shadow:0 18px 50px rgba(0,0,0,.25)}
+  .modal__title{font-weight:900;color:var(--primary);margin:0 0 10px 0}
+  .modal__body{white-space:pre-wrap;border:1px solid var(--stroke);background:#fbfdfa;border-radius:12px;padding:14px;font-family:ui-monospace,Consolas,Menlo,monospace}
+  .modal__actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}
   .hidden{display:none}
 
-  @media (max-width: 980px){ .filters{grid-template-columns:1fr 1fr 1fr} }
-  @media (max-width: 680px){ .filters{grid-template-columns:1fr 1fr} }
+  @media (max-width:980px){ .filters{grid-template-columns:1fr 1fr 1fr} .title{max-width:300px} }
+  @media (max-width:680px){ .filters{grid-template-columns:1fr 1fr} .title{max-width:220px} }
 </style>
 </head>
 <body>
@@ -71,7 +93,7 @@
         <label>Representante</label>
         <select id="fRep" class="select">
           <option value="">Todos</option>
-          <!-- opções serão preenchidas por JS -->
+          <!-- opções via JS -->
         </select>
       </div>
       <div>
@@ -106,131 +128,101 @@
     </div>
 
     <div class="count" id="countBox"></div>
-    <div id="alertBox" class="alert" style="display:none"></div>
 
-    <table id="tbl">
-      <thead>
-        <tr>
-          <th>Título</th>
-          <th>Representante</th>
-          <th>Status</th>
-          <th>Última atividade</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody id="tbody">
-        <tr><td class="empty" colspan="5">Carregando…</td></tr>
-      </tbody>
-    </table>
+    <div class="table-wrap">
+      <table id="tbl">
+        <thead>
+          <tr>
+            <th>Título</th>
+            <th>Representante</th>
+            <th>Status</th>
+            <th>Última atividade</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td class="empty" colspan="5">Carregando…</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
-  <!-- Modal (Descrição) -->
-  <div class="modal" id="descModal" role="dialog" aria-modal="true" aria-labelledby="descTitle">
+  <!-- Modal -->
+  <div class="modal" id="modalDesc" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal__box">
-      <h2 class="modal__title" id="descTitle">Descrição do chamado</h2>
-      <div class="modal__body" id="descBody"></div>
+      <h3 class="modal__title" id="modalTitle">Descrição do chamado</h3>
+      <div class="modal__body" id="modalBody"></div>
       <div class="modal__actions">
-        <button class="btn" id="btnFecharDesc">Fechar</button>
+        <button class="btn" id="btnFecharModal">Fechar</button>
       </div>
     </div>
   </div>
 
 <script>
 (function(){
-  var tbody = document.getElementById('tbody');
-  var countBox = document.getElementById('countBox');
-  var alertBox = document.getElementById('alertBox');
-  var repSelect = document.getElementById('fRep');
+  const tbody = document.getElementById('tbody');
+  const countBox = document.getElementById('countBox');
+  const repSelect = document.getElementById('fRep');
 
-  // Mesmas opções do formulário
-  var REPRESENTANTES = [
+  /* mesmas opções do formulário */
+  const REPRESENTANTES = [
     "Host.com","2RTI Soluções","MT Solutions","Unai System","Multitech",
     "Mad Automação","Tecnuve Soluções","GoSystem Automação","RJ Soluções",
     "Raizes Tecnologia","Webside Sistemas","Web System Norte","Online Soluções",
     "Delane","Supriserv","MS Tech Soluções","Use Tecnologia","Unity Automação",
     "Digital RF Tecnologia","Connecta Informática","R.A Soluções"
-  ].sort(function(a,b){ return a.localeCompare(b,'pt-BR'); });
-
-  REPRESENTANTES.forEach(function(r){
-    var o = document.createElement('option');
-    o.value = r; o.textContent = r;
-    repSelect.appendChild(o);
+  ].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  REPRESENTANTES.forEach(r=>{
+    const o=document.createElement('option'); o.value=r; o.textContent=r; repSelect.appendChild(o);
   });
 
   function escapeHtml(s){
-    return String(s||"").replace(/[&<>"']/g,function(m){
-      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m];
-    });
+    return String(s||"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
   }
   function fmtDate(iso){
     if(!iso) return '-';
-    try{ return new Date(iso).toLocaleString(); }catch(e){ return iso; }
+    try{ const d=new Date(iso); return d.toLocaleDateString()+' '+d.toLocaleTimeString(); }catch(e){ return iso; }
   }
   function statusClass(s){
-    var x = (s||'').toLowerCase();
-    if(x === 'em aberto') return 'status s-open';
-    if(x === 'em análise') return 'status s-analise';
-    if(x === 'aguardando versão') return 'status s-versao';
-    if(x === 'aguardando requisição') return 'status s-req';
-    if(x === 'finalizado') return 'status s-ok';
-    if(x === 'descartado') return 'status s-drop';
+    const x=(s||'').toLowerCase();
+    if(x==='em aberto') return 'status s-open';
+    if(x==='em análise') return 'status s-analise';
+    if(x==='aguardando versão') return 'status s-versao';
+    if(x==='aguardando requisição') return 'status s-req';
+    if(x==='finalizado') return 'status s-ok';
+    if(x==='descartado') return 'status s-drop';
     return 'status';
   }
 
-  // --- Modal descrição ---
-  var modal = document.getElementById('descModal');
-  var descBody = document.getElementById('descBody');
-  function openDesc(text){
-    descBody.textContent = text || '(sem descrição)';
-    modal.style.display = 'flex';
-  }
-  function closeDesc(){
-    modal.style.display = 'none';
-    descBody.textContent = '';
-  }
-  document.getElementById('btnFecharDesc').addEventListener('click', closeDesc);
-  modal.addEventListener('click', function(e){
-    if (e.target === modal) closeDesc();
-  });
-  document.addEventListener('keydown', function(e){
-    if (e.key === 'Escape') closeDesc();
-  });
-
   function render(items){
-    tbody.innerHTML = '';
+    tbody.innerHTML='';
     if(!items.length){
-      tbody.innerHTML = '<tr><td class="empty" colspan="5">Nenhum chamado encontrado.</td></tr>';
+      tbody.innerHTML='<tr><td class="empty" colspan="5">Nenhum chamado encontrado.</td></tr>';
       return;
     }
-    items.forEach(function(it){
-      var tr = document.createElement('tr');
+    items.forEach((it,i)=>{
+      const tr=document.createElement('tr');
       tr.innerHTML =
-        '<td><div>'+escapeHtml(it.titulo)+'</div></td>' + /* <- descrição removida aqui */
-        '<td>'+escapeHtml(it.representante || '-')+'</td>'+
-        '<td><span class="'+statusClass(it.status)+'">'+escapeHtml(it.status || '-')+'</span></td>'+
-        '<td>'+fmtDate(it.ultima_atividade)+'</td>'+
-        '<td>'+
-          (it.url ? '<a class="btn--link" href="'+it.url+'" target="_blank" rel="noopener">Abrir no Trello</a>' : '-')+
-          ' <button class="btn--link js-desc" data-desc="'+escapeHtml(it.descricao||'')+'">Ver descrição</button>'+
+        '<td class="title" title="'+escapeHtml(it.titulo)+'">'+escapeHtml(it.titulo)+'</td>'+
+        '<td>'+escapeHtml(it.representante||'-')+'</td>'+
+        '<td><span class="'+statusClass(it.status)+'">'+escapeHtml(it.status||'-')+'</span></td>'+
+        '<td class="date">'+fmtDate(it.ultima_atividade)+'</td>'+
+        '<td class="actions-cell">'+
+          (it.url?'<a class="pill-btn pill-btn--accent" href="'+it.url+'" target="_blank" rel="noopener">Abrir no Trello</a>':'')+
+          '<button class="pill-btn" data-i="'+i+'" data-action="ver">Ver descrição</button>'+
         '</td>';
+      tr.dataset.index=i;
       tbody.appendChild(tr);
-    });
-
-    // delega evento dos botões "Ver descrição"
-    tbody.querySelectorAll('.js-desc').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        openDesc(this.getAttribute('data-desc'));
-      });
     });
   }
 
   function buildQuery(){
-    var qs = [];
-    var rep = repSelect.value.trim();
-    var st  = document.getElementById('fStatus').value.trim();
-    var de  = document.getElementById('fDe').value;
-    var ate = document.getElementById('fAte').value;
-    var q   = document.getElementById('fQ').value.trim();
+    const qs = [];
+    const rep = repSelect.value.trim();
+    const st  = document.getElementById('fStatus').value.trim();
+    const de  = document.getElementById('fDe').value;
+    const ate = document.getElementById('fAte').value;
+    const q   = document.getElementById('fQ').value.trim();
     if(rep) qs.push('representante='+encodeURIComponent(rep));
     if(st)  qs.push('status='+encodeURIComponent(st));
     if(de)  qs.push('de='+encodeURIComponent(de));
@@ -239,44 +231,64 @@
     return qs.length ? ('?'+qs.join('&')) : '';
   }
 
-  function showError(msg){
-    alertBox.style.display = 'block';
-    alertBox.textContent = msg;
-  }
-  function clearError(){
-    alertBox.style.display = 'none';
-    alertBox.textContent = '';
-  }
-
+  let cache = []; // guarda os itens pra abrir modal
   function load(){
-    clearError();
-    tbody.innerHTML = '<tr><td class="empty" colspan="5">Carregando…</td></tr>';
+    tbody.innerHTML='<tr><td class="empty" colspan="5">Carregando…</td></tr>';
     fetch('/api/chamados'+buildQuery())
-      .then(async function(r){
-        const ct = r.headers.get('content-type') || '';
-        const text = await r.text();
-        if (!ct.includes('application/json')) {
-          throw new Error(text.slice(0, 300));
-        }
-        return JSON.parse(text);
+      .then(async r=>{
+        const ct=r.headers.get('content-type')||'';
+        const t=await r.text();
+        if(!ct.includes('application/json')) throw new Error(t.slice(0,300));
+        return JSON.parse(t);
       })
-      .then(function(j){
-        countBox.textContent = (j.total||0) + ' chamado(s) encontrado(s).';
-        render(j.items||[]);
+      .then(j=>{
+        cache = j.items||[];
+        countBox.textContent = (j.total||cache.length||0)+' chamado(s) encontrado(s).';
+        render(cache);
       })
-      .catch(function(err){
-        showError('Falha ao carregar /api/chamados. Verifique logs do servidor e variáveis do Trello. Detalhe: ' + String(err));
-        tbody.innerHTML = '<tr><td class="empty" colspan="5">Erro ao carregar.</td></tr>';
+      .catch(err=>{
+        countBox.textContent='';
+        tbody.innerHTML='<tr><td class="empty" colspan="5">Erro ao carregar. Verifique o servidor.</td></tr>';
+        console.error(err);
       });
   }
 
+  // aplicar
   document.getElementById('btnAplicar').addEventListener('click', load);
-  document.getElementById('btnLimpar').addEventListener('click', function(){
-    repSelect.value=''; document.getElementById('fStatus').value='';
-    document.getElementById('fDe').value=''; document.getElementById('fAte').value='';
-    document.getElementById('fQ').value=''; load();
+
+  // limpar TUDO e recarregar a lista completa
+  document.getElementById('btnLimpar').addEventListener('click', ()=>{
+    repSelect.value='';
+    document.getElementById('fStatus').value='';
+    document.getElementById('fDe').value='';
+    document.getElementById('fAte').value='';
+    document.getElementById('fQ').value='';
+    load(); // sem query => backend retorna todos
   });
 
+  // Modal
+  const modal=document.getElementById('modalDesc');
+  const modalBody=document.getElementById('modalBody');
+  const btnClose=document.getElementById('btnFecharModal');
+  function openModal(text){
+    modalBody.textContent = text || '—';
+    modal.style.display='flex';
+  }
+  function closeModal(){ modal.style.display='none'; }
+  btnClose.addEventListener('click', closeModal);
+  modal.addEventListener('click', e=>{ if(e.target===modal) closeModal(); });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
+
+  // delega clique nos botões "Ver descrição"
+  tbody.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-action="ver"]');
+    if(!btn) return;
+    const i = Number(btn.getAttribute('data-i'));
+    const item = cache[i] || {};
+    openModal(item.descricao || '');
+  });
+
+  // inicial
   load();
 })();
 </script>
