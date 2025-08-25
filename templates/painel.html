@@ -24,25 +24,39 @@
   .actions{display:flex;gap:8px;margin-top:10px}
   .btn{border:1px solid var(--stroke);background:#fff;border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:700}
   .btn--primary{background:linear-gradient(180deg, var(--primary), #004e47);color:#fff;border-color:#004e47}
+  .btn--link{border:1px solid var(--stroke);background:#fff;border-radius:999px;padding:6px 10px;font-weight:700;text-decoration:none}
   .count{font-size:13px;color:var(--muted);margin-top:8px}
 
   table{width:100%;border-collapse:collapse;background:#fff;margin-top:12px;border:1px solid var(--stroke);border-radius:12px;overflow:hidden}
   th,td{padding:12px;border-bottom:1px solid var(--stroke);font-size:14px;vertical-align:top}
   th{background:#f1f5f4;text-align:left;font-weight:700;color:#0f1a1a}
   tr:hover td{background:#fbfdfa}
-  .status{display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid var(--stroke);font-size:12px}
+
+  /* pill de status centralizado */
+  .status{
+    display:inline-flex;align-items:center;justify-content:center;
+    padding:8px 12px;border-radius:999px;border:1px solid var(--stroke);
+    font-size:12px;min-width:160px;text-align:center;line-height:1.1
+  }
   .s-open{background:#fff7ed}
   .s-analise{background:#fff1f2}
   .s-versao{background:#fefce8}
   .s-req{background:#eff6ff}
   .s-ok{background:#ecfdf5}
   .s-drop{background:#f8fafc}
+
   .muted{color:var(--muted);font-size:12px}
   .empty{padding:20px;text-align:center;color:var(--muted)}
 
-  .alert{
-    margin-top:12px;padding:12px;border:1px solid #ffd7d7;background:#fff6f6;color:#6b1a1a;border-radius:10px;font-size:14px;
-  }
+  .alert{margin-top:12px;padding:12px;border:1px solid #ffd7d7;background:#fff6f6;color:#6b1a1a;border-radius:10px;font-size:14px}
+
+  /* Modal de descrição */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:9999}
+  .modal__box{width:min(680px,92vw);max-height:80vh;overflow:auto;background:#fff;border:1px solid var(--stroke);border-radius:14px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+  .modal__title{font-weight:800;color:var(--primary);margin:0 0 6px 0}
+  .modal__body{white-space:pre-wrap;border:1px solid var(--stroke);background:#fbfdfa;border-radius:12px;padding:12px;font-family:ui-monospace,Consolas,Menlo,monospace}
+  .modal__actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+  .hidden{display:none}
 
   @media (max-width: 980px){ .filters{grid-template-columns:1fr 1fr 1fr} }
   @media (max-width: 680px){ .filters{grid-template-columns:1fr 1fr} }
@@ -57,7 +71,7 @@
         <label>Representante</label>
         <select id="fRep" class="select">
           <option value="">Todos</option>
-          <!-- opções serão preenchidas por JS para evitar divergência de acentuação -->
+          <!-- opções serão preenchidas por JS -->
         </select>
       </div>
       <div>
@@ -110,6 +124,17 @@
     </table>
   </div>
 
+  <!-- Modal (Descrição) -->
+  <div class="modal" id="descModal" role="dialog" aria-modal="true" aria-labelledby="descTitle">
+    <div class="modal__box">
+      <h2 class="modal__title" id="descTitle">Descrição do chamado</h2>
+      <div class="modal__body" id="descBody"></div>
+      <div class="modal__actions">
+        <button class="btn" id="btnFecharDesc">Fechar</button>
+      </div>
+    </div>
+  </div>
+
 <script>
 (function(){
   var tbody = document.getElementById('tbody');
@@ -117,7 +142,7 @@
   var alertBox = document.getElementById('alertBox');
   var repSelect = document.getElementById('fRep');
 
-  // As MESMAS opções do formulário (mantém uma única fonte de verdade aqui)
+  // Mesmas opções do formulário
   var REPRESENTANTES = [
     "Host.com","2RTI Soluções","MT Solutions","Unai System","Multitech",
     "Mad Automação","Tecnuve Soluções","GoSystem Automação","RJ Soluções",
@@ -126,7 +151,6 @@
     "Digital RF Tecnologia","Connecta Informática","R.A Soluções"
   ].sort(function(a,b){ return a.localeCompare(b,'pt-BR'); });
 
-  // Preenche o select
   REPRESENTANTES.forEach(function(r){
     var o = document.createElement('option');
     o.value = r; o.textContent = r;
@@ -152,6 +176,26 @@
     if(x === 'descartado') return 'status s-drop';
     return 'status';
   }
+
+  // --- Modal descrição ---
+  var modal = document.getElementById('descModal');
+  var descBody = document.getElementById('descBody');
+  function openDesc(text){
+    descBody.textContent = text || '(sem descrição)';
+    modal.style.display = 'flex';
+  }
+  function closeDesc(){
+    modal.style.display = 'none';
+    descBody.textContent = '';
+  }
+  document.getElementById('btnFecharDesc').addEventListener('click', closeDesc);
+  modal.addEventListener('click', function(e){
+    if (e.target === modal) closeDesc();
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') closeDesc();
+  });
+
   function render(items){
     tbody.innerHTML = '';
     if(!items.length){
@@ -161,13 +205,22 @@
     items.forEach(function(it){
       var tr = document.createElement('tr');
       tr.innerHTML =
-        '<td><div>'+escapeHtml(it.titulo)+'</div>' +
-        '<div class="muted">'+(it.descricao ? escapeHtml(it.descricao).slice(0,120)+'…' : '')+'</div></td>'+
+        '<td><div>'+escapeHtml(it.titulo)+'</div></td>' + /* <- descrição removida aqui */
         '<td>'+escapeHtml(it.representante || '-')+'</td>'+
-        '<td><span class="'+statusClass(it.status)+'">'+escapeHtml(it.status || '-')+'</span><div class="muted">'+escapeHtml(it.lista||'')+'</div></td>'+
+        '<td><span class="'+statusClass(it.status)+'">'+escapeHtml(it.status || '-')+'</span></td>'+
         '<td>'+fmtDate(it.ultima_atividade)+'</td>'+
-        '<td>'+(it.url ? '<a href="'+it.url+'" target="_blank" rel="noopener">Abrir no Trello</a>' : '-')+'</td>';
+        '<td>'+
+          (it.url ? '<a class="btn--link" href="'+it.url+'" target="_blank" rel="noopener">Abrir no Trello</a>' : '-')+
+          ' <button class="btn--link js-desc" data-desc="'+escapeHtml(it.descricao||'')+'">Ver descrição</button>'+
+        '</td>';
       tbody.appendChild(tr);
+    });
+
+    // delega evento dos botões "Ver descrição"
+    tbody.querySelectorAll('.js-desc').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        openDesc(this.getAttribute('data-desc'));
+      });
     });
   }
 
@@ -203,7 +256,6 @@
         const ct = r.headers.get('content-type') || '';
         const text = await r.text();
         if (!ct.includes('application/json')) {
-          // backend retornou HTML (ex.: erro 500) -> evita "Unexpected token '<'"
           throw new Error(text.slice(0, 300));
         }
         return JSON.parse(text);
@@ -220,12 +272,9 @@
 
   document.getElementById('btnAplicar').addEventListener('click', load);
   document.getElementById('btnLimpar').addEventListener('click', function(){
-    repSelect.value='';
-    document.getElementById('fStatus').value='';
-    document.getElementById('fDe').value='';
-    document.getElementById('fAte').value='';
-    document.getElementById('fQ').value='';
-    load();
+    repSelect.value=''; document.getElementById('fStatus').value='';
+    document.getElementById('fDe').value=''; document.getElementById('fAte').value='';
+    document.getElementById('fQ').value=''; load();
   });
 
   load();
