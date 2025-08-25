@@ -1,296 +1,455 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Painel de Chamados</title>
-<style>
-  :root{
-    --ink:#142222; --muted:#6a7676; --stroke:#e6ecea; --bg:#f7f9f8; --primary:#006056;
-    --shadow:0 10px 30px rgba(0,0,0,.06)
-  }
-  *{box-sizing:border-box}
-  body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;background:var(--bg);color:var(--ink)}
-  .wrap{max-width:1100px;margin:0 auto;padding:24px}
-  h1{font-size:24px;margin:6px 0 16px;color:var(--primary);display:flex;align-items:center;gap:10px}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Painel de Chamados</title>
+    <style>
+        :root {
+            --ink: #142222;
+            --muted: #6a7676;
+            --stroke: #e6ecea;
+            --bg: #f7f9f8;
+            --primary: #006056;
+            --shadow: 0 10px 30px rgba(0, 0, 0, .06)
+        }
 
-  /* Filtros */
-  .filters{
-    display:grid;grid-template-columns:1.2fr 0.9fr 0.9fr 0.9fr 1fr;
-    gap:12px;background:#fff;padding:14px;border:1px solid var(--stroke);
-    border-radius:14px;box-shadow:var(--shadow)
-  }
-  .filters label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600;letter-spacing:.2px}
-  .input,.select{
-    width:100%;padding:11px 12px;border:1px solid var(--stroke);border-radius:10px;background:#fbfdfa;
-    font-size:14px;outline:none;transition:.15s ease
-  }
-  .input:focus,.select:focus{border-color:#66a39c;box-shadow:0 0 0 4px rgba(0,96,86,.12);background:#fff}
-  .actions{display:flex;gap:10px;margin-top:12px}
-  .btn{border:1px solid var(--stroke);background:#fff;border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:700}
-  .btn--primary{background:linear-gradient(180deg,var(--primary),#004e47);color:#fff;border-color:#004e47}
-  .count{font-size:13px;color:var(--muted);margin-top:10px}
+        * {
+            box-sizing: border-box
+        }
 
-  /* Tabela */
-  .table-wrap{background:#fff;border:1px solid var(--stroke);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;margin-top:12px}
-  table{width:100%;border-collapse:separate;border-spacing:0}
-  th,td{padding:14px 16px;border-bottom:1px solid var(--stroke);font-size:14px}
-  th{background:#f1f5f4;text-align:left;font-weight:800;color:#0f1a1a}
-  td{vertical-align:middle}
-  tbody tr:hover td{background:#fbfdfa}
+        body {
+            font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+            margin: 0;
+            background: var(--bg);
+            color: var(--ink)
+        }
 
-  /* alinhar centro as colunas de Status e Ações */
-  thead th:nth-child(3), thead th:nth-child(5){text-align:center}
-  tbody td:nth-child(3), tbody td:nth-child(5){text-align:center}
+        .wrap {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 24px
+        }
 
-  /* Título enxuto (sem descrição embaixo) */
-  .title{max-width:460px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+        h1 {
+            font-size: 24px;
+            margin: 6px 0 16px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
 
-  /* Pill de status centralizado */
-  .status{
-    display:inline-flex;align-items:center;justify-content:center;
-    padding:8px 14px;border-radius:999px;border:1px solid var(--stroke);
-    min-width:170px;background:#f5f7f6;font-weight:800;font-size:12px;letter-spacing:.2px
-  }
-  .s-open{background:#fff7ed}
-  .s-analise{background:#fff1f2}
-  .s-versao{background:#fefce8}
-  .s-req{background:#eff6ff}
-  .s-ok{background:#ecfdf5}
-  .s-drop{background:#f8fafc}
+        /* Filtros */
+        .filters {
+            display: grid;
+            grid-template-columns: 1.2fr .9fr .9fr .9fr 1fr;
+            gap: 12px;
+            background: #fff;
+            padding: 14px;
+            border: 1px solid var(--stroke);
+            border-radius: 14px;
+            box-shadow: var(--shadow)
+        }
 
-  /* Data */
-  .date{color:#243333;font-variant-numeric:tabular-nums}
-  .empty{padding:24px;text-align:center;color:var(--muted)}
+        .filters label {
+            display: block;
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 4px;
+            font-weight: 600;
+            letter-spacing: .2px
+        }
 
-  /* Ações em pílulas */
-  .actions-cell{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
-  .pill-btn{
-    display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;border:1px solid var(--stroke);
-    background:#fff;font-weight:700;text-decoration:none;cursor:pointer
-  }
-  .pill-btn:hover{transform:translateY(-1px)}
-  .pill-btn--accent{border-color:#e6d8ff;background:#f4efff;color:#5b27b5}
+        .input,
+        .select {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid var(--stroke);
+            border-radius: 10px;
+            background: #fbfdfa;
+            font-size: 14px;
+            outline: none;
+            transition: .15s ease
+        }
 
-  /* Modal de descrição */
-  .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:9999}
-  .modal__box{width:min(720px,92vw);max-height:80vh;overflow:auto;background:#fff;border:1px solid var(--stroke);border-radius:14px;padding:20px;box-shadow:0 18px 50px rgba(0,0,0,.25)}
-  .modal__title{font-weight:900;color:var(--primary);margin:0 0 10px 0}
-  .modal__body{white-space:pre-wrap;border:1px solid var(--stroke);background:#fbfdfa;border-radius:12px;padding:14px;font-family:ui-monospace,Consolas,Menlo,monospace}
-  .modal__actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}
-  .hidden{display:none}
+        .input:focus,
+        .select:focus {
+            border-color: #66a39c;
+            box-shadow: 0 0 0 4px rgba(0, 96, 86, .12);
+            background: #fff
+        }
 
-  @media (max-width:980px){ .filters{grid-template-columns:1fr 1fr 1fr} .title{max-width:300px} }
-  @media (max-width:680px){ .filters{grid-template-columns:1fr 1fr} .title{max-width:220px} }
-</style>
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+            flex-wrap: wrap
+        }
+
+        .actions .push-right {
+            margin-left: auto
+        }
+
+        .btn {
+            border: 1px solid var(--stroke);
+            background: #fff;
+            border-radius: 10px;
+            padding: 10px 14px;
+            cursor: pointer;
+            font-weight: 700
+        }
+
+        .btn--primary {
+            background: linear-gradient(180deg, var(--primary), #004e47);
+            color: #fff;
+            border-color: #004e47
+        }
+
+        .btn--live {
+            background: linear-gradient(180deg, var(--primary), #004e47);
+            color: #fff;
+            border-color: #004e47
+        }
+
+        .btn--live.is-on {
+            outline: 3px solid rgba(91, 39, 181, .25)
+        }
+
+        .count {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 10px
+        }
+
+        /* Tabela */
+        .table-wrap {
+            background: #fff;
+            border: 1px solid var(--stroke);
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin-top: 12px
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0
+        }
+
+        th,
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--stroke);
+            font-size: 14px
+        }
+
+        th {
+            background: #f1f5f4;
+            text-align: left;
+            font-weight: 800;
+            color: #0f1a1a
+        }
+
+        td {
+            vertical-align: middle
+        }
+
+        tbody tr:hover td {
+            background: #fbfdfa
+        }
+
+        thead th:nth-child(3),
+        thead th:nth-child(5),
+        thead th:nth-child(6) {
+            text-align: center
+        }
+
+        tbody td:nth-child(3),
+        tbody td:nth-child(5),
+        tbody td:nth-child(6) {
+            text-align: center
+        }
+
+        .title {
+            max-width: 420px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        /* Status pill centralizado */
+        .status {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 14px;
+            border-radius: 999px;
+            border: 1px solid var(--stroke);
+            min-width: 170px;
+            background: #f5f7f6;
+            font-weight: 800;
+            font-size: 12px;
+            letter-spacing: .2px
+        }
+
+        .s-open {
+            background: #fff7ed
+        }
+
+        .s-analise {
+            background: #fff1f2
+        }
+
+        .s-versao {
+            background: #fefce8
+        }
+
+        .s-req {
+            background: #eff6ff
+        }
+
+        .s-ok {
+            background: #ecfdf5
+        }
+
+        .s-drop {
+            background: #f8fafc
+        }
+
+        .date {
+            color: #243333;
+            font-variant-numeric: tabular-nums
+        }
+
+        .empty {
+            padding: 24px;
+            text-align: center;
+            color: var(--muted)
+        }
+
+        /* Ações / descrições em pílulas */
+        .actions-cell,
+        .desc-cell {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap
+        }
+
+        .pill-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--stroke);
+            background: #fff;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer
+        }
+
+        .pill-btn:hover {
+            transform: translateY(-1px)
+        }
+
+        .pill-btn--accent {
+            border-color: #e6d8ff;
+            background: #f4efff;
+            color: #5b27b5
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999
+        }
+
+        .modal__box {
+            width: min(720px, 92vw);
+            max-height: 80vh;
+            overflow: auto;
+            background: #fff;
+            border: 1px solid var(--stroke);
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 18px 50px rgba(0, 0, 0, .25)
+        }
+
+        .modal__title {
+            font-weight: 900;
+            color: var(--primary);
+            margin: 0 0 10px 0
+        }
+
+        .modal__body {
+            white-space: pre-wrap;
+            border: 1px solid var(--stroke);
+            background: #fbfdfa;
+            border-radius: 12px;
+            padding: 14px;
+            font-family: ui-monospace, Consolas, Menlo, monospace
+        }
+
+        .modal__actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 12px
+        }
+
+        @media (max-width:980px) {
+            .filters {
+                grid-template-columns: 1fr 1fr 1fr
+            }
+
+            .title {
+                max-width: 300px
+            }
+        }
+
+        @media (max-width:680px) {
+            .filters {
+                grid-template-columns: 1fr 1fr
+            }
+
+            .title {
+                max-width: 220px
+            }
+        }
+    </style>
 </head>
+
 <body>
-  <div class="wrap">
-    <h1>📁 Painel de Chamados</h1>
+    <div class="wrap">
+        <h1>📁 Painel de Chamados</h1>
 
-    <div class="filters">
-      <div>
-        <label>Representante</label>
-        <select id="fRep" class="select">
-          <option value="">Todos</option>
-          <!-- opções via JS -->
-        </select>
-      </div>
-      <div>
-        <label>Status</label>
-        <select id="fStatus" class="select">
-          <option value="">Todos</option>
-          <option value="Em aberto">Em aberto</option>
-          <option value="Em análise">Em análise</option>
-          <option value="Aguardando versão">Aguardando versão</option>
-          <option value="Aguardando Requisição">Aguardando Requisição</option>
-          <option value="Finalizado">Finalizado</option>
-          <option value="Descartado">Descartado</option>
-        </select>
-      </div>
-      <div>
-        <label>De (Última atividade)</label>
-        <input id="fDe" type="date" class="input">
-      </div>
-      <div>
-        <label>Até (Última atividade)</label>
-        <input id="fAte" type="date" class="input">
-      </div>
-      <div>
-        <label>Busca</label>
-        <input id="fQ" class="input" placeholder="título/descrição">
-      </div>
+        <div class="filters">
+            <div>
+                <label>Representante</label>
+                <select id="fRep" class="select">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+            <div>
+                <label>Status</label>
+                <select id="fStatus" class="select">
+                    <option value="">Todos</option>
+                    <option value="Em aberto">Em aberto</option>
+                    <option value="Em análise">Em análise</option>
+                    <option value="Aguardando versão">Aguardando versão</option>
+                    <option value="Aguardando Requisição">Aguardando Requisição</option>
+                    <option value="Finalizado">Finalizado</option>
+                    <option value="Descartado">Descartado</option>
+                </select>
+            </div>
+            <div>
+                <label>De (Última atividade)</label>
+                <input id="fDe" type="date" class="input">
+            </div>
+            <div>
+                <label>Até (Última atividade)</label>
+                <input id="fAte" type="date" class="input">
+            </div>
+            <div>
+                <label>Busca</label>
+                <input id="fQ" class="input" placeholder="título/descrição">
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn--primary" id="btnAplicar">Aplicar filtros</button>
+            <button class="btn" id="btnLimpar">Limpar</button>
+            <button class="btn btn--live push-right" id="btnRealtime">Chamados em aberto (tempo real)</button>
+        </div>
+
+        <div class="count" id="countBox"></div>
+
+        <div class="table-wrap">
+            <table id="tbl">
+                <thead>
+                    <tr>
+                        <th>Título</th>
+                        <th>Representante</th>
+                        <th>Status</th>
+                        <th>Última atividade</th>
+                        <th>Descrição</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody">
+                    <tr>
+                        <td class="empty" colspan="6">Carregando…</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div> <!-- Modal -->
+    <div class="modal" id="modalDesc" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal__box">
+            <h3 class="modal__title" id="modalTitle">Descrição do chamado</h3>
+            <div class="modal__body" id="modalBody"></div>
+            <div class="modal__actions"> <button class="btn" id="btnFecharModal">Fechar</button> </div>
+        </div>
     </div>
+    <script>
+        (function() {
+                const tbody = document.getElementById('tbody');
+                const countBox = document.getElementById('countBox');
+                const repSelect = document.getElementById('fRep');
+                const statusSelect = document.getElementById('fStatus');
+                const deInput = document.getElementById('fDe');
+                const ateInput = document.getElementById('fAte');
+                const qInput = document.getElementById('fQ');
+                const btnRealtime = document.getElementById('btnRealtime'); /* mesmas opções do formulário */
+                const REPRESENTANTES = ["Host.com", "2RTI Soluções", "MT Solutions", "Unai System", "Multitech", "Mad Automação", "Tecnuve Soluções", "GoSystem Automação", "RJ Soluções", "Raizes Tecnologia", "Webside Sistemas", "Web System Norte", "Online Soluções", "Delane", "Supriserv", "MS Tech Soluções", "Use Tecnologia", "Unity Automação", "Digital RF Tecnologia", "Connecta Informática", "R.A Soluções"].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+                REPRESENTANTES.forEach(r => {
+                    const o = document.createElement('option');
+                    o.value = r;
+                    o.textContent = r;
+                    repSelect.appendChild(o);
+                });
 
-    <div class="actions">
-      <button class="btn btn--primary" id="btnAplicar">Aplicar filtros</button>
-      <button class="btn" id="btnLimpar">Limpar</button>
-    </div>
+                function escapeHtml(s) {
+                    return String(s || "").replace(/[&<>"']/g, m => ({
+                        '&': '&amp;',
+                        '<': '&lt;',
+                        '>': '&gt;',
+                        '"': '&quot;',
+                        "'": '&#39;'
+                    })[m]);
+                }
 
-    <div class="count" id="countBox"></div>
+                function fmtDate(iso) {
+                    if (!iso) return '-';
+                    try {
+                        const d = new Date(iso);
+                        return d.toLocaleDateString() + ' ' + d.toLocaleTimeString();
+                    } catch (e) {
+                        return iso;
+                    }
+                }
 
-    <div class="table-wrap">
-      <table id="tbl">
-        <thead>
-          <tr>
-            <th>Título</th>
-            <th>Representante</th>
-            <th>Status</th>
-            <th>Última atividade</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody id="tbody">
-          <tr><td class="empty" colspan="5">Carregando…</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Modal -->
-  <div class="modal" id="modalDesc" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div class="modal__box">
-      <h3 class="modal__title" id="modalTitle">Descrição do chamado</h3>
-      <div class="modal__body" id="modalBody"></div>
-      <div class="modal__actions">
-        <button class="btn" id="btnFecharModal">Fechar</button>
-      </div>
-    </div>
-  </div>
-
-<script>
-(function(){
-  const tbody = document.getElementById('tbody');
-  const countBox = document.getElementById('countBox');
-  const repSelect = document.getElementById('fRep');
-
-  /* mesmas opções do formulário */
-  const REPRESENTANTES = [
-    "Host.com","2RTI Soluções","MT Solutions","Unai System","Multitech",
-    "Mad Automação","Tecnuve Soluções","GoSystem Automação","RJ Soluções",
-    "Raizes Tecnologia","Webside Sistemas","Web System Norte","Online Soluções",
-    "Delane","Supriserv","MS Tech Soluções","Use Tecnologia","Unity Automação",
-    "Digital RF Tecnologia","Connecta Informática","R.A Soluções"
-  ].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-  REPRESENTANTES.forEach(r=>{
-    const o=document.createElement('option'); o.value=r; o.textContent=r; repSelect.appendChild(o);
-  });
-
-  function escapeHtml(s){
-    return String(s||"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
-  }
-  function fmtDate(iso){
-    if(!iso) return '-';
-    try{ const d=new Date(iso); return d.toLocaleDateString()+' '+d.toLocaleTimeString(); }catch(e){ return iso; }
-  }
-  function statusClass(s){
-    const x=(s||'').toLowerCase();
-    if(x==='em aberto') return 'status s-open';
-    if(x==='em análise') return 'status s-analise';
-    if(x==='aguardando versão') return 'status s-versao';
-    if(x==='aguardando requisição') return 'status s-req';
-    if(x==='finalizado') return 'status s-ok';
-    if(x==='descartado') return 'status s-drop';
-    return 'status';
-  }
-
-  function render(items){
-    tbody.innerHTML='';
-    if(!items.length){
-      tbody.innerHTML='<tr><td class="empty" colspan="5">Nenhum chamado encontrado.</td></tr>';
-      return;
-    }
-    items.forEach((it,i)=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML =
-        '<td class="title" title="'+escapeHtml(it.titulo)+'">'+escapeHtml(it.titulo)+'</td>'+
-        '<td>'+escapeHtml(it.representante||'-')+'</td>'+
-        '<td><span class="'+statusClass(it.status)+'">'+escapeHtml(it.status||'-')+'</span></td>'+
-        '<td class="date">'+fmtDate(it.ultima_atividade)+'</td>'+
-        '<td class="actions-cell">'+
-          (it.url?'<a class="pill-btn pill-btn--accent" href="'+it.url+'" target="_blank" rel="noopener">Abrir no Trello</a>':'')+
-          '<button class="pill-btn" data-i="'+i+'" data-action="ver">Ver descrição</button>'+
-        '</td>';
-      tr.dataset.index=i;
-      tbody.appendChild(tr);
-    });
-  }
-
-  function buildQuery(){
-    const qs = [];
-    const rep = repSelect.value.trim();
-    const st  = document.getElementById('fStatus').value.trim();
-    const de  = document.getElementById('fDe').value;
-    const ate = document.getElementById('fAte').value;
-    const q   = document.getElementById('fQ').value.trim();
-    if(rep) qs.push('representante='+encodeURIComponent(rep));
-    if(st)  qs.push('status='+encodeURIComponent(st));
-    if(de)  qs.push('de='+encodeURIComponent(de));
-    if(ate) qs.push('ate='+encodeURIComponent(ate));
-    if(q)   qs.push('q='+encodeURIComponent(q));
-    return qs.length ? ('?'+qs.join('&')) : '';
-  }
-
-  let cache = []; // guarda os itens pra abrir modal
-  function load(){
-    tbody.innerHTML='<tr><td class="empty" colspan="5">Carregando…</td></tr>';
-    fetch('/api/chamados'+buildQuery())
-      .then(async r=>{
-        const ct=r.headers.get('content-type')||'';
-        const t=await r.text();
-        if(!ct.includes('application/json')) throw new Error(t.slice(0,300));
-        return JSON.parse(t);
-      })
-      .then(j=>{
-        cache = j.items||[];
-        countBox.textContent = (j.total||cache.length||0)+' chamado(s) encontrado(s).';
-        render(cache);
-      })
-      .catch(err=>{
-        countBox.textContent='';
-        tbody.innerHTML='<tr><td class="empty" colspan="5">Erro ao carregar. Verifique o servidor.</td></tr>';
-        console.error(err);
-      });
-  }
-
-  // aplicar
-  document.getElementById('btnAplicar').addEventListener('click', load);
-
-  // limpar TUDO e recarregar a lista completa
-  document.getElementById('btnLimpar').addEventListener('click', ()=>{
-    repSelect.value='';
-    document.getElementById('fStatus').value='';
-    document.getElementById('fDe').value='';
-    document.getElementById('fAte').value='';
-    document.getElementById('fQ').value='';
-    load(); // sem query => backend retorna todos
-  });
-
-  // Modal
-  const modal=document.getElementById('modalDesc');
-  const modalBody=document.getElementById('modalBody');
-  const btnClose=document.getElementById('btnFecharModal');
-  function openModal(text){
-    modalBody.textContent = text || '—';
-    modal.style.display='flex';
-  }
-  function closeModal(){ modal.style.display='none'; }
-  btnClose.addEventListener('click', closeModal);
-  modal.addEventListener('click', e=>{ if(e.target===modal) closeModal(); });
-  document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
-
-  // delega clique nos botões "Ver descrição"
-  tbody.addEventListener('click', (e)=>{
-    const btn = e.target.closest('button[data-action="ver"]');
-    if(!btn) return;
-    const i = Number(btn.getAttribute('data-i'));
-    const item = cache[i] || {};
-    openModal(item.descricao || '');
-  });
-
-  // inicial
-  load();
-})();
-</script>
+                function statusClass(s) {
+                    const x = (s || '').toLowerCase();
+                    if (x === 'em aberto') return 'status s-open';
+                    if (x === 'em análise') return 'status s-analise';
+                    if (x === 'aguardando versão') return 'status s-versao';
+                    if (x === 'aguardando requisição') return 'status s-req';
+                    if (x === 'finalizado') return 'status s-ok';
+                    if (x === 'descartado') return 'status s-drop';
+                    return 'status';
+                }
+                let cache = []; // últimos itens renderizados function render(items){ tbody.innerHTML=''; if(!items.length){ tbody.innerHTML='<tr><td class="empty" colspan="6">Nenhum chamado encontrado.</td></tr>'; return; } cache = items; items.forEach((it,i)=>{ const tr=document.createElement('tr'); tr.innerHTML = '<td class="title" title="'+escapeHtml(it.titulo)+'">'+escapeHtml(it.titulo)+'</td>'+ '<td>'+escapeHtml(it.representante||'-')+'</td>'+ '<td><span class="'+statusClass(it.status)+'">'+escapeHtml(it.status||'-')+'</span></td>'+ '<td class="date">'+fmtDate(it.ultima_atividade)+'</td>'+ '<td class="desc-cell"><button class="pill-btn" data-i="'+i+'" data-action="ver">Ver</button></td>'+ '<td class="actions-cell">'+(it.url?'<a class="pill-btn pill-btn--accent" href="'+it.url+'" target="_blank" rel="noopener">Abrir no Trello</a>':'-')+'</td>'; tbody.appendChild(tr); }); } function buildQuery(){ const qs = []; const rep = repSelect.value.trim(); const st = statusSelect.value.trim(); const de = deInput.value; const ate = ateInput.value; const q = qInput.value.trim(); if(rep) qs.push('representante='+encodeURIComponent(rep)); if(st) qs.push('status='+encodeURIComponent(st)); if(de) qs.push('de='+encodeURIComponent(de)); if(ate) qs.push('ate='+encodeURIComponent(ate)); if(q) qs.push('q='+encodeURIComponent(q)); return qs.length ? ('?'+qs.join('&')) : ''; } function showLoading(){ tbody.innerHTML='<tr><td class="empty" colspan="6">Carregando…</td></tr>'; } function load(){ showLoading(); fetch('/api/chamados'+buildQuery()) .then(async r=>{ const ct=r.headers.get('content-type')||''; const t=await r.text(); if(!ct.includes('application/json')) throw new Error(t.slice(0,300)); return JSON.parse(t); }) .then(j=>{ render(j.items||[]); countBox.textContent = (j.total ?? (j.items||[]).length)+' chamado(s) encontrado(s).'; }) .catch(err=>{ console.error(err); countBox.textContent=''; tbody.innerHTML='<tr><td class="empty" colspan="6">Erro ao carregar. Verifique o servidor.</td></tr>'; }); } // Aplicar document.getElementById('btnAplicar').addEventListener('click', ()=>{ stopRealtime(); load(); }); // Limpar: confirma, limpa filtros e resultados document.getElementById('btnLimpar').addEventListener('click', ()=>{ if(!confirm('Deseja limpar filtros e resultados?')) return; stopRealtime(); repSelect.value=''; statusSelect.value=''; deInput.value=''; ateInput.value=''; qInput.value=''; cache = []; countBox.textContent=''; tbody.innerHTML='<tr><td class="empty" colspan="6">Sem resultados. Aplique filtros ou ative “Chamados em aberto (tempo real)”.</td></tr>'; }); // Tempo real (toggle) let realtimeTimer = null; function startRealtime(){ btnRealtime.classList.add('is-on'); statusSelect.value='Em aberto'; deInput.value=''; ateInput.value=''; qInput.value=''; load(); realtimeTimer = setInterval(load, 6000); // 6s } function stopRealtime(){ btnRealtime.classList.remove('is-on'); if(realtimeTimer){ clearInterval(realtimeTimer); realtimeTimer=null; } } btnRealtime.addEventListener('click', ()=>{ if(realtimeTimer){ stopRealtime(); } else{ startRealtime(); } }); // Modal const modal=document.getElementById('modalDesc'); const modalBody=document.getElementById('modalBody'); const btnClose=document.getElementById('btnFecharModal'); function openModal(text){ modalBody.textContent = text || '—'; modal.style.display='flex'; } function closeModal(){ modal.style.display='none'; } btnClose.addEventListener('click', closeModal); modal.addEventListener('click', e=>{ if(e.target===modal) closeModal(); }); document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); }); // Delegação para "Ver" tbody.addEventListener('click', (e)=>{ const btn = e.target.closest('button[data-action="ver"]'); if(!btn) return; const i = Number(btn.getAttribute('data-i')); const item = cache[i] || {}; openModal(item.descricao || ''); }); // inicial load(); })(); 
+    </script>
 </body>
+
 </html>
