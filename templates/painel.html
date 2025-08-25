@@ -5,105 +5,316 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Painel de Chamados</title>
 <style>
-  :root{--ink:#142222;--muted:#6a7676;--stroke:#e6ecea;--bg:#f7f9f8;--primary:#006056;--shadow:0 10px 30px rgba(0,0,0,.06)}
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  
+  :root {
+    --ink: #0f172a;
+    --muted: #64748b;
+    --stroke: #e2e8f0;
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --primary: #006056;
+    --primary-dark: #006056;
+    --primary-light: #e0f2fe;
+    --success: #10b981;
+    --success-light: #d1fae5;
+    --warning: #f59e0b;
+    --warning-light: #fef3c7;
+    --error: #ef4444;
+    --error-light: #fee2e2;
+    --purple: #8b5cf6;
+    --purple-light: #f3e8ff;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-lg: 16px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Arial;
+    margin: 0;
+    background: linear-gradient(135deg, var(--bg) 0%, #e2e8f0 100%);
+    color: var(--ink);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 32px 24px; }
+  <!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Painel de Chamados</title>
+
+<!-- Favicon / PWA -->
+<link rel="icon" type="image/png" sizes="32x32" href="/static/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png">
+<link rel="apple-touch-icon" href="/static/icon-192.png">
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#006056">
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  
+  :root {
+    --ink:#0f172a; --muted:#64748b; --stroke:#e2e8f0; --bg:#f8fafc; --surface:#fff;
+    --primary:#006056; --primary-dark:#004e47; --primary-light:#e0f2fe;
+    --success:#10b981; --success-light:#d1fae5; --warning:#f59e0b; --warning-light:#fef3c7;
+    --error:#ef4444; --error-light:#fee2e2; --purple:#8b5cf6; --purple-light:#f3e8ff;
+    --shadow:0 4px 6px -1px rgb(0 0 0 / .1),0 2px 4px -2px rgb(0 0 0 / .1);
+    --shadow-lg:0 10px 15px -3px rgb(0 0 0 / .1),0 4px 6px -4px rgb(0 0 0 / .1);
+    --radius:12px; --radius-lg:16px;
+  }
   *{box-sizing:border-box}
-  body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;background:var(--bg);color:var(--ink)}
-  .wrap{max-width:1100px;margin:0 auto;padding:24px}
-  h1{font-size:24px;margin:6px 0 16px;color:var(--primary);display:flex;align-items:center;gap:10px}
+  body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,Arial;margin:0;background:linear-gradient(135deg,var(--bg) 0%,#e2e8f0 100%);color:var(--ink);min-height:100vh;line-height:1.5}
+  .wrap{max-width:1400px;margin:0 auto;padding:32px 24px}
+
+  /* header com logo */
+  .header{display:flex;align-items:center;gap:14px;margin:0 0 24px}
+  .brand{display:flex;align-items:center;gap:14px}
+  .brand img{width:44px;height:44px;border-radius:10px;display:block;object-fit:contain;box-shadow:0 6px 18px rgba(0,0,0,.08)}
+  .titlebox h1{margin:0;font-size:32px;font-weight:800;letter-spacing:-.02em;color:#065f5b}
+  .titlebox .subtitle{margin:6px 0 0;color:var(--muted);font-size:15px}
+
+
+  .subtitle{ color:var(--muted); font-size:16px; margin:0; font-weight:500; }
 
   .filters{
-    display:grid;grid-template-columns:1.2fr .9fr .9fr .9fr 1fr;
-    gap:12px;background:#fff;padding:14px;border:1px solid var(--stroke);
-    border-radius:14px;box-shadow:var(--shadow)
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:20px;
+    background:var(--surface); padding:24px; border:1px solid var(--stroke);
+    border-radius:var(--radius-lg); box-shadow:var(--shadow); backdrop-filter:blur(10px);
+    margin-bottom:24px;
   }
-  .filters label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600;letter-spacing:.2px}
-  .input,.select{width:100%;padding:11px 12px;border:1px solid var(--stroke);border-radius:10px;background:#fbfdfa;font-size:14px;outline:none;transition:.15s ease}
-  .input:focus,.select:focus{border-color:#66a39c;box-shadow:0 0 0 4px rgba(0,96,86,.12);background:#fff}
+  .filter-group{ display:flex; flex-direction:column; gap:8px; }
+  .filters label{ font-size:14px; color:var(--ink); font-weight:600; letter-spacing:-0.025em; }
 
-  .actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
-  .actions .push-right{margin-left:auto}
-  .btn{border:1px solid var(--stroke);background:#fff;border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:700}
-  .btn--primary{background:linear-gradient(180deg,var(--primary),#004e47);color:#fff;border-color:#004e47}
-  .btn--live{background:linear-gradient(180deg,var(--primary),#004e47);color:#fff;border-color:#004e47}
-  .btn--live.is-on{outline:3px solid rgba(91,39,181,.25)}
-  .count{font-size:13px;color:var(--muted);margin-top:10px}
+  .input,.select{
+    width:100%; padding:12px 16px; border:2px solid var(--stroke); border-radius:var(--radius);
+    background:var(--surface); font-size:14px; font-weight:500; outline:none;
+    transition:all .2s cubic-bezier(.4,0,.2,1); color:var(--ink);
+  }
+  .input:focus,.select:focus{ border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-light); transform:translateY(-1px); }
+  .input::placeholder{ color:var(--muted); }
 
-  .table-wrap{background:#fff;border:1px solid var(--stroke);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;margin-top:12px}
-  table{width:100%;border-collapse:separate;border-spacing:0}
-  th,td{padding:14px 16px;border-bottom:1px solid var(--stroke);font-size:14px}
-  th{background:#f1f5f4;text-align:left;font-weight:800;color:#0f1a1a}
-  td{vertical-align:middle}
-  tbody tr:hover td{background:#fbfdfa}
+  .actions{ display:flex; gap:16px; margin-bottom:24px; flex-wrap:wrap; align-items:center; }
+  .actions .push-right{ margin-left:auto; }
 
-  thead th:nth-child(3), thead th:nth-child(4), thead th:nth-child(5), thead th:nth-child(6), thead th:nth-child(7){text-align:center}
-  tbody td:nth-child(3), tbody td:nth-child(4), tbody td:nth-child(5), tbody td:nth-child(6), tbody td:nth-child(7){text-align:center}
+  .btn{
+    border:2px solid var(--stroke); background:var(--surface); border-radius:var(--radius);
+    padding:12px 20px; cursor:pointer; font-weight:600; font-size:14px;
+    transition:all .2s cubic-bezier(.4,0,.2,1); display:inline-flex; align-items:center; gap:8px; text-decoration:none; position:relative; overflow:hidden;
+  }
+  .btn:hover{ transform:translateY(-2px); box-shadow:var(--shadow-lg); }
+  .btn--primary{ background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%); color:#fff; border-color:var(--primary-dark); }
+  .btn--primary:hover{ background:linear-gradient(135deg,var(--primary-dark) 0%,#0369a1 100%); }
 
-  .title{max-width:420px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .btn--live{ background:linear-gradient(135deg,var(--success) 0%,#059669 100%); color:#fff; border-color:#059669; position:relative; }
+  .btn--live:hover{ background:linear-gradient(135deg,#059669 0%,#047857 100%); }
+  .btn--live.is-on{ animation:pulse 2s infinite; box-shadow:0 0 0 4px rgba(16,185,129,.3); }
+  /* dot pulsante ao vivo */
+  .btn--live.is-on::after{
+    content:''; width:8px; height:8px; border-radius:50%; background:#10b981; margin-left:6px; display:inline-block;
+    box-shadow:0 0 0 0 rgba(16,185,129,.6); animation:pulseDot 1.6s infinite;
+  }
 
-  .status{display:inline-flex;align-items:center;justify-content:center;padding:8px 14px;border-radius:999px;border:1px solid var(--stroke);min-width:170px;background:#f5f7f6;font-weight:800;font-size:12px;letter-spacing:.2px}
-  .s-open{background:#fff7ed}.s-analise{background:#fff1f2}.s-versao{background:#fefce8}.s-req{background:#eff6ff}.s-ok{background:#ecfdf5}.s-drop{background:#f8fafc}
+  @keyframes pulse{ 0%,100%{box-shadow:0 0 0 4px rgba(16,185,129,.3)} 50%{box-shadow:0 0 0 8px rgba(16,185,129,.1)} }
+  @keyframes pulseDot{ to{ box-shadow:0 0 0 10px rgba(16,185,129,0); } }
 
-  .date{color:#243333;font-variant-numeric:tabular-nums}
-  .empty{padding:24px;text-align:center;color:var(--muted)}
+  .count{
+    font-size:14px; color:var(--muted); font-weight:500; margin-bottom:16px;
+    padding:12px 16px; background:var(--surface); border-radius:var(--radius); border:1px solid var(--stroke);
+  }
 
-  /* botõezinhos iguais nas células */
-  .cell-btn{display:inline-flex;align-items:center;justify-content:center;min-width:110px;padding:8px 12px;border-radius:999px;border:1px solid var(--stroke);background:#fff;font-weight:700;text-decoration:none;cursor:pointer}
-  .cell-btn:hover{transform:translateY(-1px)}
-  .cell-btn--accent{border-color:#e6d8ff;background:#f4efff;color:#5b27b5}
+  .table-container{ background:var(--surface); border:1px solid var(--stroke); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); overflow:hidden; }
+  .table-wrap{ overflow-x:auto; }
 
-  .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:9999}
-  .modal__box{width:min(720px,92vw);max-height:80vh;overflow:auto;background:#fff;border:1px solid var(--stroke);border-radius:14px;padding:20px;box-shadow:0 18px 50px rgba(0,0,0,.25)}
-  .modal__title{font-weight:900;color:var(--primary);margin:0 0 10px 0}
-  .modal__body{white-space:pre-wrap;border:1px solid var(--stroke);background:#fbfdfa;border-radius:12px;padding:14px;font-family:ui-monospace,Consolas,Menlo,monospace}
-  .modal__actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}
+  table{ width:100%; border-collapse:separate; border-spacing:0; min-width:800px; }
+  th,td{ padding:16px 20px; border-bottom:1px solid var(--stroke); font-size:14px; text-align:left; }
+  th{
+    background:linear-gradient(135deg,#f8fafc 0%,#f1f5f9 100%);
+    font-weight:700; color:var(--ink); position:sticky; top:0; z-index:10; letter-spacing:-0.025em;
+  }
 
-  .row-new{animation:fadeIn .6s ease-out}
-  @keyframes fadeIn{from{opacity:0;transform:translateY(-2px)} to{opacity:1;transform:none}}
+  /* Centraliza as colunas Descrição (6) e Ações (7) */
+  th:nth-child(6), th:nth-child(7), td:nth-child(6), td:nth-child(7){ text-align:center; }
+
+  tbody tr{ transition:all .2s ease; }
+  tbody tr:hover{ background:linear-gradient(135deg,var(--primary-light) 0%,var(--purple-light) 100%); transform:translateX(4px); }
+  tbody tr:last-child td{ border-bottom:none; }
+
+  .title{ max-width:300px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; color:var(--ink); }
+
+  .status{
+    display:inline-flex; align-items:center; justify-content:center; padding:8px 16px;
+    border-radius:50px; font-weight:700; font-size:12px; letter-spacing:.05em; text-transform:uppercase;
+    min-width:160px; /* ↑ corrigido para largura consistente */
+    border:2px solid transparent;
+  }
+  .s-open{ background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%); color:#92400e; border-color:#f59e0b; }
+  .s-analise{ background:linear-gradient(135deg,var(--error-light) 0%,#fecaca 100%); color:#991b1b; border-color:var(--error); }
+  .s-versao{ background:linear-gradient(135deg,var(--warning-light) 0%,#fed7aa 100%); color:#ea580c; border-color:var(--warning); }
+  .s-req{ background:linear-gradient(135deg,#dbeafe 0%,#bfdbfe 100%); color:#1d4ed8; border-color:var(--primary); }
+  .s-ok{ background:linear-gradient(135deg,var(--success-light) 0%,#a7f3d0 100%); color:#065f46; border-color:var(--success); }
+  .s-drop{ background:linear-gradient(135deg,#f1f5f9 0%,#e2e8f0 100%); color:#475569; border-color:var(--muted); }
+
+  .date{ color:var(--ink); font-variant-numeric:tabular-nums; font-weight:500; }
+
+  .empty{ padding:48px; text-align:center; color:var(--muted); font-size:16px; font-weight:500; }
+
+  .cell-btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    min-width:110px; /* ↑ padrão consistente */
+    padding:8px 16px; border-radius:50px; border:2px solid var(--stroke); background:var(--surface);
+    font-weight:600; text-decoration:none; cursor:pointer; transition:all .2s cubic-bezier(.4,0,.2,1); font-size:12px; color:var(--ink);
+  }
+  .cell-btn:hover{ transform:translateY(-2px); box-shadow:var(--shadow); border-color:var(--primary); }
+  .cell-btn--accent{ border-color:var(--purple); background:linear-gradient(135deg,var(--purple-light) 0%,#ede9fe 100%); color:var(--purple); }
+  .cell-btn--accent:hover{ background:linear-gradient(135deg,var(--purple) 0%,#7c3aed 100%); color:#fff; }
+
+  .modal{
+    position:fixed; inset:0; background:rgba(15,23,42,.7); backdrop-filter:blur(8px);
+    display:none; align-items:center; justify-content:center; z-index:9999; animation:modalFadeIn .3s ease;
+  }
+  @keyframes modalFadeIn{ from{opacity:0} to{opacity:1} }
+
+  .modal__box{
+    width:min(800px,95vw); max-height:85vh; overflow:auto; background:var(--surface);
+    border:1px solid var(--stroke); border-radius:var(--radius-lg); padding:32px; box-shadow:var(--shadow-xl);
+    animation:modalSlideIn .3s cubic-bezier(.4,0,.2,1);
+  }
+  @keyframes modalSlideIn{ from{ transform:translateY(-20px) scale(.95); opacity:0 } to{ transform:none; opacity:1 } }
+
+  .modal__title{
+    font-weight:800; font-size:24px; margin:0 0 20px 0;
+    background:linear-gradient(135deg,var(--primary) 0%,var(--purple) 100%);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  }
+  .modal__body{
+    white-space:pre-wrap; border:2px solid var(--stroke);
+    background:linear-gradient(135deg,#f8fafc 0%,#f1f5f9 100%); border-radius:var(--radius); padding:20px;
+    font-family:'SF Mono', ui-monospace, Consolas, Menlo, monospace; font-size:14px; line-height:1.6; color:var(--ink);
+    max-height:400px; overflow-y:auto;
+  }
+  .modal__actions{ display:flex; justify-content:flex-end; gap:12px; margin-top:24px; }
+
+  /* animação de novo item – suavizada */
+  .row-new{ animation:slideInUp .35s ease-out; }
+  @keyframes slideInUp{ from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none} }
+
+  /* reduz movimento para quem prefere */
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+  }
+
+  /* Responsive */
+  @media (max-width:768px){
+    .wrap{ padding:20px 16px; }
+    h1{ font-size:24px; }
+    .filters{ grid-template-columns:1fr; gap:16px; padding:20px; }
+    .actions{ flex-direction:column; align-items:stretch; }
+    .actions .push-right{ margin-left:0; }
+    .btn{ justify-content:center; }
+    .table-container{ border-radius:var(--radius); }
+    .modal__box{ padding:24px; }
+    .modal__title{ font-size:20px; }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar{ width:8px; height:8px; }
+  ::-webkit-scrollbar-track{ background:var(--stroke); border-radius:4px; }
+  ::-webkit-scrollbar-thumb{ background:var(--muted); border-radius:4px; }
+  ::-webkit-scrollbar-thumb:hover{ background:var(--ink); }
+
+  /* Loading */
+  .loading{ display:inline-block; width:16px; height:16px; border:2px solid var(--stroke); border-radius:50%; border-top-color:var(--primary); animation:spin 1s ease-in-out infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
 </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>📁 Painel de Chamados</h1>
+    <div class="header">
+      <div class="brand">
+        <!-- a “caixinha verde” aparecia porque não havia <img> real. Agora é a logo: -->
+        <img src="/static/icon-512.png" alt="Logo do Painel de Chamados">
+      </div>
+      <div class="titlebox">
+        <h1>Painel de Chamados</h1>
+        <p class="subtitle">Gerencie e monitore todos os seus chamados em tempo real</p>
+      </div>
+    </div>
+
 
     <div class="filters">
-      <div>
+      <div class="filter-group">
         <label>Representante</label>
-        <select id="fRep" class="select"><option value="">Todos</option></select>
-      </div>
-      <div>
-        <label>Status</label>
-        <select id="fStatus" class="select">
-          <option value="">Todos</option>
-          <option>Em aberto</option><option>Em análise</option>
-          <option>Aguardando versão</option><option>Aguardando Requisição</option>
-          <option>Finalizado</option><option>Descartado</option>
+        <select id="fRep" class="select">
+          <option value="">Todos os representantes</option>
         </select>
       </div>
-      <div><label>De (Última atividade)</label><input id="fDe" type="date" class="input"></div>
-      <div><label>Até (Última atividade)</label><input id="fAte" type="date" class="input"></div>
-      <div><label>Busca</label><input id="fQ" class="input" placeholder="título/descrição"></div>
+      <div class="filter-group">
+        <label>Status</label>
+        <select id="fStatus" class="select">
+          <option value="">Todos os status</option>
+          <option>Em aberto</option>
+          <option>Em análise</option>
+          <option>Aguardando versão</option>
+          <option>Aguardando Requisição</option>
+          <option>Finalizado</option>
+          <option>Descartado</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Data inicial</label>
+        <input id="fDe" type="date" class="input">
+      </div>
+      <div class="filter-group">
+        <label>Data final</label>
+        <input id="fAte" type="date" class="input">
+      </div>
+      <div class="filter-group">
+        <label>Buscar por</label>
+        <input id="fQ" class="input" placeholder="Título ou descrição...">
+      </div>
     </div>
 
     <div class="actions">
-      <button class="btn btn--primary" id="btnAplicar">Aplicar filtros</button>
-      <button class="btn" id="btnLimpar">Limpar</button>
-      <button class="btn btn--live push-right" id="btnRealtime">Chamados em aberto (tempo real)</button>
+      <button class="btn btn--primary" id="btnAplicar">🔍 Aplicar Filtros</button>
+      <button class="btn" id="btnLimpar">🗑️ Limpar</button>
+      <button class="btn btn--live push-right" id="btnRealtime">🔴 Monitoramento em Tempo Real</button>
     </div>
 
     <div class="count" id="countBox"></div>
 
-    <div class="table-wrap">
-      <table id="tbl">
-        <thead>
-          <tr>
-            <th>Título</th><th>Representante</th><th>Status</th><th>Detalhes</th>
-            <th>Última atividade</th><th>Descrição</th><th>Ações</th>
-          </tr>
-        </thead>
-        <tbody id="tbody">
-          <tr><td class="empty" colspan="7">Carregando…</td></tr>
-        </tbody>
-      </table>
+    <div class="table-container">
+      <div class="table-wrap">
+        <table id="tbl">
+          <thead>
+            <tr>
+              <th>Título</th>
+              <th>Representante</th>
+              <th>Status</th>
+              <th>Detalhes</th>
+              <th>Última Atividade</th>
+              <th>Descrição</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr>
+              <td class="empty" colspan="7">
+                <div class="loading"></div>
+                Carregando chamados...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -112,7 +323,9 @@
     <div class="modal__box">
       <h3 class="modal__title" id="modalTitle">Modal</h3>
       <div class="modal__body" id="modalBody"></div>
-      <div class="modal__actions"><button class="btn" id="btnFecharModal">Fechar</button></div>
+      <div class="modal__actions">
+        <button class="btn" id="btnFecharModal">Fechar</button>
+      </div>
     </div>
   </div>
 
@@ -137,7 +350,7 @@
   REPRESENTANTES.forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; repSelect.appendChild(o); });
 
   const esc = s => String(s||"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
-  const fmtDate = iso => !iso ? '-' : (new Date(iso)).toLocaleDateString()+' '+(new Date(iso)).toLocaleTimeString();
+  const fmtDate = iso => !iso ? '-' : (new Date(iso)).toLocaleDateString('pt-BR')+' '+(new Date(iso)).toLocaleTimeString('pt-BR');
   const statusClass = s => {
     const x=(s||'').toLowerCase();
     if(x==='em aberto') return 'status s-open';
@@ -169,16 +382,16 @@
         <td class="title" title="${esc(it.titulo)}">${esc(it.titulo)}</td>
         <td>${esc(it.representante||'-')}</td>
         <td><span class="${statusClass(it.status)}">${esc(it.status||'-')}</span></td>
-        <td><button class="cell-btn" data-i="${i}" data-action="detalhes">Detalhes</button></td>
+        <td><button class="cell-btn" data-i="${i}" data-action="detalhes">📋 Detalhes</button></td>
         <td class="date">${fmtDate(it.ultima_atividade)}</td>
-        <td><button class="cell-btn" data-i="${i}" data-action="ver">Ver</button></td>
-        <td>${it.url?`<a class="cell-btn cell-btn--accent" href="${esc(it.url)}" target="_blank" rel="noopener">Abrir no Trello</a>`:'-'}</td>
+        <td><button class="cell-btn" data-i="${i}" data-action="ver">👁️ Ver</button></td>
+        <td>${it.url?`<a class="cell-btn cell-btn--accent" href="${esc(it.url)}" target="_blank" rel="noopener">🔗 Trello</a>`:'-'}</td>
       </tr>`;
   };
 
   function render(items, {silent=false}={}){
     const prev = lastKeys;
-    tbody.innerHTML = items.length ? items.map(buildRowHTML).join('') : '<tr><td class="empty" colspan="7">Nenhum chamado encontrado.</td></tr>';
+    tbody.innerHTML = items.length ? items.map(buildRowHTML).join('') : '<tr><td class="empty" colspan="7">🔍 Nenhum chamado encontrado.<br><span style="font-size: 14px; opacity: 0.7;">Tente ajustar os filtros ou verificar os critérios de busca.</span></td></tr>';
     if (silent) {
       [...tbody.querySelectorAll('tr[data-key]')].forEach(tr=>{
         const k=tr.getAttribute('data-key'); if(!prev.has(k)) tr.classList.add('row-new');
@@ -204,7 +417,7 @@
   }
 
   function load({silent=false}={}){
-    if(!silent){ tbody.innerHTML='<tr><td class="empty" colspan="7">Carregando…</td></tr>'; }
+    if(!silent){ tbody.innerHTML='<tr><td class="empty" colspan="7"><div class="loading"></div> Carregando chamados...</td></tr>'; }
     return fetch('/api/chamados'+qs())
       .then(async r=>{
         const ct=r.headers.get('content-type')||''; const t=await r.text();
@@ -213,13 +426,14 @@
       })
       .then(j=>{
         render(j.items||[], {silent});
-        countBox.textContent = (j.total ?? (j.items||[]).length)+' chamado(s) encontrado(s).';
+        const total = j.total ?? (j.items||[]).length;
+        countBox.innerHTML = `📊 <strong>${total}</strong> chamado${total !== 1 ? 's' : ''} encontrado${total !== 1 ? 's' : ''}`;
       })
       .catch(err=>{
         console.error(err);
         if(!silent){
-          countBox.textContent='';
-          tbody.innerHTML='<tr><td class="empty" colspan="7">Erro ao carregar. Verifique o servidor.</td></tr>';
+          countBox.innerHTML='❌ Erro ao carregar dados';
+          tbody.innerHTML='<tr><td class="empty" colspan="7">⚠️ Erro ao carregar chamados.<br><span style="font-size: 14px; opacity: 0.7;">Verifique sua conexão e tente novamente.</span></td></tr>';
         }
       });
   }
@@ -227,23 +441,25 @@
   document.getElementById('btnAplicar').addEventListener('click', ()=>{ stopRealtime(); load({silent:false}); });
 
   document.getElementById('btnLimpar').addEventListener('click', ()=>{
-    if(!confirm('Deseja limpar filtros e resultados?')) return;
+    if(!confirm('Deseja limpar todos os filtros e resultados?')) return;
     stopRealtime();
     repSelect.value=''; statusSelect.value=''; deInput.value=''; ateInput.value=''; qInput.value='';
     cache=[]; lastKeys=new Set();
-    countBox.textContent='';
-    tbody.innerHTML='<tr><td class="empty" colspan="7">Sem resultados. Aplique filtros ou ative “Chamados em aberto (tempo real)”.</td></tr>';
+    countBox.innerHTML='🔍 Use os filtros para buscar chamados';
+    tbody.innerHTML='<tr><td class="empty" colspan="7">🎯 Configure os filtros acima e clique em "Aplicar Filtros"<br>ou ative o "Monitoramento em Tempo Real" para ver chamados abertos.</td></tr>';
   });
 
   let realtimeTimer=null;
   function startRealtime(){
     btnRealtime.classList.add('is-on');
+    btnRealtime.innerHTML = '⏹️ Parar Monitoramento';
     statusSelect.value='Em aberto';
     deInput.value=''; ateInput.value=''; qInput.value='';
     load({silent:false}).then(()=>{ realtimeTimer=setInterval(()=>load({silent:true}), 6000); });
   }
   function stopRealtime(){
     btnRealtime.classList.remove('is-on');
+    btnRealtime.innerHTML = '🔴 Monitoramento em Tempo Real';
     if(realtimeTimer){ clearInterval(realtimeTimer); realtimeTimer=null; }
   }
   btnRealtime.addEventListener('click', ()=> realtimeTimer ? stopRealtime() : startRealtime());
@@ -276,29 +492,36 @@
     const item = cache[i] || {};
 
     if (btn.getAttribute('data-action') === 'ver') {
-      openModal('Descrição do chamado', esc(item.descricao || '—'));
+      // segurança: texto puro
+      modalTitle.textContent = '📄 Descrição do chamado';
+      modalBody.textContent  = item.descricao || 'Nenhuma descrição disponível.';
+      modal.style.display='flex';
       return;
     }
 
     if (btn.getAttribute('data-action') === 'detalhes') {
       const created = inferCreatedAt(item);
+      if(!created){
+        openModal('📋 Detalhes do chamado', 'Não foi possível determinar a data de criação deste card.');
+        return;
+      }
       const lastAct = item.ultima_atividade ? new Date(item.ultima_atividade) : null;
       const live = /^(em aberto|em análise)$/i.test(item.status||'');
-      const start = created ? created.getTime() : null;
+      const start = created.getTime();
       const stop  = live ? Date.now() : (lastAct ? lastAct.getTime() : Date.now());
 
       let html = '';
-      html += `Título: ${esc(item.titulo||'-')}\n`;
-      html += `Status: ${esc(item.status||'-')}\n\n`;
-      html += `Criado em: ${created? created.toLocaleString() : '—'}\n`;
-      html += `Última atividade: ${lastAct? lastAct.toLocaleString() : '—'}\n\n`;
-      html += `Duração ${live?'(contando)':'(fechada)'}: <span id="durSpan">calculando…</span>`;
+      html += `📋 Título: ${esc(item.titulo||'-')}\n`;
+      html += `📊 Status: ${esc(item.status||'-')}\n\n`;
+      html += `🕐 Criado em: ${created.toLocaleString('pt-BR')}\n`;
+      html += `⏰ Última atividade: ${lastAct? lastAct.toLocaleString('pt-BR') : '—'}\n\n`;
+      html += `⏱️ Duração ${live?'(contando)':'(fechada)'}: <span id="durSpan">calculando…</span>`;
 
-      openModal('Detalhes do chamado', html);
+      openModal('📋 Detalhes do chamado', html);
 
       function tick(){
         const now = live ? Date.now() : stop;
-        const ms = (start? now - start : 0);
+        const ms = now - start;
         const el = document.getElementById('durSpan');
         if (el) el.textContent = fmtDur(ms);
       }
