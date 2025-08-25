@@ -56,6 +56,19 @@ def trello_attach_file(card_id: str, filename: str, fileobj, mimetype: str = Non
     if not r.ok:
         print("[TRELLO][ATTACH] Falha:", r.status_code, r.text[:300])
 
+def trello_clear_cover(card_id: str):
+    """
+    Remove qualquer capa do card (mesmo após anexos).
+    Usa o endpoint dedicado de cover.
+    """
+    try:
+        url = f"{TRELLO_BASE}/cards/{card_id}/cover"
+        r = requests.put(url, params={"key": API_KEY, "token": TOKEN}, json={"idAttachment": None}, timeout=TIMEOUT)
+        if not r.ok:
+            print("[TRELLO][COVER] Falha ao remover capa:", r.status_code, r.text[:300])
+    except Exception as e:
+        print("[TRELLO][COVER] Exceção ao remover capa:", e)
+
 def get_board_refs():
     if not API_KEY or not TOKEN:
         raise RuntimeError("[CONFIG] Defina TRELLO_KEY e TRELLO_TOKEN nas variáveis de ambiente.")
@@ -120,6 +133,7 @@ def salvar():
         card = trello_post("/cards", params=params)
         card_id = card.get("id")
 
+        # Anexos (se houver)
         if request.files:
             for f in request.files.getlist("anexos"):
                 if not f or not f.filename:
@@ -127,6 +141,9 @@ def salvar():
                 if not _allowed(f.filename):
                     continue
                 trello_attach_file(card_id, secure_filename(f.filename), f.stream, f.mimetype)
+
+        # Garante que o card fique SEM capa (mesmo após anexos)
+        trello_clear_cover(card_id)
 
         return jsonify(success=True, message="Chamado criado com sucesso no Trello!")
     except Exception as e:
@@ -172,8 +189,8 @@ def baixar():
         mimetype="application/octet-stream",
         conditional=True
     ))
-    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-    resp.headers["Pragma"] = "no-cache"
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"]
+    resp.headers["Pragma"] = "no-cache"]
     resp.headers["Expires"] = "0"
     resp.headers["X-Content-Type-Options"] = "nosniff"
     return resp
