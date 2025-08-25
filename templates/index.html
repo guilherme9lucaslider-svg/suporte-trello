@@ -37,6 +37,7 @@
     .btn--ghost{background:#fff;border:1px solid var(--stroke)} .btn--ghost:hover{border-color:#d7dfdd;transform:translateY(-1px)}
     .btn--primary{background:linear-gradient(180deg, var(--primary), #004e47);color:white;box-shadow:0 6px 20px rgba(0,96,86,.25)}
     .btn--primary:hover{transform:translateY(-1px);filter:saturate(1.05)} .btn--primary:active{transform:translateY(0)}
+<<<<<<< HEAD
     .btn--secondary{background:linear-gradient(180deg, var(--secondary), #cc6400);color:white}
     .btn--secondary:hover{transform:translateY(-1px);filter:saturate(1.05)}
     .invalid{border-color:#e03131!important;background:rgba(224,49,49,.06)!important;box-shadow:0 0 0 4px rgba(224,49,49,.12)!important}
@@ -87,6 +88,19 @@
   }
 
 </style>
+=======
+    .helper{font-size:12px;color:var(--muted);margin-top:6px}
+
+    /* Tela de sucesso */
+    .success{display:none;min-height:100dvh;align-items:center;justify-content:center;padding:28px}
+    .success__box{max-width:560px;background:#fff;border:1px solid var(--stroke);border-radius:16px;box-shadow:var(--shadow);padding:28px;text-align:center}
+    .success__title{font-weight:800;color:var(--primary);font-size:20px;margin-bottom:8px}
+    .success__msg{color:var(--muted);margin-bottom:20px}
+    .success__actions{display:flex;gap:12px;justify-content:center}
+    .btn--secondary{background:linear-gradient(180deg, var(--secondary), color-mix(in oklab, var(--secondary) 85%, black));color:white}
+    .btn--secondary:hover{transform:translateY(-1px);filter:saturate(1.05)}
+  </style>
+>>>>>>> 14ae1ac (feat: campo Suporte + tela de sucesso)
 </head>
 <body>
   <div class="wrap" id="formView">
@@ -101,6 +115,7 @@
         </div>
       </div>
 
+<<<<<<< HEAD
       <div class="card__body" id="formBody">
         <div>
           <label for="nome">CLIENTE</label>
@@ -121,6 +136,37 @@
               <option value="" disabled selected>Selecione o representante</option>
             </select>
             <div class="field-hint" id="hint-representante">Selecione um representante.</div>
+=======
+      <div class="card__body">
+        <div><label for="nome">NOME</label><input id="nome" required placeholder="Nome do cliente"/></div>
+        <div><label for="contato">CONTATO</label><input id="contato" required placeholder="Telefone, WhatsApp ou e-mail"/></div>
+
+        <!-- Representante (select) -->
+        <div class="span-2" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div>
+            <label for="representante">REPRESENTANTE</label>
+            <select id="representante" required></select>
+          </div>
+          <div>
+            <label for="suporte">SUPORTE (quem está abrindo)</label>
+            <input id="suporte" required placeholder="Seu nome" />
+          </div>
+        </div>
+
+        <div><label for="sistema">SISTEMA</label><select id="sistema" required></select></div>
+        <div><label for="modulo">MÓDULO</label><select id="modulo" required></select></div>
+        <div class="span-2"><label for="ocorrencia">OCORRÊNCIA</label><select id="ocorrencia" required></select></div>
+
+        <div class="span-2"><label for="descricao">DESCRIÇÃO / SOLICITAÇÃO</label><textarea id="descricao" placeholder="Descreva o problema ou pedido"></textarea></div>
+        <div class="span-2"><label for="observacao">OBSERVAÇÃO</label><textarea id="observacao" placeholder="Observações adicionais (opcional)"></textarea></div>
+
+        <div class="span-2">
+          <label>PRIORIDADE</label>
+          <div class="segmented" role="radiogroup">
+            <label class="chip" data-color="Alta"><input type="radio" name="prioridade" value="Alta" required><span>Alta</span></label>
+            <label class="chip" data-color="Média"><input type="radio" name="prioridade" value="Média"><span>Média</span></label>
+            <label class="chip" data-color="Baixa"><input type="radio" name="prioridade" value="Baixa"><span>Baixa</span></label>
+>>>>>>> 14ae1ac (feat: campo Suporte + tela de sucesso)
           </div>
           <div>
             <label for="suporte">SUPORTE</label>
@@ -202,6 +248,10 @@
     </div>
   </div>
 
+<<<<<<< HEAD
+=======
+  <!-- Tela de sucesso -->
+>>>>>>> 14ae1ac (feat: campo Suporte + tela de sucesso)
   <div class="success" id="successView">
     <div class="success__box">
       <div class="success__title">Chamado enviado com sucesso! 🎉</div>
@@ -333,6 +383,7 @@
       });
     });
 
+<<<<<<< HEAD
     // ---------- Validação ----------
     function validar(){
       let ok = true;
@@ -410,6 +461,59 @@
         }
       })
       .catch(err => alert('Erro na comunicação: ' + err));
+=======
+    function showSuccess(){
+      document.getElementById('formView').style.display='none';
+      const s = document.getElementById('successView');
+      s.style.display='flex';
+
+      // Ações
+      document.getElementById('btnNovo').onclick = ()=>{
+        // reset e volta pro formulário
+        document.querySelector('form')?.reset?.();
+        // limpar selects dependentes
+        sistemaSelect.value = "";
+        moduloSelect.innerHTML = '<option value="" disabled selected>Selecione o módulo</option>';
+        ocorrenciaSelect.innerHTML = '<option value="" disabled selected>Selecione a ocorrência</option>';
+        document.querySelector('input[name="prioridade"]:checked')?.checked = false;
+        s.style.display='none';
+        document.getElementById('formView').style.display='flex';
+        window.scrollTo({top:0, behavior:'smooth'});
+      };
+
+      document.getElementById('btnSair').onclick = ()=>{
+        // tenta fechar a aba (pode ser bloqueado pelo navegador)
+        window.close();
+        // fallback: redireciona para página em branco
+        setTimeout(()=>{ window.location.href = "about:blank"; }, 200);
+      };
+    }
+
+    btnSalvar.addEventListener('click', (e)=>{
+      e.preventDefault();
+      const prioridade=(document.querySelector('input[name="prioridade"]:checked')||{}).value;
+      const payload={
+        nome:document.getElementById('nome').value.trim(),
+        contato:document.getElementById('contato').value.trim(),
+        representante:repSelect.value,
+        suporte:document.getElementById('suporte').value.trim(),
+        sistema:sistemaSelect.value,
+        modulo:moduloSelect.value,
+        ocorrencia:ocorrenciaSelect.value,
+        descricao:document.getElementById('descricao').value.trim(),
+        observacao:document.getElementById('observacao').value.trim(),
+        prioridade:prioridade
+      };
+      if(!payload.nome||!payload.contato||!payload.representante||!payload.suporte||!payload.sistema||!payload.modulo||!payload.ocorrencia||!payload.prioridade){
+        alert('Preencha todos os campos obrigatórios.');return;
+      }
+      fetch('/salvar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+        .then(r=>r.json()).then(res=>{
+          if(res.success){ showSuccess(); }
+          else{ alert(res.message||'Erro ao salvar'); }
+        })
+        .catch(err=>alert('Erro na comunicação: '+err));
+>>>>>>> 14ae1ac (feat: campo Suporte + tela de sucesso)
     });
 
     // ---------- Limpar ----------
