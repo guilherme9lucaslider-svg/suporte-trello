@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Painel de Chamados</title>
+<style>
+  :root{--ink:#132222;--muted:#5d6a6a;--stroke:#e6ecea;--bg:#f7f9f8;--primary:#006056}
+  *{box-sizing:border-box}
+  body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;background:var(--bg);color:var(--ink)}
+  .wrap{max-width:1100px;margin:0 auto;padding:22px}
+  h1{font-size:22px;margin:6px 0 14px;color:var(--primary);display:flex;align-items:center;gap:8px}
+  .filters{
+    display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr 1fr;
+    gap:10px;background:#fff;padding:12px;border:1px solid var(--stroke);
+    border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.04);
+  }
+  .filters label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600;letter-spacing:.2px}
+  .input, .select{
+    width:100%;padding:10px 12px;border:1px solid var(--stroke);border-radius:10px;
+    background:#fbfdfa;font-size:14px;outline:none;transition:.15s ease;
+  }
+  .input:focus, .select:focus{border-color:#66a39c;box-shadow:0 0 0 4px rgba(0,96,86,.12);background:#fff}
+  .actions{display:flex;gap:8px;margin-top:10px}
+  .btn{border:1px solid var(--stroke);background:#fff;border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:700}
+  .btn--primary{background:linear-gradient(180deg, var(--primary), #004e47);color:#fff;border-color:#004e47}
+  .count{font-size:13px;color:var(--muted);margin-top:8px}
+
+  table{width:100%;border-collapse:collapse;background:#fff;margin-top:12px;border:1px solid var(--stroke);border-radius:12px;overflow:hidden}
+  th,td{padding:12px;border-bottom:1px solid var(--stroke);font-size:14px;vertical-align:top}
+  th{background:#f1f5f4;text-align:left;font-weight:700;color:#0f1a1a}
+  tr:hover td{background:#fbfdfa}
+  .status{display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid var(--stroke);font-size:12px}
+  .s-open{background:#fff7ed}
+  .s-analise{background:#fff1f2}
+  .s-versao{background:#fefce8}
+  .s-req{background:#eff6ff}
+  .s-ok{background:#ecfdf5}
+  .s-drop{background:#f8fafc}
+  .muted{color:var(--muted);font-size:12px}
+  .empty{padding:20px;text-align:center;color:var(--muted)}
+
+  .alert{
+    margin-top:12px;padding:12px;border:1px solid #ffd7d7;background:#fff6f6;color:#6b1a1a;border-radius:10px;font-size:14px;
+  }
+
+  @media (max-width: 980px){ .filters{grid-template-columns:1fr 1fr 1fr} }
+  @media (max-width: 680px){ .filters{grid-template-columns:1fr 1fr} }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>📁 Painel de Chamados</h1>
+
+    <div class="filters">
+      <div>
+        <label>Representante</label>
+        <select id="fRep" class="select">
+          <option value="">Todos</option>
+          <!-- opções serão preenchidas por JS para evitar divergência de acentuação -->
+        </select>
+      </div>
+      <div>
+        <label>Status</label>
+        <select id="fStatus" class="select">
+          <option value="">Todos</option>
+          <option value="Em aberto">Em aberto</option>
+          <option value="Em análise">Em análise</option>
+          <option value="Aguardando versão">Aguardando versão</option>
+          <option value="Aguardando Requisição">Aguardando Requisição</option>
+          <option value="Finalizado">Finalizado</option>
+          <option value="Descartado">Descartado</option>
+        </select>
+      </div>
+      <div>
+        <label>De (Última atividade)</label>
+        <input id="fDe" type="date" class="input">
+      </div>
+      <div>
+        <label>Até (Última atividade)</label>
+        <input id="fAte" type="date" class="input">
+      </div>
+      <div>
+        <label>Busca</label>
+        <input id="fQ" class="input" placeholder="título/descrição">
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn--primary" id="btnAplicar">Aplicar filtros</button>
+      <button class="btn" id="btnLimpar">Limpar</button>
+    </div>
+
+    <div class="count" id="countBox"></div>
+    <div id="alertBox" class="alert" style="display:none"></div>
+
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th>Título</th>
+          <th>Representante</th>
+          <th>Status</th>
+          <th>Última atividade</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td class="empty" colspan="5">Carregando…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+<script>
+(function(){
+  var tbody = document.getElementById('tbody');
+  var countBox = document.getElementById('countBox');
+  var alertBox = document.getElementById('alertBox');
+  var repSelect = document.getElementById('fRep');
+
+  // As MESMAS opções do formulário (mantém uma única fonte de verdade aqui)
+  var REPRESENTANTES = [
+    "Host.com","2RTI Soluções","MT Solutions","Unai System","Multitech",
+    "Mad Automação","Tecnuve Soluções","GoSystem Automação","RJ Soluções",
+    "Raizes Tecnologia","Webside Sistemas","Web System Norte","Online Soluções",
+    "Delane","Supriserv","MS Tech Soluções","Use Tecnologia","Unity Automação",
+    "Digital RF Tecnologia","Connecta Informática","R.A Soluções"
+  ].sort(function(a,b){ return a.localeCompare(b,'pt-BR'); });
+
+  // Preenche o select
+  REPRESENTANTES.forEach(function(r){
+    var o = document.createElement('option');
+    o.value = r; o.textContent = r;
+    repSelect.appendChild(o);
+  });
+
+  function escapeHtml(s){
+    return String(s||"").replace(/[&<>"']/g,function(m){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m];
+    });
+  }
+  function fmtDate(iso){
+    if(!iso) return '-';
+    try{ return new Date(iso).toLocaleString(); }catch(e){ return iso; }
+  }
+  function statusClass(s){
+    var x = (s||'').toLowerCase();
+    if(x === 'em aberto') return 'status s-open';
+    if(x === 'em análise') return 'status s-analise';
+    if(x === 'aguardando versão') return 'status s-versao';
+    if(x === 'aguardando requisição') return 'status s-req';
+    if(x === 'finalizado') return 'status s-ok';
+    if(x === 'descartado') return 'status s-drop';
+    return 'status';
+  }
+  function render(items){
+    tbody.innerHTML = '';
+    if(!items.length){
+      tbody.innerHTML = '<tr><td class="empty" colspan="5">Nenhum chamado encontrado.</td></tr>';
+      return;
+    }
+    items.forEach(function(it){
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td><div>'+escapeHtml(it.titulo)+'</div>' +
+        '<div class="muted">'+(it.descricao ? escapeHtml(it.descricao).slice(0,120)+'…' : '')+'</div></td>'+
+        '<td>'+escapeHtml(it.representante || '-')+'</td>'+
+        '<td><span class="'+statusClass(it.status)+'">'+escapeHtml(it.status || '-')+'</span><div class="muted">'+escapeHtml(it.lista||'')+'</div></td>'+
+        '<td>'+fmtDate(it.ultima_atividade)+'</td>'+
+        '<td>'+(it.url ? '<a href="'+it.url+'" target="_blank" rel="noopener">Abrir no Trello</a>' : '-')+'</td>';
+      tbody.appendChild(tr);
+    });
+  }
+
+  function buildQuery(){
+    var qs = [];
+    var rep = repSelect.value.trim();
+    var st  = document.getElementById('fStatus').value.trim();
+    var de  = document.getElementById('fDe').value;
+    var ate = document.getElementById('fAte').value;
+    var q   = document.getElementById('fQ').value.trim();
+    if(rep) qs.push('representante='+encodeURIComponent(rep));
+    if(st)  qs.push('status='+encodeURIComponent(st));
+    if(de)  qs.push('de='+encodeURIComponent(de));
+    if(ate) qs.push('ate='+encodeURIComponent(ate));
+    if(q)   qs.push('q='+encodeURIComponent(q));
+    return qs.length ? ('?'+qs.join('&')) : '';
+  }
+
+  function showError(msg){
+    alertBox.style.display = 'block';
+    alertBox.textContent = msg;
+  }
+  function clearError(){
+    alertBox.style.display = 'none';
+    alertBox.textContent = '';
+  }
+
+  function load(){
+    clearError();
+    tbody.innerHTML = '<tr><td class="empty" colspan="5">Carregando…</td></tr>';
+    fetch('/api/chamados'+buildQuery())
+      .then(async function(r){
+        const ct = r.headers.get('content-type') || '';
+        const text = await r.text();
+        if (!ct.includes('application/json')) {
+          // backend retornou HTML (ex.: erro 500) -> evita "Unexpected token '<'"
+          throw new Error(text.slice(0, 300));
+        }
+        return JSON.parse(text);
+      })
+      .then(function(j){
+        countBox.textContent = (j.total||0) + ' chamado(s) encontrado(s).';
+        render(j.items||[]);
+      })
+      .catch(function(err){
+        showError('Falha ao carregar /api/chamados. Verifique logs do servidor e variáveis do Trello. Detalhe: ' + String(err));
+        tbody.innerHTML = '<tr><td class="empty" colspan="5">Erro ao carregar.</td></tr>';
+      });
+  }
+
+  document.getElementById('btnAplicar').addEventListener('click', load);
+  document.getElementById('btnLimpar').addEventListener('click', function(){
+    repSelect.value='';
+    document.getElementById('fStatus').value='';
+    document.getElementById('fDe').value='';
+    document.getElementById('fAte').value='';
+    document.getElementById('fQ').value='';
+    load();
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>
