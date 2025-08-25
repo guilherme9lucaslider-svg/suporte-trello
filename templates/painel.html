@@ -374,82 +374,196 @@
         <div class="count" id="countBox"></div>
 
         <div class="table-wrap">
-            <table id="tbl">
-                <thead>
-                    <tr>
-                        <th>Título</th>
-                        <th>Representante</th>
-                        <th>Status</th>
-                        <th>Última atividade</th>
-                        <th>Descrição</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="tbody">
-                    <tr>
-                        <td class="empty" colspan="6">Carregando…</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div> <!-- Modal -->
-    <div class="modal" id="modalDesc" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-        <div class="modal__box">
-            <h3 class="modal__title" id="modalTitle">Descrição do chamado</h3>
-            <div class="modal__body" id="modalBody"></div>
-            <div class="modal__actions"> <button class="btn" id="btnFecharModal">Fechar</button> </div>
-        </div>
+      <table id="tbl">
+        <thead>
+          <tr>
+            <th>Título</th>
+            <th>Representante</th>
+            <th>Status</th>
+            <th>Última atividade</th>
+            <th>Descrição</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td class="empty" colspan="6">Carregando…</td></tr>
+        </tbody>
+      </table>
     </div>
-    <script>
-        (function() {
-                const tbody = document.getElementById('tbody');
-                const countBox = document.getElementById('countBox');
-                const repSelect = document.getElementById('fRep');
-                const statusSelect = document.getElementById('fStatus');
-                const deInput = document.getElementById('fDe');
-                const ateInput = document.getElementById('fAte');
-                const qInput = document.getElementById('fQ');
-                const btnRealtime = document.getElementById('btnRealtime'); /* mesmas opções do formulário */
-                const REPRESENTANTES = ["Host.com", "2RTI Soluções", "MT Solutions", "Unai System", "Multitech", "Mad Automação", "Tecnuve Soluções", "GoSystem Automação", "RJ Soluções", "Raizes Tecnologia", "Webside Sistemas", "Web System Norte", "Online Soluções", "Delane", "Supriserv", "MS Tech Soluções", "Use Tecnologia", "Unity Automação", "Digital RF Tecnologia", "Connecta Informática", "R.A Soluções"].sort((a, b) => a.localeCompare(b, 'pt-BR'));
-                REPRESENTANTES.forEach(r => {
-                    const o = document.createElement('option');
-                    o.value = r;
-                    o.textContent = r;
-                    repSelect.appendChild(o);
-                });
+  </div>
 
-                function escapeHtml(s) {
-                    return String(s || "").replace(/[&<>"']/g, m => ({
-                        '&': '&amp;',
-                        '<': '&lt;',
-                        '>': '&gt;',
-                        '"': '&quot;',
-                        "'": '&#39;'
-                    })[m]);
-                }
+  <!-- Modal -->
+  <div class="modal" id="modalDesc" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal__box">
+      <h3 class="modal__title" id="modalTitle">Descrição do chamado</h3>
+      <div class="modal__body" id="modalBody"></div>
+      <div class="modal__actions">
+        <button class="btn" id="btnFecharModal">Fechar</button>
+      </div>
+    </div>
+  </div>
 
-                function fmtDate(iso) {
-                    if (!iso) return '-';
-                    try {
-                        const d = new Date(iso);
-                        return d.toLocaleDateString() + ' ' + d.toLocaleTimeString();
-                    } catch (e) {
-                        return iso;
-                    }
-                }
+<script>
+(function(){
+  const tbody = document.getElementById('tbody');
+  const countBox = document.getElementById('countBox');
+  const repSelect = document.getElementById('fRep');
+  const statusSelect = document.getElementById('fStatus');
+  const deInput = document.getElementById('fDe');
+  const ateInput = document.getElementById('fAte');
+  const qInput = document.getElementById('fQ');
+  const btnRealtime = document.getElementById('btnRealtime');
 
-                function statusClass(s) {
-                    const x = (s || '').toLowerCase();
-                    if (x === 'em aberto') return 'status s-open';
-                    if (x === 'em análise') return 'status s-analise';
-                    if (x === 'aguardando versão') return 'status s-versao';
-                    if (x === 'aguardando requisição') return 'status s-req';
-                    if (x === 'finalizado') return 'status s-ok';
-                    if (x === 'descartado') return 'status s-drop';
-                    return 'status';
-                }
-                let cache = []; // últimos itens renderizados function render(items){ tbody.innerHTML=''; if(!items.length){ tbody.innerHTML='<tr><td class="empty" colspan="6">Nenhum chamado encontrado.</td></tr>'; return; } cache = items; items.forEach((it,i)=>{ const tr=document.createElement('tr'); tr.innerHTML = '<td class="title" title="'+escapeHtml(it.titulo)+'">'+escapeHtml(it.titulo)+'</td>'+ '<td>'+escapeHtml(it.representante||'-')+'</td>'+ '<td><span class="'+statusClass(it.status)+'">'+escapeHtml(it.status||'-')+'</span></td>'+ '<td class="date">'+fmtDate(it.ultima_atividade)+'</td>'+ '<td class="desc-cell"><button class="pill-btn" data-i="'+i+'" data-action="ver">Ver</button></td>'+ '<td class="actions-cell">'+(it.url?'<a class="pill-btn pill-btn--accent" href="'+it.url+'" target="_blank" rel="noopener">Abrir no Trello</a>':'-')+'</td>'; tbody.appendChild(tr); }); } function buildQuery(){ const qs = []; const rep = repSelect.value.trim(); const st = statusSelect.value.trim(); const de = deInput.value; const ate = ateInput.value; const q = qInput.value.trim(); if(rep) qs.push('representante='+encodeURIComponent(rep)); if(st) qs.push('status='+encodeURIComponent(st)); if(de) qs.push('de='+encodeURIComponent(de)); if(ate) qs.push('ate='+encodeURIComponent(ate)); if(q) qs.push('q='+encodeURIComponent(q)); return qs.length ? ('?'+qs.join('&')) : ''; } function showLoading(){ tbody.innerHTML='<tr><td class="empty" colspan="6">Carregando…</td></tr>'; } function load(){ showLoading(); fetch('/api/chamados'+buildQuery()) .then(async r=>{ const ct=r.headers.get('content-type')||''; const t=await r.text(); if(!ct.includes('application/json')) throw new Error(t.slice(0,300)); return JSON.parse(t); }) .then(j=>{ render(j.items||[]); countBox.textContent = (j.total ?? (j.items||[]).length)+' chamado(s) encontrado(s).'; }) .catch(err=>{ console.error(err); countBox.textContent=''; tbody.innerHTML='<tr><td class="empty" colspan="6">Erro ao carregar. Verifique o servidor.</td></tr>'; }); } // Aplicar document.getElementById('btnAplicar').addEventListener('click', ()=>{ stopRealtime(); load(); }); // Limpar: confirma, limpa filtros e resultados document.getElementById('btnLimpar').addEventListener('click', ()=>{ if(!confirm('Deseja limpar filtros e resultados?')) return; stopRealtime(); repSelect.value=''; statusSelect.value=''; deInput.value=''; ateInput.value=''; qInput.value=''; cache = []; countBox.textContent=''; tbody.innerHTML='<tr><td class="empty" colspan="6">Sem resultados. Aplique filtros ou ative “Chamados em aberto (tempo real)”.</td></tr>'; }); // Tempo real (toggle) let realtimeTimer = null; function startRealtime(){ btnRealtime.classList.add('is-on'); statusSelect.value='Em aberto'; deInput.value=''; ateInput.value=''; qInput.value=''; load(); realtimeTimer = setInterval(load, 6000); // 6s } function stopRealtime(){ btnRealtime.classList.remove('is-on'); if(realtimeTimer){ clearInterval(realtimeTimer); realtimeTimer=null; } } btnRealtime.addEventListener('click', ()=>{ if(realtimeTimer){ stopRealtime(); } else{ startRealtime(); } }); // Modal const modal=document.getElementById('modalDesc'); const modalBody=document.getElementById('modalBody'); const btnClose=document.getElementById('btnFecharModal'); function openModal(text){ modalBody.textContent = text || '—'; modal.style.display='flex'; } function closeModal(){ modal.style.display='none'; } btnClose.addEventListener('click', closeModal); modal.addEventListener('click', e=>{ if(e.target===modal) closeModal(); }); document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); }); // Delegação para "Ver" tbody.addEventListener('click', (e)=>{ const btn = e.target.closest('button[data-action="ver"]'); if(!btn) return; const i = Number(btn.getAttribute('data-i')); const item = cache[i] || {}; openModal(item.descricao || ''); }); // inicial load(); })(); 
-    </script>
+  /* mesmas opções do formulário */
+  const REPRESENTANTES = [
+    "Host.com","2RTI Soluções","MT Solutions","Unai System","Multitech",
+    "Mad Automação","Tecnuve Soluções","GoSystem Automação","RJ Soluções",
+    "Raizes Tecnologia","Webside Sistemas","Web System Norte","Online Soluções",
+    "Delane","Supriserv","MS Tech Soluções","Use Tecnologia","Unity Automação",
+    "Digital RF Tecnologia","Connecta Informática","R.A Soluções"
+  ].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  REPRESENTANTES.forEach(r=>{
+    const o=document.createElement('option'); o.value=r; o.textContent=r; repSelect.appendChild(o);
+  });
+
+  function escapeHtml(s){
+    return String(s||"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
+  }
+  function fmtDate(iso){
+    if(!iso) return '-';
+    try{ const d=new Date(iso); return d.toLocaleDateString()+' '+d.toLocaleTimeString(); }catch(e){ return iso; }
+  }
+  function statusClass(s){
+    const x=(s||'').toLowerCase();
+    if(x==='em aberto') return 'status s-open';
+    if(x==='em análise') return 'status s-analise';
+    if(x==='aguardando versão') return 'status s-versao';
+    if(x==='aguardando requisição') return 'status s-req';
+    if(x==='finalizado') return 'status s-ok';
+    if(x==='descartado') return 'status s-drop';
+    return 'status';
+  }
+
+  let cache = []; // últimos itens renderizados
+  function render(items){
+    tbody.innerHTML='';
+    if(!items.length){
+      tbody.innerHTML='<tr><td class="empty" colspan="6">Nenhum chamado encontrado.</td></tr>';
+      return;
+    }
+    cache = items;
+    items.forEach((it,i)=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML =
+        '<td class="title" title="'+escapeHtml(it.titulo)+'">'+escapeHtml(it.titulo)+'</td>'+
+        '<td>'+escapeHtml(it.representante||'-')+'</td>'+
+        '<td><span class="'+statusClass(it.status)+'">'+escapeHtml(it.status||'-')+'</span></td>'+
+        '<td class="date">'+fmtDate(it.ultima_atividade)+'</td>'+
+        '<td class="desc-cell"><button class="pill-btn" data-i="'+i+'" data-action="ver">Ver</button></td>'+
+        '<td class="actions-cell">'+(it.url?'<a class="pill-btn pill-btn--accent" href="'+it.url+'" target="_blank" rel="noopener">Abrir no Trello</a>':'-')+'</td>';
+      tbody.appendChild(tr);
+    });
+  }
+
+  function buildQuery(){
+    const qs = [];
+    const rep = repSelect.value.trim();
+    const st  = statusSelect.value.trim();
+    const de  = deInput.value;
+    const ate = ateInput.value;
+    const q   = qInput.value.trim();
+    if(rep) qs.push('representante='+encodeURIComponent(rep));
+    if(st)  qs.push('status='+encodeURIComponent(st));
+    if(de)  qs.push('de='+encodeURIComponent(de));
+    if(ate) qs.push('ate='+encodeURIComponent(ate));
+    if(q)   qs.push('q='+encodeURIComponent(q));
+    return qs.length ? ('?'+qs.join('&')) : '';
+  }
+
+  function showLoading(){
+    tbody.innerHTML='<tr><td class="empty" colspan="6">Carregando…</td></tr>';
+  }
+
+  function load(){
+    showLoading();
+    fetch('/api/chamados'+buildQuery())
+      .then(async r=>{
+        const ct=r.headers.get('content-type')||'';
+        const t=await r.text();
+        if(!ct.includes('application/json')) throw new Error(t.slice(0,300));
+        return JSON.parse(t);
+      })
+      .then(j=>{
+        render(j.items||[]);
+        countBox.textContent = (j.total ?? (j.items||[]).length)+' chamado(s) encontrado(s).';
+      })
+      .catch(err=>{
+        console.error(err);
+        countBox.textContent='';
+        tbody.innerHTML='<tr><td class="empty" colspan="6">Erro ao carregar. Verifique o servidor.</td></tr>';
+      });
+  }
+
+  // Aplicar
+  document.getElementById('btnAplicar').addEventListener('click', ()=>{
+    stopRealtime();
+    load();
+  });
+
+  // Limpar: confirma, limpa filtros e resultados
+  document.getElementById('btnLimpar').addEventListener('click', ()=>{
+    if(!confirm('Deseja limpar filtros e resultados?')) return;
+    stopRealtime();
+    repSelect.value='';
+    statusSelect.value='';
+    deInput.value='';
+    ateInput.value='';
+    qInput.value='';
+    cache = [];
+    countBox.textContent='';
+    tbody.innerHTML='<tr><td class="empty" colspan="6">Sem resultados. Aplique filtros ou ative “Chamados em aberto (tempo real)”.</td></tr>';
+  });
+
+  // Tempo real (toggle)
+  let realtimeTimer = null;
+  function startRealtime(){
+    btnRealtime.classList.add('is-on');
+    statusSelect.value='Em aberto';
+    deInput.value=''; ateInput.value=''; qInput.value='';
+    load();
+    realtimeTimer = setInterval(load, 6000); // 6s
+  }
+  function stopRealtime(){
+    btnRealtime.classList.remove('is-on');
+    if(realtimeTimer){ clearInterval(realtimeTimer); realtimeTimer=null; }
+  }
+  btnRealtime.addEventListener('click', ()=>{
+    if(realtimeTimer){ stopRealtime(); }
+    else{ startRealtime(); }
+  });
+
+  // Modal
+  const modal=document.getElementById('modalDesc');
+  const modalBody=document.getElementById('modalBody');
+  const btnClose=document.getElementById('btnFecharModal');
+  function openModal(text){ modalBody.textContent = text || '—'; modal.style.display='flex'; }
+  function closeModal(){ modal.style.display='none'; }
+  btnClose.addEventListener('click', closeModal);
+  modal.addEventListener('click', e=>{ if(e.target===modal) closeModal(); });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
+
+  // Delegação para "Ver"
+  tbody.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-action="ver"]');
+    if(!btn) return;
+    const i = Number(btn.getAttribute('data-i'));
+    const item = cache[i] || {};
+    openModal(item.descricao || '');
+  });
+
+  // inicial
+  load();
+})();
+</script>
 </body>
-
 </html>
