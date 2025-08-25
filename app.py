@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory, abort, make_response
-import requests, os, json, hashlib
+import requests, os, json, hashlib, sys
 from pathlib import Path
 from werkzeug.utils import secure_filename
 
@@ -18,8 +18,11 @@ BASE_DIR = Path(__file__).resolve().parent
 DOWNLOADS_DIR = BASE_DIR / "downloads"
 MANIFEST = DOWNLOADS_DIR / "latest.json"
 
-# Mostrar botão de download só na web (defina HIDE_DOWNLOAD_BUTTON=1 p/ esconder)
+# Mostrar botão de download só na web
 HIDE_DOWNLOAD_BUTTON = (os.getenv("HIDE_DOWNLOAD_BUTTON", "0") == "1")
+
+# Detecta app desktop (PyInstaller) ou variável de ambiente forçada
+IS_DESKTOP = bool(getattr(sys, "frozen", False)) or os.getenv("APP_DESKTOP") == "1"
 
 ALLOWED_EXT = {"png","jpg","jpeg","gif","webp","pdf","txt","csv","xlsx","xls","doc","docx","zip","rar","7z"}
 
@@ -57,10 +60,7 @@ def trello_attach_file(card_id: str, filename: str, fileobj, mimetype: str = Non
         print("[TRELLO][ATTACH] Falha:", r.status_code, r.text[:300])
 
 def trello_clear_cover(card_id: str):
-    """
-    Remove qualquer capa do card (mesmo após anexos).
-    Usa o endpoint dedicado de cover.
-    """
+    """Remove qualquer capa do card após anexos."""
     try:
         url = f"{TRELLO_BASE}/cards/{card_id}/cover"
         r = requests.put(
@@ -92,9 +92,17 @@ def get_board_refs():
 
 LIST_ID, LABEL_IDS = get_board_refs()
 
+@app.context_processor
+def inject_flags():
+    # Disponibiliza no template, caso precise em outros pontos
+    return {"is_desktop": IS_DESKTOP}
+
 @app.route("/")
 def index():
-    show_download = not HIDE_DOWNLOAD_BUTTON
+    # Botão aparece somente se:
+    # - não estamos no desktop
+    # - e não foi forçado esconder via HIDE_DOWNLOAD_BUTTON
+    show_download = (not IS_DESKTOP) and (not HIDE_DOWNLOAD_BUTTON)
     return render_template("index.html", show_download=show_download)
 
 @app.route("/salvar", methods=["POST"])
@@ -147,7 +155,7 @@ def salvar():
                     continue
                 trello_attach_file(card_id, secure_filename(f.filename), f.stream, f.mimetype)
 
-        # Garante que o card fique SEM capa (mesmo após anexos)
+        # Garante que o card fique SEM capa
         trello_clear_cover(card_id)
 
         return jsonify(success=True, message="Chamado criado com sucesso no Trello!")
@@ -195,7 +203,7 @@ def baixar():
         conditional=True
     ))
     resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-    resp.headers["Pragma"] = "no-cache"   # <-- corrigido: removido ']' extra
+    resp.headers["Pragma"] = "no-cache"
     resp.headers["Expires"] = "0"
     resp.headers["X-Content-Type-Options"] = "nosniff"
     return resp
