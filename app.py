@@ -25,9 +25,6 @@ DOWNLOADS_DIR = BASE_DIR / "downloads"
 MANIFEST = DOWNLOADS_DIR / "latest.json"
 # ==================================================
 
-# Mostra/oculta botão de download no HTML
-HIDE_DOWNLOAD_BUTTON = (os.getenv("HIDE_DOWNLOAD_BUTTON", "0") == "1")
-
 # ====== Extensões permitidas para anexos ======
 ALLOWED_EXT = {
     "png","jpg","jpeg","gif","webp",      # imagens
@@ -104,16 +101,17 @@ LIST_ID, LABEL_IDS = get_board_refs()
 
 @app.route("/")
 def index():
-    return render_template("index.html", hide_download_button=HIDE_DOWNLOAD_BUTTON)
+    # Só mostra botão de download se não for localhost (ou 127.0.0.1)
+    is_web = not (request.host.startswith("localhost") or request.host.startswith("127.0.0.1"))
+    return render_template("index.html", show_download=is_web)
 
 
 @app.route("/salvar", methods=["POST"])
 def salvar():
     """
-    Recebe dados via multipart/form-data (FormData do front) e envia ao Trello.
-    Também anexa arquivos (campo 'anexos').
+    Recebe dados via multipart/form-data (FormData do front) ou JSON.
+    Cria o card no Trello e anexa arquivos (campo 'anexos').
     """
-    # Suporta tanto multipart/form quanto JSON (fallback)
     data = request.form if request.form else (request.json or {})
 
     nome          = (data.get("nome") or "").strip()
@@ -145,11 +143,7 @@ def salvar():
         f"**Observação:**\n{observacao or '-'}\n"
     )
 
-    params = {
-        "idList": LIST_ID,
-        "name": titulo,
-        "desc": desc,
-    }
+    params = {"idList": LIST_ID, "name": titulo, "desc": desc}
 
     # Aplica label de prioridade, se existir no board
     label_id = LABEL_IDS.get(prioridade)
