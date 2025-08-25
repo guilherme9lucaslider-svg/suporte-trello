@@ -254,6 +254,19 @@
   document.getElementById('successView').style.display = 'none';
 
   document.addEventListener('DOMContentLoaded', function () {
+    // ======== Esconde "Baixar aplicativo" se detectar app desktop (sem optional chaining) ========
+    (function hideDownloadOnDesktopApp(){
+      var el = document.getElementById('downloadWrap');
+      if(!el) return;
+      var ua = navigator.userAgent || "";
+      var isPyWebview = (typeof window.pywebview !== 'undefined') || /PyWebView/i.test(ua);
+      var isElectron  = /Electron/i.test(ua) || (window && window.process && window.process.versions && window.process.versions.electron);
+      var isTauri     = /Tauri/i.test(ua) || (typeof window.__TAURI__ !== 'undefined');
+      if (isPyWebview || isElectron || isTauri) {
+        el.style.display = 'none';
+      }
+    })();
+
     // ---------- Dados ----------
     const representantes = [
       "Host.com","2RTI Soluções","MT Solutions","Unai System","Multitech",
@@ -322,13 +335,13 @@
     // ---------- Overlay & blur ----------
     function showLoading(){
       document.body.classList.add('is-loading');
-      btnSalvar?.setAttribute('disabled','true');
-      btnLimpar?.setAttribute('disabled','true');
+      if (btnSalvar) btnSalvar.setAttribute('disabled','true');
+      if (btnLimpar) btnLimpar.setAttribute('disabled','true');
     }
     function hideLoading(){
       document.body.classList.remove('is-loading');
-      btnSalvar?.removeAttribute('disabled');
-      btnLimpar?.removeAttribute('disabled');
+      if (btnSalvar) btnSalvar.removeAttribute('disabled');
+      if (btnLimpar) btnLimpar.removeAttribute('disabled');
     }
 
     // ---------- ANEXOS ----------
@@ -375,9 +388,15 @@
     const clearInvalid = el => { el.classList.remove('invalid'); el.removeAttribute('aria-invalid'); };
     const markInvalid = (el, hintId) => {
       el.classList.add('invalid'); el.setAttribute('aria-invalid','true');
-      if(hintId){ document.getElementById(hintId)?.classList.add('show'); }
+      if(hintId){
+        var h = document.getElementById(hintId);
+        if (h) h.classList.add('show');
+      }
     };
-    const clearHint = hintId => document.getElementById(hintId)?.classList.remove('show');
+    const clearHint = hintId => {
+      var e = document.getElementById(hintId);
+      if (e) e.classList.remove('show');
+    };
     const cap = s => (s||"").toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
 
     ['nome','contato','suporte','descricao'].forEach(id=>{
@@ -396,59 +415,10 @@
     });
 
     // ---------- Popular selects ----------
-    const representantes = [
-      "Host.com","2RTI Soluções","MT Solutions","Unai System","Multitech",
-      "Mad Automação","Tecnuve Soluções","GoSystem Automação","RJ Soluções",
-      "Raizes Tecnologia","Webside Sistemas","Web System Norte","Online Soluções",
-      "Delane","Supriserv","MS Tech Soluções","Use Tecnologia","Unity Automação",
-      "Digital RF Tecnologia","Connecta Informática","R.A Soluções"
-    ].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-
     representantes.forEach(r=>{
       const o=document.createElement('option'); o.value=r; o.textContent=r;
       repSelect.appendChild(o);
     });
-    const data = {
-      "WebLider":{
-        "Cadastro":["Geral","Veículos","Outros"],
-        "Movimento":["Pedido","Orçamento","Ordem de Serviço","Outros"],
-        "Financeiro":["Movimentos","Contas a Receber","Contas a Pagar","Caixa","Comissão","Utilitários","Outros"],
-        "Documentos Fiscais":["Entrada","Saída (Emissão)","Arquivos","Estoque","Outros"],
-        "Relatório":["Pessoa","Conta","Financeiro","Produto","Veículo","Controle de Viagens","Relação de Documentos Fiscais","Pedido","Serviço","Restaurante","Consignação","Ordem de Serviço","Orçamento","Pedido de Compra","Outros"],
-        "Utilitários":["Configurações","Usuários","Exportação","Etiqueta","Auditoria","Integração","Outros"]
-      },
-      "Lider PDV":{
-        "NFC-e":["Emissão","Cancelamento","Contingência","Impressão"],
-        "Pedido":["Emissão","Cancelamento","Duplicidade","Impressão"],
-        "Restaurante":["Abertura/fechamento de mesa","Servidor de Impressão","Itens"],
-        "Delivery":["Cadastro de Cliente","Impressão","Integração"],
-        "Integração":["Integração Parada"],
-        "Financeiro":["Fechamento de Caixa","Espelho de Caixa","Despesa","Sangria","Suprimento"]
-      },
-      "Força de Vendas":{
-        "Venda":["Relatórios"],
-        "Pedidos":["Emissão","Cancelamento","Envio"],
-        "Clientes":["Cadastro","Edição","Pesquisa"],
-        "Produtos":["Consulta","Estoque"]
-      },
-      "Web Comandas":{
-        "Mesas":["Abertura de Mesa/Comanda","Itens","Finalização de Mesa","Impressão"]
-      },
-      "WebPay":{
-        "NFC-e":["Emissão","Cancelamento","Contingência","Impressão"],
-        "Pedido":["Emissão","Cancelamento","Impressão"],
-        "Clientes":["Consulta","Cadastro"],
-        "Financeiro":["Fechamento de Caixa","Espelho de Caixa","Despesa","Sangria","Suprimento"],
-        "Relatório":["Relatório de Vendas"]
-      },
-      "WebLider (Mobile)":{
-        "Pessoas":["Consulta"],
-        "Vendas":["Relatórios","Gráficos"],
-        "Contas a Pagar":["Títulos","Gráficos"],
-        "Contas a Receber":["Títulos","Gráficos"],
-        "Estatísticas":["Gráficos Estatísticos"]
-      }
-    };
     Object.keys(data).forEach(s=>{
       const o=document.createElement('option'); o.value=s; o.textContent=s;
       sistemaSelect.appendChild(o);
@@ -490,7 +460,8 @@
       if(!descricaoTxt.value.trim()){ markInvalid(descricaoTxt,'hint-descricao'); ok=false; }
       if(!prioridade){
         prioridadeGroup.classList.add('invalid');
-        document.getElementById('hint-prioridade').classList.add('show');
+        var hp = document.getElementById('hint-prioridade');
+        if (hp) hp.classList.add('show');
         ok=false;
       }
 
@@ -499,7 +470,7 @@
       return ok;
     }
 
-    // ---------- Salvar ----------
+    // ---------- Salvar (via FormData para suportar anexos) ----------
     btnSalvar.addEventListener('click', function (e) {
       e.preventDefault();
       if(!validar()) return;
@@ -519,6 +490,7 @@
       form.set('prioridade', prioridade);
       for (const f of cestaAnexos) form.append('anexos', f, f.name);
 
+      // mostra overlay apenas se demorar um pouco
       let loadingTimer = setTimeout(showLoading, 400);
 
       fetch('/salvar', { method: 'POST', body: form })
@@ -564,7 +536,8 @@
       document.getElementById('tipo').value='';
       descricaoTxt.value='';
       document.getElementById('observacao').value='';
-      document.getElementById('hint-prioridade').classList.remove('show');
+      var hp = document.getElementById('hint-prioridade');
+      if (hp) hp.classList.remove('show');
       prioridadeGroup.classList.remove('invalid');
       const checked=document.querySelector('input[name="prioridade"]:checked');
       if(checked) checked.checked=false;
@@ -582,5 +555,37 @@
     });
   });
   </script>
+
+  <!-- Esconder o botão de download quando rodar local (loopback/rede privada) -->
+  <script>
+  (function(){
+    var wrap = document.getElementById('downloadWrap');
+    if (!wrap) return;
+
+    var rawHost = (location.hostname || (location.host || '').split(':')[0] || '').trim().toLowerCase();
+    var isLoopback = (h) => (h === 'localhost' || h === '127.0.0.1' || h === '0.0.0.0' || h === '::1');
+    var parseIPv4 = (h) => {
+      var m = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+      if (!m) return null;
+      var nums = m.slice(1).map(function(n){ return parseInt(n,10); });
+      return nums.every(function(n){ return n>=0 && n<=255; }) ? nums : null;
+    };
+    var isPrivateIPv4 = (h) => {
+      var ip = parseIPv4(h);
+      if (!ip) return false;
+      var a=ip[0], b=ip[1];
+      if (a === 10) return true;
+      if (a === 172 && b >= 16 && b <= 31) return true;
+      if (a === 192 && b === 168) return true;
+      return false;
+    };
+
+    var runningLocally = isLoopback(rawHost) || isPrivateIPv4(rawHost);
+    if (runningLocally) {
+      wrap.style.display = 'none';
+    }
+  })();
+  </script>
+
 </body>
 </html>
