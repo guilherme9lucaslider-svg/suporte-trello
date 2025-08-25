@@ -6,10 +6,10 @@
   <title>Cadastro de Chamado</title>
 
   <!-- Favicons / PWA -->
-  <link rel="icon" type="image/png" sizes="32x32" href="/static/icon-192.png">
+  <link rel="icon" type="image/png" sizes="32x32"   href="/static/icon-192.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png">
-  <link rel="apple-touch-icon" sizes="192x192" href="/static/icon-192.png">
-  <link rel="apple-touch-icon" sizes="512x512" href="/static/icon-512.png">
+  <link rel="apple-touch-icon" sizes="192x192"      href="/static/icon-192.png">
+  <link rel="apple-touch-icon" sizes="512x512"      href="/static/icon-512.png">
   <link rel="manifest" href="/static/manifest.json">
   <meta name="theme-color" content="#006056" />
 
@@ -242,16 +242,300 @@
     </div>
   </div>
 
+  <!-- App JS -->
   <script>
-  // Garante modal oculto ao carregar
+  // Oculta a view de sucesso ao carregar
   document.getElementById('successView').style.display = 'none';
 
   document.addEventListener('DOMContentLoaded', function () {
-    /* (restante do seu JS original permanece igual) */
+    // ===== Dados (uma única fonte) =====
+    const REPRESENTANTES = [
+      "Host.com","2RTI Soluções","MT Solutions","Unai System","Multitech",
+      "Mad Automação","Tecnuve Soluções","GoSystem Automação","RJ Soluções",
+      "Raizes Tecnologia","Webside Sistemas","Web System Norte","Online Soluções",
+      "Delane","Supriserv","MS Tech Soluções","Use Tecnologia","Unity Automação",
+      "Digital RF Tecnologia","Connecta Informática","R.A Soluções"
+    ].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+
+    const DATA = {
+      "WebLider":{
+        "Cadastro":["Geral","Veículos","Outros"],
+        "Movimento":["Pedido","Orçamento","Ordem de Serviço","Outros"],
+        "Financeiro":["Movimentos","Contas a Receber","Contas a Pagar","Caixa","Comissão","Utilitários","Outros"],
+        "Documentos Fiscais":["Entrada","Saída (Emissão)","Arquivos","Estoque","Outros"],
+        "Relatório":["Pessoa","Conta","Financeiro","Produto","Veículo","Controle de Viagens","Relação de Documentos Fiscais","Pedido","Serviço","Restaurante","Consignação","Ordem de Serviço","Orçamento","Pedido de Compra","Outros"],
+        "Utilitários":["Configurações","Usuários","Exportação","Etiqueta","Auditoria","Integração","Outros"]
+      },
+      "Lider PDV":{
+        "NFC-e":["Emissão","Cancelamento","Contingência","Impressão"],
+        "Pedido":["Emissão","Cancelamento","Duplicidade","Impressão"],
+        "Restaurante":["Abertura/fechamento de mesa","Servidor de Impressão","Itens"],
+        "Delivery":["Cadastro de Cliente","Impressão","Integração"],
+        "Integração":["Integração Parada"],
+        "Financeiro":["Fechamento de Caixa","Espelho de Caixa","Despesa","Sangria","Suprimento"]
+      },
+      "Força de Vendas":{
+        "Venda":["Relatórios"],
+        "Pedidos":["Emissão","Cancelamento","Envio"],
+        "Clientes":["Cadastro","Edição","Pesquisa"],
+        "Produtos":["Consulta","Estoque"]
+      },
+      "Web Comandas":{
+        "Mesas":["Abertura de Mesa/Comanda","Itens","Finalização de Mesa","Impressão"]
+      },
+      "WebPay":{
+        "NFC-e":["Emissão","Cancelamento","Contingência","Impressão"],
+        "Pedido":["Emissão","Cancelamento","Impressão"],
+        "Clientes":["Consulta","Cadastro"],
+        "Financeiro":["Fechamento de Caixa","Espelho de Caixa","Despesa","Sangria","Suprimento"],
+        "Relatório":["Relatório de Vendas"]
+      },
+      "WebLider (Mobile)":{
+        "Pessoas":["Consulta"],
+        "Vendas":["Relatórios","Gráficos"],
+        "Contas a Pagar":["Títulos","Gráficos"],
+        "Contas a Receber":["Títulos","Gráficos"],
+        "Estatísticas":["Gráficos Estatísticos"]
+      }
+    };
+
+    // ===== Refs =====
+    const formView = document.getElementById('formView');
+    const successView = document.getElementById('successView');
+
+    const nomeInp   = document.getElementById('nome');
+    const contatoInp= document.getElementById('contato');
+    const repSelect = document.getElementById('representante');
+    const suporteInp= document.getElementById('suporte');
+    const sistemaSelect = document.getElementById('sistema');
+    const moduloSelect  = document.getElementById('modulo');
+    const ocorrenciaSelect = document.getElementById('ocorrencia');
+    const tipoSelect  = document.getElementById('tipo');
+    const descricaoTxt= document.getElementById('descricao');
+    const obsTxt      = document.getElementById('observacao');
+    const prioridadeGroup = document.getElementById('prioridadeGroup');
+
+    const btnSalvar = document.getElementById('btnSalvar');
+    const btnLimpar = document.getElementById('btnLimpar');
+
+    // ===== Overlay =====
+    function showLoading(){
+      document.body.classList.add('is-loading');
+      btnSalvar?.setAttribute('disabled','true');
+      btnLimpar?.setAttribute('disabled','true');
+    }
+    function hideLoading(){
+      document.body.classList.remove('is-loading');
+      btnSalvar?.removeAttribute('disabled');
+      btnLimpar?.removeAttribute('disabled');
+    }
+
+    // ===== Anexos =====
+    const inputAnexos = document.getElementById('anexos');
+    const btnSelecionarArquivos = document.getElementById('btnSelecionarArquivos');
+    const listaAnexosEl = document.getElementById('listaAnexos');
+    /** @type {File[]} */
+    let cestaAnexos = [];
+    const renderAnexos = () => {
+      listaAnexosEl.innerHTML = '';
+      if (!cestaAnexos.length) return;
+      const wrap = document.createElement('div');
+      wrap.style.display='flex';
+      wrap.style.flexWrap='wrap';
+      wrap.style.gap='8px';
+      cestaAnexos.forEach((file, idx) => {
+        const pill = document.createElement('span');
+        pill.className = 'pill';
+        const sizeKB = Math.round(file.size/1024);
+        pill.innerHTML = `
+          <span title="${file.name}">${file.name}</span>
+          <small style="color:#6b7a7a">${sizeKB} KB</small>
+          <button type="button" data-i="${idx}" aria-label="Remover anexo">remover</button>
+        `;
+        wrap.appendChild(pill);
+      });
+      listaAnexosEl.appendChild(wrap);
+    };
+    btnSelecionarArquivos.addEventListener('click', ()=> inputAnexos.click());
+    inputAnexos.addEventListener('change', ()=>{
+      for (const f of inputAnexos.files) cestaAnexos.push(f);
+      inputAnexos.value = ''; // permite reescolher o mesmo arquivo
+      renderAnexos();
+    });
+    listaAnexosEl.addEventListener('click', (e)=>{
+      const btn = e.target.closest('button[data-i]');
+      if (!btn) return;
+      const i = Number(btn.getAttribute('data-i'));
+      cestaAnexos.splice(i,1);
+      renderAnexos();
+    });
+
+    // ===== Helpers de validação =====
+    const clearInvalid = el => { el.classList.remove('invalid'); el.removeAttribute('aria-invalid'); };
+    const markInvalid = (el, hintId) => {
+      el.classList.add('invalid'); el.setAttribute('aria-invalid','true');
+      if(hintId){ document.getElementById(hintId)?.classList.add('show'); }
+    };
+    const clearHint = hintId => document.getElementById(hintId)?.classList.remove('show');
+    const cap = s => (s||"").toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+
+    ['nome','contato','suporte','descricao'].forEach(id=>{
+      const el=document.getElementById(id);
+      el.addEventListener('input', ()=>{ clearInvalid(el); clearHint('hint-'+id); });
+      if(id==='nome' || id==='suporte'){ el.addEventListener('blur', ()=> el.value = cap(el.value)); }
+    });
+    [repSelect, sistemaSelect, moduloSelect, ocorrenciaSelect, tipoSelect].forEach(el=>{
+      el.addEventListener('change', ()=>{ clearInvalid(el); clearHint('hint-'+el.id); });
+    });
+    document.querySelectorAll('input[name="prioridade"]').forEach(r=>{
+      r.addEventListener('change', ()=>{
+        prioridadeGroup.classList.remove('invalid');
+        clearHint('hint-prioridade');
+      });
+    });
+
+    // ===== Popular selects =====
+    function resetSelect(el, placeholder){
+      el.innerHTML = '';
+      const opt = document.createElement('option');
+      opt.value=''; opt.textContent=placeholder; opt.disabled=true; opt.selected=true;
+      el.appendChild(opt);
+    }
+
+    // Representantes
+    resetSelect(repSelect,'Selecione o representante');
+    REPRESENTANTES.forEach(r=>{
+      const o=document.createElement('option'); o.value=r; o.textContent=r;
+      repSelect.appendChild(o);
+    });
+
+    // Sistemas
+    resetSelect(sistemaSelect,'Selecione o sistema');
+    Object.keys(DATA).forEach(s=>{
+      const o=document.createElement('option'); o.value=s; o.textContent=s;
+      sistemaSelect.appendChild(o);
+    });
+
+    sistemaSelect.addEventListener('change', ()=>{
+      resetSelect(moduloSelect,'Selecione o módulo');
+      resetSelect(ocorrenciaSelect,'Selecione a ocorrência');
+      (Object.keys(DATA[sistemaSelect.value]||{})).forEach(m=>{
+        const o=document.createElement('option'); o.value=m; o.textContent=m;
+        moduloSelect.appendChild(o);
+      });
+    });
+
+    moduloSelect.addEventListener('change', ()=>{
+      resetSelect(ocorrenciaSelect,'Selecione a ocorrência');
+      ((DATA[sistemaSelect.value]||{})[moduloSelect.value]||[]).forEach(oc=>{
+        const o=document.createElement('option'); o.value=oc; o.textContent=oc;
+        ocorrenciaSelect.appendChild(o);
+      });
+    });
+
+    // ===== Validação =====
+    function validar(){
+      let ok = true;
+      const prioridade=(document.querySelector('input[name="prioridade"]:checked')||{}).value;
+
+      ['nome','contato','representante','suporte','sistema','modulo','ocorrencia','tipo','descricao','prioridade']
+        .forEach(h=>clearHint('hint-'+h));
+
+      if(!nomeInp.value.trim()){ markInvalid(nomeInp,'hint-nome'); ok=false; }
+      if(!contatoInp.value.trim()){ markInvalid(contatoInp,'hint-contato'); ok=false; }
+      if(!repSelect.value){ markInvalid(repSelect,'hint-representante'); ok=false; }
+      if(!suporteInp.value.trim()){ markInvalid(suporteInp,'hint-suporte'); ok=false; }
+      if(!sistemaSelect.value){ markInvalid(sistemaSelect,'hint-sistema'); ok=false; }
+      if(!moduloSelect.value){ markInvalid(moduloSelect,'hint-modulo'); ok=false; }
+      if(!ocorrenciaSelect.value){ markInvalid(ocorrenciaSelect,'hint-ocorrencia'); ok=false; }
+      if(!tipoSelect.value){ markInvalid(tipoSelect,'hint-tipo'); ok=false; }
+      if(!descricaoTxt.value.trim()){ markInvalid(descricaoTxt,'hint-descricao'); ok=false; }
+      if(!prioridade){
+        prioridadeGroup.classList.add('invalid');
+        document.getElementById('hint-prioridade').classList.add('show');
+        ok=false;
+      }
+
+      const first=document.querySelector('.invalid');
+      if(first){ first.focus({preventScroll:false}); first.scrollIntoView({behavior:'smooth',block:'center'}); }
+      return ok;
+    }
+
+    // ===== Salvar =====
+    btnSalvar.addEventListener('click', function (e) {
+      e.preventDefault();
+      if(!validar()) return;
+
+      const prioridade=(document.querySelector('input[name="prioridade"]:checked')||{}).value;
+      const form = new FormData();
+      form.set('nome', cap(nomeInp.value.trim()));
+      form.set('contato', contatoInp.value.trim());
+      form.set('representante', repSelect.value);
+      form.set('suporte', cap(suporteInp.value.trim()));
+      form.set('sistema', sistemaSelect.value);
+      form.set('modulo', moduloSelect.value);
+      form.set('ocorrencia', ocorrenciaSelect.value);
+      form.set('tipo', tipoSelect.value);
+      form.set('descricao', descricaoTxt.value.trim());
+      form.set('observacao', obsTxt.value.trim());
+      form.set('prioridade', prioridade);
+      for (const f of cestaAnexos) form.append('anexos', f, f.name);
+
+      let loadingTimer = setTimeout(showLoading, 300);
+
+      fetch('/salvar', { method: 'POST', body: form })
+      .then(r => r.json())
+      .then(res => {
+        if(res.success){
+          // sucesso
+          formView.style.display='none';
+          successView.style.display='flex';
+
+          document.getElementById('btnNovo').onclick = ()=>{
+            limparCampos();
+            successView.style.display='none';
+            formView.style.display='flex';
+            window.scrollTo({top:0, behavior:'smooth'});
+          };
+          document.getElementById('btnSair').onclick = ()=>{
+            window.close();
+            setTimeout(()=>{ window.location.href = 'about:blank'; }, 200);
+          };
+        } else {
+          alert(res.message || 'Erro ao salvar');
+        }
+      })
+      .catch(err => alert('Erro na comunicação: ' + err))
+      .finally(()=>{
+        clearTimeout(loadingTimer);
+        hideLoading();
+      });
+    });
+
+    // ===== Limpar =====
+    function limparCampos(){
+      document.querySelectorAll('.invalid').forEach(el=>el.classList.remove('invalid'));
+      document.querySelectorAll('.field-hint.show').forEach(h=>h.classList.remove('show'));
+      nomeInp.value=''; contatoInp.value=''; repSelect.value=''; suporteInp.value='';
+      sistemaSelect.value=''; resetSelect(moduloSelect,'Selecione o módulo'); resetSelect(ocorrenciaSelect,'Selecione a ocorrência');
+      tipoSelect.value=''; descricaoTxt.value=''; obsTxt.value='';
+      document.getElementById('hint-prioridade').classList.remove('show');
+      prioridadeGroup.classList.remove('invalid');
+      const checked=document.querySelector('input[name="prioridade"]:checked'); if(checked) checked.checked=false;
+
+      cestaAnexos = []; renderAnexos();
+    }
+
+    btnLimpar.addEventListener('click', function(e){
+      e.preventDefault();
+      if(confirm('Tem certeza que deseja limpar todos os dados do formulário?')){
+        limparCampos();
+      }
+    });
   });
   </script>
 
-  <!-- Esconder o botão de download quando rodar local (loopback/rede privada) -->
+  <!-- Esconde botão de download se rodar local/rede privada -->
   <script>
   (function(){
     var wrap = document.getElementById('downloadWrap');
@@ -276,13 +560,8 @@
     };
 
     var runningLocally = isLoopback(rawHost) || isPrivateIPv4(rawHost);
-    if (runningLocally) {
-      wrap.style.display = 'none';
-    }
+    if (runningLocally) wrap.style.display = 'none';
   })();
   </script>
-
-  <!-- Seu JS original completo vem aqui abaixo (mantive intocado no envio anterior).
-       Se quiser, posso mesclar de volta caso tenha removido algo por engano. -->
 </body>
 </html>
