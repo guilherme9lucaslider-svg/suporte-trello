@@ -63,7 +63,12 @@ def trello_clear_cover(card_id: str):
     """
     try:
         url = f"{TRELLO_BASE}/cards/{card_id}/cover"
-        r = requests.put(url, params={"key": API_KEY, "token": TOKEN}, json={"idAttachment": None}, timeout=TIMEOUT)
+        r = requests.put(
+            url,
+            params={"key": API_KEY, "token": TOKEN},
+            json={"idAttachment": None},
+            timeout=TIMEOUT
+        )
         if not r.ok:
             print("[TRELLO][COVER] Falha ao remover capa:", r.status_code, r.text[:300])
     except Exception as e:
@@ -189,8 +194,8 @@ def baixar():
         mimetype="application/octet-stream",
         conditional=True
     ))
-    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"]
-    resp.headers["Pragma"] = "no-cache"]
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    resp.headers["Pragma"] = "no-cache"   # <-- corrigido: removido ']' extra
     resp.headers["Expires"] = "0"
     resp.headers["X-Content-Type-Options"] = "nosniff"
     return resp
