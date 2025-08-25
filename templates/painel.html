@@ -1,379 +1,128 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Painel de Chamados</title>
-    <style>
-        :root {
-            --ink: #142222;
-            --muted: #6a7676;
-            --stroke: #e6ecea;
-            --bg: #f7f9f8;
-            --primary: #006056;
-            --shadow: 0 10px 30px rgba(0, 0, 0, .06)
-        }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Painel de Chamados</title>
+<style>
+  :root{--ink:#142222;--muted:#6a7676;--stroke:#e6ecea;--bg:#f7f9f8;--primary:#006056;--shadow:0 10px 30px rgba(0,0,0,.06)}
+  *{box-sizing:border-box}
+  body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;background:var(--bg);color:var(--ink)}
+  .wrap{max-width:1100px;margin:0 auto;padding:24px}
+  h1{font-size:24px;margin:6px 0 16px;color:var(--primary);display:flex;align-items:center;gap:10px}
 
-        * {
-            box-sizing: border-box
-        }
+  /* Filtros */
+  .filters{
+    display:grid;grid-template-columns:1.2fr .9fr .9fr .9fr 1fr;
+    gap:12px;background:#fff;padding:14px;border:1px solid var(--stroke);
+    border-radius:14px;box-shadow:var(--shadow)
+  }
+  .filters label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600;letter-spacing:.2px}
+  .input,.select{
+    width:100%;padding:11px 12px;border:1px solid var(--stroke);border-radius:10px;background:#fbfdfa;
+    font-size:14px;outline:none;transition:.15s ease
+  }
+  .input:focus,.select:focus{border-color:#66a39c;box-shadow:0 0 0 4px rgba(0,96,86,.12);background:#fff}
+  .actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+  .actions .push-right{margin-left:auto}
+  .btn{border:1px solid var(--stroke);background:#fff;border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:700}
+  .btn--primary{background:linear-gradient(180deg,var(--primary),#004e47);color:#fff;border-color:#004e47}
+  .btn--live{background:linear-gradient(180deg,var(--primary),#004e47);color:#fff;border-color:#004e47}
+  .btn--live.is-on{outline:3px solid rgba(91,39,181,.25)}
+  .count{font-size:13px;color:var(--muted);margin-top:10px}
 
-        body {
-            font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-            margin: 0;
-            background: var(--bg);
-            color: var(--ink)
-        }
+  /* Tabela */
+  .table-wrap{background:#fff;border:1px solid var(--stroke);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;margin-top:12px}
+  table{width:100%;border-collapse:separate;border-spacing:0}
+  th,td{padding:14px 16px;border-bottom:1px solid var(--stroke);font-size:14px}
+  th{background:#f1f5f4;text-align:left;font-weight:800;color:#0f1a1a}
+  td{vertical-align:middle}
+  tbody tr:hover td{background:#fbfdfa}
 
-        .wrap {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 24px
-        }
+  thead th:nth-child(3), thead th:nth-child(5), thead th:nth-child(6){text-align:center}
+  tbody td:nth-child(3), tbody td:nth-child(5), tbody td:nth-child(6){text-align:center}
 
-        h1 {
-            font-size: 24px;
-            margin: 6px 0 16px;
-            color: var(--primary);
-            display: flex;
-            align-items: center;
-            gap: 10px
-        }
+  .title{max-width:420px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-        /* Filtros */
-        .filters {
-            display: grid;
-            grid-template-columns: 1.2fr .9fr .9fr .9fr 1fr;
-            gap: 12px;
-            background: #fff;
-            padding: 14px;
-            border: 1px solid var(--stroke);
-            border-radius: 14px;
-            box-shadow: var(--shadow)
-        }
+  /* Status pill centralizado */
+  .status{display:inline-flex;align-items:center;justify-content:center;padding:8px 14px;border-radius:999px;border:1px solid var(--stroke);min-width:170px;background:#f5f7f6;font-weight:800;font-size:12px;letter-spacing:.2px}
+  .s-open{background:#fff7ed}
+  .s-analise{background:#fff1f2}
+  .s-versao{background:#fefce8}
+  .s-req{background:#eff6ff}
+  .s-ok{background:#ecfdf5}
+  .s-drop{background:#f8fafc}
 
-        .filters label {
-            display: block;
-            font-size: 12px;
-            color: var(--muted);
-            margin-bottom: 4px;
-            font-weight: 600;
-            letter-spacing: .2px
-        }
+  .date{color:#243333;font-variant-numeric:tabular-nums}
+  .empty{padding:24px;text-align:center;color:var(--muted)}
 
-        .input,
-        .select {
-            width: 100%;
-            padding: 11px 12px;
-            border: 1px solid var(--stroke);
-            border-radius: 10px;
-            background: #fbfdfa;
-            font-size: 14px;
-            outline: none;
-            transition: .15s ease
-        }
+  /* Ações / descrições em pílulas */
+  .actions-cell,.desc-cell{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+  .pill-btn{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;border:1px solid var(--stroke);background:#fff;font-weight:700;text-decoration:none;cursor:pointer}
+  .pill-btn:hover{transform:translateY(-1px)}
+  .pill-btn--accent{border-color:#e6d8ff;background:#f4efff;color:#5b27b5}
 
-        .input:focus,
-        .select:focus {
-            border-color: #66a39c;
-            box-shadow: 0 0 0 4px rgba(0, 96, 86, .12);
-            background: #fff
-        }
+  /* Modal */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:9999}
+  .modal__box{width:min(720px,92vw);max-height:80vh;overflow:auto;background:#fff;border:1px solid var(--stroke);border-radius:14px;padding:20px;box-shadow:0 18px 50px rgba(0,0,0,.25)}
+  .modal__title{font-weight:900;color:var(--primary);margin:0 0 10px 0}
+  .modal__body{white-space:pre-wrap;border:1px solid var(--stroke);background:#fbfdfa;border-radius:12px;padding:14px;font-family:ui-monospace,Consolas,Menlo,monospace}
+  .modal__actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}
 
-        .actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 12px;
-            flex-wrap: wrap
-        }
+  /* Aparição suave para itens novos no tempo real */
+  .row-new{animation:fadeIn .6s ease-out}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(-2px)} to{opacity:1;transform:none}}
 
-        .actions .push-right {
-            margin-left: auto
-        }
-
-        .btn {
-            border: 1px solid var(--stroke);
-            background: #fff;
-            border-radius: 10px;
-            padding: 10px 14px;
-            cursor: pointer;
-            font-weight: 700
-        }
-
-        .btn--primary {
-            background: linear-gradient(180deg, var(--primary), #004e47);
-            color: #fff;
-            border-color: #004e47
-        }
-
-        .btn--live {
-            background: linear-gradient(180deg, var(--primary), #004e47);
-            color: #fff;
-            border-color: #004e47
-        }
-
-        .btn--live.is-on {
-            outline: 3px solid rgba(91, 39, 181, .25)
-        }
-
-        .count {
-            font-size: 13px;
-            color: var(--muted);
-            margin-top: 10px
-        }
-
-        /* Tabela */
-        .table-wrap {
-            background: #fff;
-            border: 1px solid var(--stroke);
-            border-radius: 14px;
-            box-shadow: var(--shadow);
-            overflow: hidden;
-            margin-top: 12px
-        }
-
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0
-        }
-
-        th,
-        td {
-            padding: 14px 16px;
-            border-bottom: 1px solid var(--stroke);
-            font-size: 14px
-        }
-
-        th {
-            background: #f1f5f4;
-            text-align: left;
-            font-weight: 800;
-            color: #0f1a1a
-        }
-
-        td {
-            vertical-align: middle
-        }
-
-        tbody tr:hover td {
-            background: #fbfdfa
-        }
-
-        thead th:nth-child(3),
-        thead th:nth-child(5),
-        thead th:nth-child(6) {
-            text-align: center
-        }
-
-        tbody td:nth-child(3),
-        tbody td:nth-child(5),
-        tbody td:nth-child(6) {
-            text-align: center
-        }
-
-        .title {
-            max-width: 420px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis
-        }
-
-        /* Status pill centralizado */
-        .status {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 8px 14px;
-            border-radius: 999px;
-            border: 1px solid var(--stroke);
-            min-width: 170px;
-            background: #f5f7f6;
-            font-weight: 800;
-            font-size: 12px;
-            letter-spacing: .2px
-        }
-
-        .s-open {
-            background: #fff7ed
-        }
-
-        .s-analise {
-            background: #fff1f2
-        }
-
-        .s-versao {
-            background: #fefce8
-        }
-
-        .s-req {
-            background: #eff6ff
-        }
-
-        .s-ok {
-            background: #ecfdf5
-        }
-
-        .s-drop {
-            background: #f8fafc
-        }
-
-        .date {
-            color: #243333;
-            font-variant-numeric: tabular-nums
-        }
-
-        .empty {
-            padding: 24px;
-            text-align: center;
-            color: var(--muted)
-        }
-
-        /* Ações / descrições em pílulas */
-        .actions-cell,
-        .desc-cell {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            flex-wrap: wrap
-        }
-
-        .pill-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 12px;
-            border-radius: 999px;
-            border: 1px solid var(--stroke);
-            background: #fff;
-            font-weight: 700;
-            text-decoration: none;
-            cursor: pointer
-        }
-
-        .pill-btn:hover {
-            transform: translateY(-1px)
-        }
-
-        .pill-btn--accent {
-            border-color: #e6d8ff;
-            background: #f4efff;
-            color: #5b27b5
-        }
-
-        /* Modal */
-        .modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, .45);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999
-        }
-
-        .modal__box {
-            width: min(720px, 92vw);
-            max-height: 80vh;
-            overflow: auto;
-            background: #fff;
-            border: 1px solid var(--stroke);
-            border-radius: 14px;
-            padding: 20px;
-            box-shadow: 0 18px 50px rgba(0, 0, 0, .25)
-        }
-
-        .modal__title {
-            font-weight: 900;
-            color: var(--primary);
-            margin: 0 0 10px 0
-        }
-
-        .modal__body {
-            white-space: pre-wrap;
-            border: 1px solid var(--stroke);
-            background: #fbfdfa;
-            border-radius: 12px;
-            padding: 14px;
-            font-family: ui-monospace, Consolas, Menlo, monospace
-        }
-
-        .modal__actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 12px
-        }
-
-        @media (max-width:980px) {
-            .filters {
-                grid-template-columns: 1fr 1fr 1fr
-            }
-
-            .title {
-                max-width: 300px
-            }
-        }
-
-        @media (max-width:680px) {
-            .filters {
-                grid-template-columns: 1fr 1fr
-            }
-
-            .title {
-                max-width: 220px
-            }
-        }
-    </style>
+  @media (max-width:980px){ .filters{grid-template-columns:1fr 1fr 1fr} .title{max-width:300px} }
+  @media (max-width:680px){ .filters{grid-template-columns:1fr 1fr} .title{max-width:220px} }
+</style>
 </head>
-
 <body>
-    <div class="wrap">
-        <h1>📁 Painel de Chamados</h1>
+  <div class="wrap">
+    <h1>📁 Painel de Chamados</h1>
 
-        <div class="filters">
-            <div>
-                <label>Representante</label>
-                <select id="fRep" class="select">
-                    <option value="">Todos</option>
-                </select>
-            </div>
-            <div>
-                <label>Status</label>
-                <select id="fStatus" class="select">
-                    <option value="">Todos</option>
-                    <option value="Em aberto">Em aberto</option>
-                    <option value="Em análise">Em análise</option>
-                    <option value="Aguardando versão">Aguardando versão</option>
-                    <option value="Aguardando Requisição">Aguardando Requisição</option>
-                    <option value="Finalizado">Finalizado</option>
-                    <option value="Descartado">Descartado</option>
-                </select>
-            </div>
-            <div>
-                <label>De (Última atividade)</label>
-                <input id="fDe" type="date" class="input">
-            </div>
-            <div>
-                <label>Até (Última atividade)</label>
-                <input id="fAte" type="date" class="input">
-            </div>
-            <div>
-                <label>Busca</label>
-                <input id="fQ" class="input" placeholder="título/descrição">
-            </div>
-        </div>
+    <div class="filters">
+      <div>
+        <label>Representante</label>
+        <select id="fRep" class="select">
+          <option value="">Todos</option>
+        </select>
+      </div>
+      <div>
+        <label>Status</label>
+        <select id="fStatus" class="select">
+          <option value="">Todos</option>
+          <option value="Em aberto">Em aberto</option>
+          <option value="Em análise">Em análise</option>
+          <option value="Aguardando versão">Aguardando versão</option>
+          <option value="Aguardando Requisição">Aguardando Requisição</option>
+          <option value="Finalizado">Finalizado</option>
+          <option value="Descartado">Descartado</option>
+        </select>
+      </div>
+      <div>
+        <label>De (Última atividade)</label>
+        <input id="fDe" type="date" class="input">
+      </div>
+      <div>
+        <label>Até (Última atividade)</label>
+        <input id="fAte" type="date" class="input">
+      </div>
+      <div>
+        <label>Busca</label>
+        <input id="fQ" class="input" placeholder="título/descrição">
+      </div>
+    </div>
 
-        <div class="actions">
-            <button class="btn btn--primary" id="btnAplicar">Aplicar filtros</button>
-            <button class="btn" id="btnLimpar">Limpar</button>
-            <button class="btn btn--live push-right" id="btnRealtime">Chamados em aberto (tempo real)</button>
-        </div>
+    <div class="actions">
+      <button class="btn btn--primary" id="btnAplicar">Aplicar filtros</button>
+      <button class="btn" id="btnLimpar">Limpar</button>
+      <button class="btn btn--live push-right" id="btnRealtime">Chamados em aberto (tempo real)</button>
+    </div>
 
-        <div class="count" id="countBox"></div>
+    <div class="count" id="countBox"></div>
 
-        <div class="table-wrap">
+    <div class="table-wrap">
       <table id="tbl">
         <thead>
           <tr>
@@ -426,14 +175,9 @@
     const o=document.createElement('option'); o.value=r; o.textContent=r; repSelect.appendChild(o);
   });
 
-  function escapeHtml(s){
-    return String(s||"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
-  }
-  function fmtDate(iso){
-    if(!iso) return '-';
-    try{ const d=new Date(iso); return d.toLocaleDateString()+' '+d.toLocaleTimeString(); }catch(e){ return iso; }
-  }
-  function statusClass(s){
+  const esc = s => String(s||"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
+  const fmtDate = iso => !iso ? '-' : (new Date(iso)).toLocaleDateString()+' '+(new Date(iso)).toLocaleTimeString();
+  const statusClass = s => {
     const x=(s||'').toLowerCase();
     if(x==='em aberto') return 'status s-open';
     if(x==='em análise') return 'status s-analise';
@@ -442,127 +186,133 @@
     if(x==='finalizado') return 'status s-ok';
     if(x==='descartado') return 'status s-drop';
     return 'status';
-  }
+  };
 
-  let cache = []; // últimos itens renderizados
-  function render(items){
-    tbody.innerHTML='';
-    if(!items.length){
-      tbody.innerHTML='<tr><td class="empty" colspan="6">Nenhum chamado encontrado.</td></tr>';
-      return;
+  // guardamos as chaves atuais (id/url/título) para detectar itens novos
+  let lastKeys = new Set();
+  let cache = [];
+
+  const rowKey = it => it.id || it.url || it.titulo || Math.random().toString(36).slice(2);
+
+  const buildRowHTML = (it,i) => {
+    const key = rowKey(it);
+    return `
+      <tr data-key="${esc(key)}">
+        <td class="title" title="${esc(it.titulo)}">${esc(it.titulo)}</td>
+        <td>${esc(it.representante||'-')}</td>
+        <td><span class="${statusClass(it.status)}">${esc(it.status||'-')}</span></td>
+        <td class="date">${fmtDate(it.ultima_atividade)}</td>
+        <td class="desc-cell"><button class="pill-btn" data-i="${i}" data-action="ver">Ver</button></td>
+        <td class="actions-cell">${it.url?`<a class="pill-btn pill-btn--accent" href="${esc(it.url)}" target="_blank" rel="noopener">Abrir no Trello</a>`:'-'}</td>
+      </tr>`;
+  };
+
+  function render(items, {silent=false}={}){
+    // comparar keys para descobrir novidades (somente quando já havia algo)
+    const prev = lastKeys;
+    const newHTML = items.map(buildRowHTML).join('');
+    if (!silent) {
+      // modo normal (primeira carga / aplicar filtros): mostra tudo de uma vez
+      tbody.innerHTML = newHTML || '<tr><td class="empty" colspan="6">Nenhum chamado encontrado.</td></tr>';
+    } else {
+      // modo silencioso: substitui sem placeholder e marca itens novos com fade‑in
+      tbody.innerHTML = newHTML || '<tr><td class="empty" colspan="6">Nenhum chamado encontrado.</td></tr>';
+      [...tbody.querySelectorAll('tr[data-key]')].forEach(tr=>{
+        const key = tr.getAttribute('data-key');
+        if (!prev.has(key)) tr.classList.add('row-new');
+      });
     }
+    lastKeys = new Set(items.map(rowKey));
     cache = items;
-    items.forEach((it,i)=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML =
-        '<td class="title" title="'+escapeHtml(it.titulo)+'">'+escapeHtml(it.titulo)+'</td>'+
-        '<td>'+escapeHtml(it.representante||'-')+'</td>'+
-        '<td><span class="'+statusClass(it.status)+'">'+escapeHtml(it.status||'-')+'</span></td>'+
-        '<td class="date">'+fmtDate(it.ultima_atividade)+'</td>'+
-        '<td class="desc-cell"><button class="pill-btn" data-i="'+i+'" data-action="ver">Ver</button></td>'+
-        '<td class="actions-cell">'+(it.url?'<a class="pill-btn pill-btn--accent" href="'+it.url+'" target="_blank" rel="noopener">Abrir no Trello</a>':'-')+'</td>';
-      tbody.appendChild(tr);
-    });
   }
 
-  function buildQuery(){
-    const qs = [];
+  function qs(){
+    const p = [];
     const rep = repSelect.value.trim();
     const st  = statusSelect.value.trim();
     const de  = deInput.value;
     const ate = ateInput.value;
     const q   = qInput.value.trim();
-    if(rep) qs.push('representante='+encodeURIComponent(rep));
-    if(st)  qs.push('status='+encodeURIComponent(st));
-    if(de)  qs.push('de='+encodeURIComponent(de));
-    if(ate) qs.push('ate='+encodeURIComponent(ate));
-    if(q)   qs.push('q='+encodeURIComponent(q));
-    return qs.length ? ('?'+qs.join('&')) : '';
+    if(rep) p.push('representante='+encodeURIComponent(rep));
+    if(st)  p.push('status='+encodeURIComponent(st));
+    if(de)  p.push('de='+encodeURIComponent(de));
+    if(ate) p.push('ate='+encodeURIComponent(ate));
+    if(q)   p.push('q='+encodeURIComponent(q));
+    return p.length?('?'+p.join('&')):'';
   }
 
-  function showLoading(){
-    tbody.innerHTML='<tr><td class="empty" colspan="6">Carregando…</td></tr>';
-  }
-
-  function load(){
-    showLoading();
-    fetch('/api/chamados'+buildQuery())
+  function load({silent=false}={}){
+    if(!silent){ tbody.innerHTML='<tr><td class="empty" colspan="6">Carregando…</td></tr>'; }
+    return fetch('/api/chamados'+qs())
       .then(async r=>{
-        const ct=r.headers.get('content-type')||'';
-        const t=await r.text();
+        const ct=r.headers.get('content-type')||''; const t=await r.text();
         if(!ct.includes('application/json')) throw new Error(t.slice(0,300));
         return JSON.parse(t);
       })
       .then(j=>{
-        render(j.items||[]);
+        render(j.items||[], {silent});
         countBox.textContent = (j.total ?? (j.items||[]).length)+' chamado(s) encontrado(s).';
       })
       .catch(err=>{
         console.error(err);
-        countBox.textContent='';
-        tbody.innerHTML='<tr><td class="empty" colspan="6">Erro ao carregar. Verifique o servidor.</td></tr>';
+        if(!silent){
+          countBox.textContent='';
+          tbody.innerHTML='<tr><td class="empty" colspan="6">Erro ao carregar. Verifique o servidor.</td></tr>';
+        }
       });
   }
 
   // Aplicar
   document.getElementById('btnAplicar').addEventListener('click', ()=>{
     stopRealtime();
-    load();
+    load({silent:false});
   });
 
   // Limpar: confirma, limpa filtros e resultados
   document.getElementById('btnLimpar').addEventListener('click', ()=>{
     if(!confirm('Deseja limpar filtros e resultados?')) return;
     stopRealtime();
-    repSelect.value='';
-    statusSelect.value='';
-    deInput.value='';
-    ateInput.value='';
-    qInput.value='';
-    cache = [];
+    repSelect.value=''; statusSelect.value=''; deInput.value=''; ateInput.value=''; qInput.value='';
+    cache=[]; lastKeys=new Set();
     countBox.textContent='';
     tbody.innerHTML='<tr><td class="empty" colspan="6">Sem resultados. Aplique filtros ou ative “Chamados em aberto (tempo real)”.</td></tr>';
   });
 
-  // Tempo real (toggle)
-  let realtimeTimer = null;
+  // Tempo real (toggle) – atualiza silenciosamente a cada 6s
+  let realtimeTimer=null;
   function startRealtime(){
     btnRealtime.classList.add('is-on');
     statusSelect.value='Em aberto';
     deInput.value=''; ateInput.value=''; qInput.value='';
-    load();
-    realtimeTimer = setInterval(load, 6000); // 6s
+    load({silent:false}).then(()=>{
+      realtimeTimer=setInterval(()=>load({silent:true}), 6000);
+    });
   }
   function stopRealtime(){
     btnRealtime.classList.remove('is-on');
     if(realtimeTimer){ clearInterval(realtimeTimer); realtimeTimer=null; }
   }
-  btnRealtime.addEventListener('click', ()=>{
-    if(realtimeTimer){ stopRealtime(); }
-    else{ startRealtime(); }
-  });
+  btnRealtime.addEventListener('click', ()=> realtimeTimer ? stopRealtime() : startRealtime());
 
   // Modal
   const modal=document.getElementById('modalDesc');
   const modalBody=document.getElementById('modalBody');
   const btnClose=document.getElementById('btnFecharModal');
-  function openModal(text){ modalBody.textContent = text || '—'; modal.style.display='flex'; }
-  function closeModal(){ modal.style.display='none'; }
+  const openModal=t=>{ modalBody.textContent=t||'—'; modal.style.display='flex'; };
+  const closeModal=()=>{ modal.style.display='none'; };
   btnClose.addEventListener('click', closeModal);
   modal.addEventListener('click', e=>{ if(e.target===modal) closeModal(); });
   document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
 
   // Delegação para "Ver"
-  tbody.addEventListener('click', (e)=>{
-    const btn = e.target.closest('button[data-action="ver"]');
-    if(!btn) return;
-    const i = Number(btn.getAttribute('data-i'));
-    const item = cache[i] || {};
-    openModal(item.descricao || '');
+  tbody.addEventListener('click', e=>{
+    const btn=e.target.closest('button[data-action="ver"]'); if(!btn) return;
+    const i=Number(btn.getAttribute('data-i')); const item=cache[i]||{};
+    openModal(item.descricao||'');
   });
 
   // inicial
-  load();
+  load({silent:false});
 })();
 </script>
 </body>
