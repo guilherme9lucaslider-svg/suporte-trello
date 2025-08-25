@@ -11,18 +11,15 @@
   .wrap{max-width:1100px;margin:0 auto;padding:24px}
   h1{font-size:24px;margin:6px 0 16px;color:var(--primary);display:flex;align-items:center;gap:10px}
 
-  /* Filtros */
   .filters{
     display:grid;grid-template-columns:1.2fr .9fr .9fr .9fr 1fr;
     gap:12px;background:#fff;padding:14px;border:1px solid var(--stroke);
     border-radius:14px;box-shadow:var(--shadow)
   }
   .filters label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600;letter-spacing:.2px}
-  .input,.select{
-    width:100%;padding:11px 12px;border:1px solid var(--stroke);border-radius:10px;background:#fbfdfa;
-    font-size:14px;outline:none;transition:.15s ease
-  }
+  .input,.select{width:100%;padding:11px 12px;border:1px solid var(--stroke);border-radius:10px;background:#fbfdfa;font-size:14px;outline:none;transition:.15s ease}
   .input:focus,.select:focus{border-color:#66a39c;box-shadow:0 0 0 4px rgba(0,96,86,.12);background:#fff}
+
   .actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
   .actions .push-right{margin-left:auto}
   .btn{border:1px solid var(--stroke);background:#fff;border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:700}
@@ -31,7 +28,6 @@
   .btn--live.is-on{outline:3px solid rgba(91,39,181,.25)}
   .count{font-size:13px;color:var(--muted);margin-top:10px}
 
-  /* Tabela */
   .table-wrap{background:#fff;border:1px solid var(--stroke);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;margin-top:12px}
   table{width:100%;border-collapse:separate;border-spacing:0}
   th,td{padding:14px 16px;border-bottom:1px solid var(--stroke);font-size:14px}
@@ -39,42 +35,30 @@
   td{vertical-align:middle}
   tbody tr:hover td{background:#fbfdfa}
 
-  thead th:nth-child(3), thead th:nth-child(5), thead th:nth-child(6){text-align:center}
-  tbody td:nth-child(3), tbody td:nth-child(5), tbody td:nth-child(6){text-align:center}
+  thead th:nth-child(3), thead th:nth-child(4), thead th:nth-child(5), thead th:nth-child(6), thead th:nth-child(7){text-align:center}
+  tbody td:nth-child(3), tbody td:nth-child(4), tbody td:nth-child(5), tbody td:nth-child(6), tbody td:nth-child(7){text-align:center}
 
   .title{max-width:420px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-  /* Status pill centralizado */
   .status{display:inline-flex;align-items:center;justify-content:center;padding:8px 14px;border-radius:999px;border:1px solid var(--stroke);min-width:170px;background:#f5f7f6;font-weight:800;font-size:12px;letter-spacing:.2px}
-  .s-open{background:#fff7ed}
-  .s-analise{background:#fff1f2}
-  .s-versao{background:#fefce8}
-  .s-req{background:#eff6ff}
-  .s-ok{background:#ecfdf5}
-  .s-drop{background:#f8fafc}
+  .s-open{background:#fff7ed}.s-analise{background:#fff1f2}.s-versao{background:#fefce8}.s-req{background:#eff6ff}.s-ok{background:#ecfdf5}.s-drop{background:#f8fafc}
 
   .date{color:#243333;font-variant-numeric:tabular-nums}
   .empty{padding:24px;text-align:center;color:var(--muted)}
 
-  /* Ações / descrições em pílulas */
-  .actions-cell,.desc-cell{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
-  .pill-btn{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;border:1px solid var(--stroke);background:#fff;font-weight:700;text-decoration:none;cursor:pointer}
-  .pill-btn:hover{transform:translateY(-1px)}
-  .pill-btn--accent{border-color:#e6d8ff;background:#f4efff;color:#5b27b5}
+  /* botõezinhos iguais nas células */
+  .cell-btn{display:inline-flex;align-items:center;justify-content:center;min-width:110px;padding:8px 12px;border-radius:999px;border:1px solid var(--stroke);background:#fff;font-weight:700;text-decoration:none;cursor:pointer}
+  .cell-btn:hover{transform:translateY(-1px)}
+  .cell-btn--accent{border-color:#e6d8ff;background:#f4efff;color:#5b27b5}
 
-  /* Modal */
   .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:9999}
   .modal__box{width:min(720px,92vw);max-height:80vh;overflow:auto;background:#fff;border:1px solid var(--stroke);border-radius:14px;padding:20px;box-shadow:0 18px 50px rgba(0,0,0,.25)}
   .modal__title{font-weight:900;color:var(--primary);margin:0 0 10px 0}
   .modal__body{white-space:pre-wrap;border:1px solid var(--stroke);background:#fbfdfa;border-radius:12px;padding:14px;font-family:ui-monospace,Consolas,Menlo,monospace}
   .modal__actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}
 
-  /* Aparição suave para itens novos no tempo real */
   .row-new{animation:fadeIn .6s ease-out}
   @keyframes fadeIn{from{opacity:0;transform:translateY(-2px)} to{opacity:1;transform:none}}
-
-  @media (max-width:980px){ .filters{grid-template-columns:1fr 1fr 1fr} .title{max-width:300px} }
-  @media (max-width:680px){ .filters{grid-template-columns:1fr 1fr} .title{max-width:220px} }
 </style>
 </head>
 <body>
@@ -84,34 +68,20 @@
     <div class="filters">
       <div>
         <label>Representante</label>
-        <select id="fRep" class="select">
-          <option value="">Todos</option>
-        </select>
+        <select id="fRep" class="select"><option value="">Todos</option></select>
       </div>
       <div>
         <label>Status</label>
         <select id="fStatus" class="select">
           <option value="">Todos</option>
-          <option value="Em aberto">Em aberto</option>
-          <option value="Em análise">Em análise</option>
-          <option value="Aguardando versão">Aguardando versão</option>
-          <option value="Aguardando Requisição">Aguardando Requisição</option>
-          <option value="Finalizado">Finalizado</option>
-          <option value="Descartado">Descartado</option>
+          <option>Em aberto</option><option>Em análise</option>
+          <option>Aguardando versão</option><option>Aguardando Requisição</option>
+          <option>Finalizado</option><option>Descartado</option>
         </select>
       </div>
-      <div>
-        <label>De (Última atividade)</label>
-        <input id="fDe" type="date" class="input">
-      </div>
-      <div>
-        <label>Até (Última atividade)</label>
-        <input id="fAte" type="date" class="input">
-      </div>
-      <div>
-        <label>Busca</label>
-        <input id="fQ" class="input" placeholder="título/descrição">
-      </div>
+      <div><label>De (Última atividade)</label><input id="fDe" type="date" class="input"></div>
+      <div><label>Até (Última atividade)</label><input id="fAte" type="date" class="input"></div>
+      <div><label>Busca</label><input id="fQ" class="input" placeholder="título/descrição"></div>
     </div>
 
     <div class="actions">
@@ -126,29 +96,23 @@
       <table id="tbl">
         <thead>
           <tr>
-            <th>Título</th>
-            <th>Representante</th>
-            <th>Status</th>
-            <th>Última atividade</th>
-            <th>Descrição</th>
-            <th>Ações</th>
+            <th>Título</th><th>Representante</th><th>Status</th><th>Detalhes</th>
+            <th>Última atividade</th><th>Descrição</th><th>Ações</th>
           </tr>
         </thead>
         <tbody id="tbody">
-          <tr><td class="empty" colspan="6">Carregando…</td></tr>
+          <tr><td class="empty" colspan="7">Carregando…</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 
   <!-- Modal -->
-  <div class="modal" id="modalDesc" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal__box">
-      <h3 class="modal__title" id="modalTitle">Descrição do chamado</h3>
+      <h3 class="modal__title" id="modalTitle">Modal</h3>
       <div class="modal__body" id="modalBody"></div>
-      <div class="modal__actions">
-        <button class="btn" id="btnFecharModal">Fechar</button>
-      </div>
+      <div class="modal__actions"><button class="btn" id="btnFecharModal">Fechar</button></div>
     </div>
   </div>
 
@@ -163,7 +127,6 @@
   const qInput = document.getElementById('fQ');
   const btnRealtime = document.getElementById('btnRealtime');
 
-  /* mesmas opções do formulário */
   const REPRESENTANTES = [
     "Host.com","2RTI Soluções","MT Solutions","Unai System","Multitech",
     "Mad Automação","Tecnuve Soluções","GoSystem Automação","RJ Soluções",
@@ -171,9 +134,7 @@
     "Delane","Supriserv","MS Tech Soluções","Use Tecnologia","Unity Automação",
     "Digital RF Tecnologia","Connecta Informática","R.A Soluções"
   ].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-  REPRESENTANTES.forEach(r=>{
-    const o=document.createElement('option'); o.value=r; o.textContent=r; repSelect.appendChild(o);
-  });
+  REPRESENTANTES.forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; repSelect.appendChild(o); });
 
   const esc = s => String(s||"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
   const fmtDate = iso => !iso ? '-' : (new Date(iso)).toLocaleDateString()+' '+(new Date(iso)).toLocaleTimeString();
@@ -188,10 +149,17 @@
     return 'status';
   };
 
-  // guardamos as chaves atuais (id/url/título) para detectar itens novos
-  let lastKeys = new Set();
-  let cache = [];
+  function inferCreatedAt(item){
+    if (item.created_at) return new Date(item.created_at);
+    if (item.id && /^[0-9a-f]{24}$/i.test(item.id)) {
+      const secs = parseInt(item.id.substring(0,8), 16);
+      if (!Number.isNaN(secs)) return new Date(secs*1000);
+    }
+    return null;
+  }
 
+  let cache = [];
+  let lastKeys = new Set();
   const rowKey = it => it.id || it.url || it.titulo || Math.random().toString(36).slice(2);
 
   const buildRowHTML = (it,i) => {
@@ -201,25 +169,19 @@
         <td class="title" title="${esc(it.titulo)}">${esc(it.titulo)}</td>
         <td>${esc(it.representante||'-')}</td>
         <td><span class="${statusClass(it.status)}">${esc(it.status||'-')}</span></td>
+        <td><button class="cell-btn" data-i="${i}" data-action="detalhes">Detalhes</button></td>
         <td class="date">${fmtDate(it.ultima_atividade)}</td>
-        <td class="desc-cell"><button class="pill-btn" data-i="${i}" data-action="ver">Ver</button></td>
-        <td class="actions-cell">${it.url?`<a class="pill-btn pill-btn--accent" href="${esc(it.url)}" target="_blank" rel="noopener">Abrir no Trello</a>`:'-'}</td>
+        <td><button class="cell-btn" data-i="${i}" data-action="ver">Ver</button></td>
+        <td>${it.url?`<a class="cell-btn cell-btn--accent" href="${esc(it.url)}" target="_blank" rel="noopener">Abrir no Trello</a>`:'-'}</td>
       </tr>`;
   };
 
   function render(items, {silent=false}={}){
-    // comparar keys para descobrir novidades (somente quando já havia algo)
     const prev = lastKeys;
-    const newHTML = items.map(buildRowHTML).join('');
-    if (!silent) {
-      // modo normal (primeira carga / aplicar filtros): mostra tudo de uma vez
-      tbody.innerHTML = newHTML || '<tr><td class="empty" colspan="6">Nenhum chamado encontrado.</td></tr>';
-    } else {
-      // modo silencioso: substitui sem placeholder e marca itens novos com fade‑in
-      tbody.innerHTML = newHTML || '<tr><td class="empty" colspan="6">Nenhum chamado encontrado.</td></tr>';
+    tbody.innerHTML = items.length ? items.map(buildRowHTML).join('') : '<tr><td class="empty" colspan="7">Nenhum chamado encontrado.</td></tr>';
+    if (silent) {
       [...tbody.querySelectorAll('tr[data-key]')].forEach(tr=>{
-        const key = tr.getAttribute('data-key');
-        if (!prev.has(key)) tr.classList.add('row-new');
+        const k=tr.getAttribute('data-key'); if(!prev.has(k)) tr.classList.add('row-new');
       });
     }
     lastKeys = new Set(items.map(rowKey));
@@ -242,7 +204,7 @@
   }
 
   function load({silent=false}={}){
-    if(!silent){ tbody.innerHTML='<tr><td class="empty" colspan="6">Carregando…</td></tr>'; }
+    if(!silent){ tbody.innerHTML='<tr><td class="empty" colspan="7">Carregando…</td></tr>'; }
     return fetch('/api/chamados'+qs())
       .then(async r=>{
         const ct=r.headers.get('content-type')||''; const t=await r.text();
@@ -257,36 +219,28 @@
         console.error(err);
         if(!silent){
           countBox.textContent='';
-          tbody.innerHTML='<tr><td class="empty" colspan="6">Erro ao carregar. Verifique o servidor.</td></tr>';
+          tbody.innerHTML='<tr><td class="empty" colspan="7">Erro ao carregar. Verifique o servidor.</td></tr>';
         }
       });
   }
 
-  // Aplicar
-  document.getElementById('btnAplicar').addEventListener('click', ()=>{
-    stopRealtime();
-    load({silent:false});
-  });
+  document.getElementById('btnAplicar').addEventListener('click', ()=>{ stopRealtime(); load({silent:false}); });
 
-  // Limpar: confirma, limpa filtros e resultados
   document.getElementById('btnLimpar').addEventListener('click', ()=>{
     if(!confirm('Deseja limpar filtros e resultados?')) return;
     stopRealtime();
     repSelect.value=''; statusSelect.value=''; deInput.value=''; ateInput.value=''; qInput.value='';
     cache=[]; lastKeys=new Set();
     countBox.textContent='';
-    tbody.innerHTML='<tr><td class="empty" colspan="6">Sem resultados. Aplique filtros ou ative “Chamados em aberto (tempo real)”.</td></tr>';
+    tbody.innerHTML='<tr><td class="empty" colspan="7">Sem resultados. Aplique filtros ou ative “Chamados em aberto (tempo real)”.</td></tr>';
   });
 
-  // Tempo real (toggle) – atualiza silenciosamente a cada 6s
   let realtimeTimer=null;
   function startRealtime(){
     btnRealtime.classList.add('is-on');
     statusSelect.value='Em aberto';
     deInput.value=''; ateInput.value=''; qInput.value='';
-    load({silent:false}).then(()=>{
-      realtimeTimer=setInterval(()=>load({silent:true}), 6000);
-    });
+    load({silent:false}).then(()=>{ realtimeTimer=setInterval(()=>load({silent:true}), 6000); });
   }
   function stopRealtime(){
     btnRealtime.classList.remove('is-on');
@@ -294,24 +248,65 @@
   }
   btnRealtime.addEventListener('click', ()=> realtimeTimer ? stopRealtime() : startRealtime());
 
-  // Modal
-  const modal=document.getElementById('modalDesc');
+  const modal=document.getElementById('modal');
   const modalBody=document.getElementById('modalBody');
+  const modalTitle=document.getElementById('modalTitle');
   const btnClose=document.getElementById('btnFecharModal');
-  const openModal=t=>{ modalBody.textContent=t||'—'; modal.style.display='flex'; };
-  const closeModal=()=>{ modal.style.display='none'; };
+  const openModal=(title,html)=>{ modalTitle.textContent=title; modalBody.innerHTML=html; modal.style.display='flex'; };
+  const closeModal=()=>{ modal.style.display='none'; if(timerId){clearInterval(timerId);timerId=null;} };
   btnClose.addEventListener('click', closeModal);
   modal.addEventListener('click', e=>{ if(e.target===modal) closeModal(); });
   document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
 
-  // Delegação para "Ver"
-  tbody.addEventListener('click', e=>{
-    const btn=e.target.closest('button[data-action="ver"]'); if(!btn) return;
-    const i=Number(btn.getAttribute('data-i')); const item=cache[i]||{};
-    openModal(item.descricao||'');
+  function fmtDur(ms){
+    if (ms<0) ms=0;
+    const s=Math.floor(ms/1000);
+    const d=Math.floor(s/86400);
+    const h=Math.floor((s%86400)/3600).toString().padStart(2,'0');
+    const m=Math.floor((s%3600)/60).toString().padStart(2,'0');
+    const sec=(s%60).toString().padStart(2,'0');
+    return (d? d+'d ':'')+`${h}:${m}:${sec}`;
+  }
+  let timerId=null;
+
+  tbody.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-action]');
+    if(!btn) return;
+    const i = Number(btn.getAttribute('data-i'));
+    const item = cache[i] || {};
+
+    if (btn.getAttribute('data-action') === 'ver') {
+      openModal('Descrição do chamado', esc(item.descricao || '—'));
+      return;
+    }
+
+    if (btn.getAttribute('data-action') === 'detalhes') {
+      const created = inferCreatedAt(item);
+      const lastAct = item.ultima_atividade ? new Date(item.ultima_atividade) : null;
+      const live = /^(em aberto|em análise)$/i.test(item.status||'');
+      const start = created ? created.getTime() : null;
+      const stop  = live ? Date.now() : (lastAct ? lastAct.getTime() : Date.now());
+
+      let html = '';
+      html += `Título: ${esc(item.titulo||'-')}\n`;
+      html += `Status: ${esc(item.status||'-')}\n\n`;
+      html += `Criado em: ${created? created.toLocaleString() : '—'}\n`;
+      html += `Última atividade: ${lastAct? lastAct.toLocaleString() : '—'}\n\n`;
+      html += `Duração ${live?'(contando)':'(fechada)'}: <span id="durSpan">calculando…</span>`;
+
+      openModal('Detalhes do chamado', html);
+
+      function tick(){
+        const now = live ? Date.now() : stop;
+        const ms = (start? now - start : 0);
+        const el = document.getElementById('durSpan');
+        if (el) el.textContent = fmtDur(ms);
+      }
+      tick();
+      if (live){ timerId = setInterval(tick, 1000); }
+    }
   });
 
-  // inicial
   load({silent:false});
 })();
 </script>
