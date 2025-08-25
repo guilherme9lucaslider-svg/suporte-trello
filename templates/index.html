@@ -548,5 +548,19 @@
     });
   });
   </script>
+  <script>
+(function(){
+  const wrap = document.getElementById('downloadWrap');
+  if (!wrap) return;
+
+  // Se estiver rodando localmente (EXE ou dev local)
+  const isLocal = ['localhost', '127.0.0.1'].includes(location.hostname);
+
+  if (isLocal) {
+    wrap.style.display = 'none';
+  }
+})();
+</script>
+
 </body>
 </html>
