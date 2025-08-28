@@ -1,0 +1,91 @@
+{
+  "Unity Automação": {
+    "users": [
+      {
+        "username": "maria.unity",
+        "password_hash": "pbkdf2:sha256:600000$20e17addbd7f44a2$33a5d6828ff93fbfb76e34dbe90808e43cad1b697b3b75fc6d3efbcf3434add0"
+      },
+      {
+        "username": "joao.unity",
+        "password_hash": "pbkdf2:sha256:600000$08528a6d8a925149$55c48bab8ab28319152be33b0b3abc209162478a6a3a96f66f7a5dcd5d139944"
+      }
+    ]
+  },
+  "Outro Representante": {
+    "users": [
+      {
+        "username": "ana.outro",
+        "password_hash": "pbkdf2:sha256:600000$60ca2697a8042dc6$c10521daaa681b5e84eaea4c4af6f1b8c1a22099eeda710706c47b9914dcb588"
+      }
+    ]
+  },
+  "2RTI Soluções": {
+    "users": []
+  },
+  "Bug": {
+    "users": []
+  },
+  "Connecta Informática": {
+    "users": []
+  },
+  "Delane": {
+    "users": []
+  },
+  "Digital RF Tecnologia": {
+    "users": []
+  },
+  "Dúvida": {
+    "users": []
+  },
+  "GoSystem Automação": {
+    "users": []
+  },
+  "Host.com": {
+    "users": []
+  },
+  "MS Tech Soluções": {
+    "users": []
+  },
+  "MT Solutions": {
+    "users": []
+  },
+  "Mad Automação": {
+    "users": []
+  },
+  "Melhoria": {
+    "users": []
+  },
+  "Multitech": {
+    "users": []
+  },
+  "Online Soluções": {
+    "users": []
+  },
+  "R.A Soluções": {
+    "users": []
+  },
+  "RJ Soluções": {
+    "users": []
+  },
+  "Raizes Tecnologia": {
+    "users": []
+  },
+  "Supriserv": {
+    "users": []
+  },
+  "Tecnuve Soluções": {
+    "users": []
+  },
+  "Unai System": {
+    "users": []
+  },
+  "Use Tecnologia": {
+    "users": []
+  },
+  "Web System Norte": {
+    "users": []
+  },
+  "Webside Sistemas": {
+    "users": []
+  }
+}
