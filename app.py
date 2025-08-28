@@ -26,7 +26,7 @@ import requests
 BASE_DIR = Path(__file__).resolve().parent
 
 app = Flask(__name__)
-app.secret_key = os.getenv("APP_SECRET", "super-secret-key")  # troque em produção
+app.secret_key = os.environ["APP_SECRET"]
 # Não manter sessões permanentes: o usuário deverá fazer login novamente
 app.config["SESSION_PERMANENT"] = False
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -85,8 +85,8 @@ with app.app_context():
 # -----------------------------------------------------------------------------
 # Admin helpers
 # -----------------------------------------------------------------------------
-ADMIN_USER = os.getenv("ADMIN_USER", "lider")
-ADMIN_PASS = os.getenv("ADMIN_PASS", "2018")
+ADMIN_USER = os.environ["ADMIN_USER"]
+ADMIN_PASS_HASH = generate_password_hash(os.environ["ADMIN_PASS"])
 
 def admin_logged():
     return session.get("admin") is True
@@ -554,7 +554,7 @@ def admin_login():
         return render_template("admin_login.html", error=None)
     u = request.form.get("username","")
     p = request.form.get("password","")
-    if u == ADMIN_USER and p == ADMIN_PASS:
+    if u == ADMIN_USER and check_password_hash(ADMIN_PASS_HASH, p):
         session.clear()
         session["admin"] = True
         session["fresh_admin"] = True
