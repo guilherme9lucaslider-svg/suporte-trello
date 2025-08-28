@@ -67,19 +67,6 @@
     #painel .loading{display:inline-block;width:16px;height:16px;border:2px solid var(--stroke);border-radius:50%;border-top-color:var(--primary);animation:spin 1s ease-in-out infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
   
-/* === Compact rows & buttons === */
-#painel table .btn.btn--xs{padding:6px 10px;line-height:1;border-radius:10px;font-size:12px}
-#painel table td{padding-top:8px;padding-bottom:8px}
-
-/* === Status: text color only === */
-#painel .status{background:transparent!important;border:0!important;padding:0!important}
-#painel .status.s-open{color:#22c55e}     /* Em aberto – verde claro */
-#painel .status.s-analise{color:#eab308}  /* Em análise – amarelo */
-#painel .status.s-versao{color:#f97316}   /* Aguardando versão – laranja */
-#painel .status.s-req{color:#3b82f6}      /* Requisição – azul */
-#painel .status.s-ok{color:#166534}       /* Resolvidos/Finalizado – verde escuro */
-#painel .status.s-drop{color:#ef4444}     /* Descartados – vermelho */
-
 /* === Trello (isolado por atributo, não afeta 'Ver'/'Detalhes') === */
 #painel a[data-kind="trello-link"]{
   background: linear-gradient(135deg,#93c5fd 0%, #60a5fa 100%) !important;
@@ -290,18 +277,7 @@
       })();
 
       const esc = s => String(s||"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
-      const statusClass = (s) => {
-  const m = (s||'').toLowerCase();
-  if (m.includes('em aberto')) return 'status s-open';
-  if (m.includes('análise') || m.includes('analise')) return 'status s-analise';
-  if (m.includes('versão') || m.includes('versao')) return 'status s-versao';
-  if (m.includes('abrir requisição') || m.includes('abrir requisicao') ||
-      m.includes('aguardando requisição') || m.includes('aguardando requisicao') ||
-      m.includes('requisição') || m.includes('requisicao')) return 'status s-req';
-  if (m.includes('finalizado') || m.includes('resolvido') || m.includes('resolvidos')) return 'status s-ok';
-  if (m.includes('descart')) return 'status s-drop';
-  return 'status';
-};
+      const statusClass = s => 'status';
 
       const parsePriority = (desc) => {
         const m = (desc||'').match(/\*\*Prioridade:\*\*\s*([^\n]+)/i);
@@ -610,35 +586,23 @@
   
 (function(){
   try{
-    const __render = window.render || function(items, opts){};
+    const _render = window.render || function(items, opts){};
     window.render = function(items, opts){
-      __render(items, opts);
-      // Compact action buttons only
-      document.querySelectorAll('#tbl tbody button[data-action]').forEach(b=>b.classList.add('btn--xs'));
-
-      // Status color (if renderer didn't apply classes)
-      document.querySelectorAll('#tbl tbody .status').forEach(el => {
-        const t = (el.textContent||'').trim().toLowerCase();
-        el.classList.remove('s-open','s-analise','s-versao','s-req','s-ok','s-drop');
-        if (t.includes('em aberto')) el.classList.add('s-open');
-        else if (t.includes('em análise') || t.includes('em analise')) el.classList.add('s-analise');
-        else if (t.includes('aguardando versão') || t.includes('aguardando versao')) el.classList.add('s-versao');
-        else if (t.includes('abrir requisição') || t.includes('abrir requisicao') || t.includes('aguardando requisição') || t.includes('aguardando requisicao') || t.includes('requisição') || t.includes('requisicao')) el.classList.add('s-req');
-        else if (t.includes('finalizado') || t.includes('resolvido') || t.includes('resolvidos')) el.classList.add('s-ok');
-        else if (t.includes('descart')) el.classList.add('s-drop');
-      });
-
-      // Trello to blue compact button (isolated via attribute)
+      _render(items, opts);
+      // Marcar apenas links do Trello
       document.querySelectorAll('#tbl tbody a').forEach(a=>{
         const href = (a.getAttribute('href')||'').toLowerCase();
-        if(href.includes('trello.com') || /trello/i.test(a.textContent||'')){
+        const isTrello = href.includes('trello.com') || /trello/i.test(a.textContent||'');
+        if(isTrello){
           a.setAttribute('data-kind','trello-link');
           if(!a.classList.contains('btn')) a.classList.add('btn');
           if(!a.classList.contains('btn--xs')) a.classList.add('btn--xs');
-        }else if(a.getAttribute('data-kind')==='trello-link'){
-          a.removeAttribute('data-kind');
+        } else {
+          if(a.getAttribute('data-kind')==='trello-link') a.removeAttribute('data-kind');
         }
       });
+      // Garantir que "Ver"/"Detalhes" fiquem compactos e NÃO recebam estilo azul
+      document.querySelectorAll('#tbl tbody button[data-action]').forEach(b=>b.classList.add('btn--xs'));
     };
   }catch(e){}
 })();
