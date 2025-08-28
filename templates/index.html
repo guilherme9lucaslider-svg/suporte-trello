@@ -776,5 +776,25 @@
     if (runningLocally) wrap.style.display = 'none';
   })();
   </script>
+<script>
+(function(){
+  const w = document.getElementById('whatsInput');
+  if(w){ w.addEventListener('input', ()=> WA.maskBR(w)); }
+  const form = document.getElementById('formChamado') || document.querySelector('form[action="/salvar"]') || document.querySelector('form');
+  if(form && w){
+    form.addEventListener('submit', function(ev){
+      const digits = (w.value || '').replace(/\D+/g,'');
+      if(!(digits.length === 10 || digits.length === 11)){
+        ev.preventDefault();
+        alert('WhatsApp inválido. Use DDD + número (10 ou 11 dígitos).');
+        w.focus();
+        return false;
+      }
+      w.value = digits;
+    });
+  }
+})();
+</script>
+
 </body>
 </html>
