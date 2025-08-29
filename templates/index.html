@@ -156,7 +156,7 @@
     .priority-chip:hover{ transform:translateY(-2px); box-shadow:var(--shadow-sm); }
     .priority-chip input{ position:absolute; opacity:0; pointer-events:none; }
     .priority-chip[data-color="Alta"]{ --color:#e74c3c; }
-    .priority-chip[data-color="Média"]{ --color:var(--secondary); }
+    .priority-chip[data-color="MÃ©dia"]{ --color:var(--secondary); }
     .priority-chip[data-color="Baixa"]{ --color:#27ae60; }
     .priority-chip input:checked + span{
       background:var(--color); color:#fff; border-radius:10px; padding:14px 10px; display:block;
@@ -289,16 +289,8 @@
         </div>
 
         <div class="field-group">
-          <label for="contato">Contato</label>
-          <input id="contato" required placeholder="Telefone, WhatsApp ou e-mail"/>
-          <div class="field-hint" id="hint-contato">Informe um contato.</div>
-        </div>
-
-        <div class="field-group span-2">
-          <div class="double-field">
-            <div class="field-group">
-              <label for="representante">Representante</label>
-              {% if representante_logado %}
+          <label for="representante">Representante</label>
+          {% if representante_logado %}
 <input id="representante_view" value="{{ representante_logado }}" readonly />
 <input type="hidden" id="representante" name="representante" value="{{ representante_logado }}">
 {% else %}
@@ -309,20 +301,25 @@
   {% endfor %}
 </select>
 {% endif %}
-              <div class="field-hint" id="hint-representante">
+          <div class="field-hint" id="hint-representante">
   {% if representante_logado %}
     Representante definido pelo login.
   {% else %}
     Selecione um representante.
   {% endif %}
 </div>
-            </div>
-            <div class="field-group">
-              <label for="suporte">Suporte</label>
-              <input id="suporte" required placeholder="Seu nome" />
-              <div class="field-hint" id="hint-suporte">Informe quem está abrindo o chamado.</div>
-            </div>
-          </div>
+        </div>
+
+        <div class="field-group">
+          <label for="suporte">Suporte</label>
+          <input id="suporte" required placeholder="Seu nome" />
+          <div class="field-hint" id="hint-suporte">Informe quem está abrindo o chamado.</div>
+        </div>
+
+        <div class="field-group">
+          <label for="whatsapp">WhatsApp</label>
+          <input id="whatsapp" required placeholder="(XX) XXXXX-XXXX" maxlength="15"/>
+          <div class="field-hint" id="hint-whatsapp">Informe o WhatsApp no formato (XX) XXXXX-XXXX.</div>
         </div>
 
         <div class="field-group">
@@ -443,6 +440,25 @@
   // Garante modal oculto ao carregar
   document.getElementById('successView').style.display = 'none';
 
+  // Função para máscara de WhatsApp
+  function mascaraWhatsApp(input) {
+    let valor = input.value.replace(/\D/g, ''); // Remove tudo que não é dígito
+    
+    if (valor.length <= 11) {
+      if (valor.length === 0) {
+        valor = '';
+      } else if (valor.length <= 2) {
+        valor = valor.replace(/(\d{1,2})/, '($1');
+      } else if (valor.length <= 7) {
+        valor = valor.replace(/(\d{2})(\d{1,5})/, '($1) $2');
+      } else {
+        valor = valor.replace(/(\d{2})(\d{5})(\d{1,4})/, '($1) $2-$3');
+      }
+    }
+    
+    input.value = valor;
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     // ===== Dados base (uma única fonte) =====
     // Sistemas/módulos/ocorrências são definidos aqui. A lista de representantes
@@ -494,7 +510,7 @@
     const successView = document.getElementById('successView');
 
     const nomeInp   = document.getElementById('nome');
-    const contatoInp= document.getElementById('contato');
+    const whatsappInp = document.getElementById('whatsapp');
     const repSelect = document.getElementById('representante');
     const representanteLogado = {{ representante_logado|tojson }};
     const suporteInp= document.getElementById('suporte');
@@ -509,6 +525,11 @@
 
     const btnSalvar = document.getElementById('btnSalvar');
     const btnLimpar = document.getElementById('btnLimpar');
+
+    // Aplicar máscara no campo WhatsApp
+    whatsappInp.addEventListener('input', function() {
+      mascaraWhatsApp(this);
+    });
 
     // Representante logado injetado pelo backend (null se não houver)
 
@@ -551,7 +572,7 @@
         pill.innerHTML = `
           <span title="${file.name}">${file.name}</span>
           <small style="color:#6b7a7a">${sizeKB} KB</small>
-          <button type="button" data-i="${idx}" aria-label="Remover anexo">❌</button>
+          <button type="button" data-i="${idx}" aria-label="Remover anexo">⌫</button>
         `;
         listaAnexosEl.appendChild(pill);
       });
@@ -579,7 +600,7 @@
     const clearHint = hintId => document.getElementById(hintId)?.classList.remove('show');
     const cap = s => (s||"").toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
 
-    ['nome','contato','suporte','descricao'].forEach(id=>{
+    ['nome','whatsapp','suporte','descricao'].forEach(id=>{
       const el=document.getElementById(id);
       el.addEventListener('input', ()=>{ clearInvalid(el); clearHint('hint-'+id); });
       if(id==='nome' || id==='suporte'){ el.addEventListener('blur', ()=> el.value = cap(el.value)); }
@@ -645,15 +666,22 @@
     });
 
     // ===== Validação =====
+    function validarWhatsApp(numero) {
+      // Remove todos os caracteres não numéricos
+      const digits = numero.replace(/\D/g, '');
+      // Deve ter 10 ou 11 dígitos (DDD + número)
+      return digits.length === 10 || digits.length === 11;
+    }
+
     function validar(){
       let ok = true;
       const prioridade=(document.querySelector('input[name="prioridade"]:checked')||{}).value;
 
-      ['nome','contato','representante','suporte','sistema','modulo','ocorrencia','tipo','descricao','prioridade']
+      ['nome','whatsapp','representante','suporte','sistema','modulo','ocorrencia','tipo','descricao','prioridade']
         .forEach(h=>clearHint('hint-'+h));
 
       if(!nomeInp.value.trim()){ markInvalid(nomeInp,'hint-nome'); ok=false; }
-      if(!contatoInp.value.trim()){ markInvalid(contatoInp,'hint-contato'); ok=false; }
+      if(!whatsappInp.value.trim() || !validarWhatsApp(whatsappInp.value)){ markInvalid(whatsappInp,'hint-whatsapp'); ok=false; }
       const repValue = representanteLogado || (repSelect ? repSelect.value : '');
       if(!repValue){ markInvalid(repSelect || document.getElementById('representante_view'),'hint-representante'); ok=false; }
       if(!suporteInp.value.trim()){ markInvalid(suporteInp,'hint-suporte'); ok=false; }
@@ -681,7 +709,7 @@
       const prioridade=(document.querySelector('input[name="prioridade"]:checked')||{}).value;
       const form = new FormData();
       form.set('nome', cap(nomeInp.value.trim()));
-      form.set('contato', contatoInp.value.trim());
+      form.set('whatsapp', whatsappInp.value.trim());
       const repValue2 = representanteLogado || (repSelect ? repSelect.value : '');
       form.set('representante', repValue2);
       form.set('suporte', cap(suporteInp.value.trim()));
@@ -731,7 +759,7 @@
     function limparCampos(){
       document.querySelectorAll('.invalid').forEach(el=>el.classList.remove('invalid'));
       document.querySelectorAll('.field-hint.show').forEach(h=>h.classList.remove('show'));
-      nomeInp.value=''; contatoInp.value=''; if(repSelect) repSelect.value=''; suporteInp.value='';
+      nomeInp.value=''; whatsappInp.value=''; if(repSelect) repSelect.value=''; suporteInp.value='';
       sistemaSelect.value=''; resetSelect(moduloSelect,'Selecione o módulo'); resetSelect(ocorrenciaSelect,'Selecione a ocorrência');
       tipoSelect.value=''; descricaoTxt.value=''; obsTxt.value='';
       document.getElementById('hint-prioridade').classList.remove('show');
@@ -778,25 +806,6 @@
     if (runningLocally) wrap.style.display = 'none';
   })();
   </script>
-<script>
-(function(){
-  const w = document.getElementById('whatsInput');
-  if(w){ w.addEventListener('input', ()=> WA.maskBR(w)); }
-  const form = document.getElementById('formChamado') || document.querySelector('form[action="/salvar"]') || document.querySelector('form');
-  if(form && w){
-    form.addEventListener('submit', function(ev){
-      const digits = (w.value || '').replace(/\D+/g,'');
-      if(!(digits.length === 10 || digits.length === 11)){
-        ev.preventDefault();
-        alert('WhatsApp inválido. Use DDD + número (10 ou 11 dígitos).');
-        w.focus();
-        return false;
-      }
-      w.value = digits;
-    });
-  }
-})();
-</script>
 
 </body>
 </html>
