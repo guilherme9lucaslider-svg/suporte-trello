@@ -430,7 +430,7 @@ def logout():
 def salvar():
     data = request.form if request.form else (request.json or {})
     nome          = (data.get("nome") or "").strip()
-    contato       = (data.get("contato") or "").strip()
+    whatsapp       = (data.get("whatsapp") or "").strip()
     representante = ((session.get('representante') or data.get('representante') or '')).strip()
     suporte       = (data.get("suporte") or "").strip()
     sistema       = (data.get("sistema") or "").strip()
@@ -440,17 +440,17 @@ def salvar():
     observacao    = (data.get("observacao") or "").strip()
     prioridade    = (data.get("prioridade") or "").strip()
 
-    obrig = [nome, contato, representante, suporte, sistema, modulo, ocorrencia, prioridade]
+    obrig = [nome, whatsapp, representante, suporte, sistema, modulo, ocorrencia, prioridade]
     if not all(obrig):
         return jsonify(success=False, message="Campos obrigatórios faltando."), 400
-    # Validação simples de contato: exigir ao menos 3 caracteres e conter número ou '@'
-    if len(contato) < 3 or (not any(c.isdigit() for c in contato) and '@' not in contato):
-        return jsonify(success=False, message="Informe um telefone ou e‑mail válido no campo Contato."), 400
+    # Validação simples de whatsapp: exigir ao menos 13 digitos contando com os parênteses
+    if len(contato) < 13 or (not any(c.isdigit() for c in contato)):
+        return jsonify(success=False, message="Informe um telefone válido no campo Whatsapp."), 400
 
     titulo = f"{nome} - {sistema} ({ocorrencia})"
     desc = (
         f"**Nome:** {nome}\n"
-        f"**Contato:** {contato}\n"
+        f"**Whatsapp:** {whatsapp}\n"
         f"**Representante:** {representante}\n"
         f"**Suporte:** {suporte}\n"
         f"**Sistema:** {sistema}\n"
