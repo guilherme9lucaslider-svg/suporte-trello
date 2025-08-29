@@ -1,24 +1,32 @@
-# app.py (substituir integralmente)
+# app.py
 
-from flask import request, Response
 import os
-import json
-import hashlib
 import sys
 import re
 import time
+import json
 from pathlib import Path
 from datetime import datetime
-
 from functools import wraps
-from flask import request, (
-    Flask, render_template, request, jsonify, send_from_directory,
-    abort, make_response, session, redirect, url_for
+
+from flask import (
+    Flask,
+    render_template,
+    request,
+    jsonify,
+    send_from_directory,
+    abort,
+    make_response,
+    session,
+    redirect,
+    url_for,
+    Response,
 )
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import requests
+
 
 # -----------------------------------------------------------------------------
 # Paths / App
