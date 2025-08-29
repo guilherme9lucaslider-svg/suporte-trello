@@ -407,8 +407,10 @@
       </div>
 
       <div class="actions">
-        <div class="mr-auto" id="downloadWrap">
+        {% if show_download %}
+<div class="mr-auto" id="downloadWrap">
           <a class="btn btn--link" href="/baixar" title="Baixar aplicativo para Windows">Baixar aplicativo ⬇</a>
+{% endif %}
         </div>
         <button class="btn btn--ghost" id="btnLimpar">🗑️ Limpar</button>
         <button class="btn btn--primary" id="btnSalvar">Salvar Chamado</button>

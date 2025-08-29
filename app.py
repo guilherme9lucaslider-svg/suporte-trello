@@ -1,6 +1,6 @@
 # app.py (substituir integralmente)
 
-from flask import Response
+from flask import request, Response
 import os
 import json
 import hashlib
@@ -11,7 +11,7 @@ from pathlib import Path
 from datetime import datetime
 
 from functools import wraps
-from flask import (
+from flask import request, (
     Flask, render_template, request, jsonify, send_from_directory,
     abort, make_response, session, redirect, url_for
 )
@@ -26,6 +26,23 @@ import requests
 BASE_DIR = Path(__file__).resolve().parent
 
 app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB
+
+# ==== Mostrar/ocultar botão "Baixar aplicativo" ====
+def _compute_show_download(req=None):
+    """Retorna True se o botão 'Baixar aplicativo' deve aparecer."""
+    try:
+        req = req or request
+        ua = (req.headers.get("User-Agent") or "").lower()
+    except Exception:
+        ua = ""
+    is_electron = "electron" in ua
+    hide = os.getenv("HIDE_DOWNLOAD_BUTTON", "0") == "1" or os.getenv("APP_DESKTOP", "0") == "1"
+    return not (is_electron or hide)
+
+@app.context_processor
+def inject_show_download():
+    return {"show_download": _compute_show_download()}
 app.secret_key = os.getenv("APP_SECRET", "super-secret-key")  # troque em produção
 # Não manter sessões permanentes: o usuário deverá fazer login novamente
 app.config["SESSION_PERMANENT"] = False
