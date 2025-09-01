@@ -444,7 +444,7 @@ def salvar():
     if not all(obrig):
         return jsonify(success=False, message="Campos obrigatórios faltando."), 400
     # Validação simples de whatsapp: exigir ao menos 15 digitos contando com os parênteses
-    if len(contato) < 13 or (not any(c.isdigit() for c in contato)):
+    if len(whatsapp) < 13 or (not any(c.isdigit() for c in whatsapp)):
         return jsonify(success=False, message="Informe um telefone válido no campo Whatsapp."), 400
 
     titulo = f"{nome} - {sistema} ({ocorrencia})"
