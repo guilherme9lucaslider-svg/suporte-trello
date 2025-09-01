@@ -417,46 +417,41 @@
         return rec.acc + (isLive && rec.lastStart!=null ? (nowMs() - rec.lastStart) : 0);
       }
 
-      function load({silent=false}={}){
-        if(!silent) tbody.innerHTML='<tr><td class="empty" colspan="7"><div class="loading"></div> Carregando chamados...</td></tr>';
-        return fetch('/api/chamados'+qs(), {cache:'no-store'})
-          .then(async r=>{ const ct=r.headers.get('content-type')||''; const t=await r.text(); if(!ct.includes('application/json')) throw new Error(t.slice(0,300)); return JSON.parse(t); })
-          .then(j=>{
-            const items = (j.items||[]).map(x=>{ x.prioridade = x.prioridade || parsePriority(x.descricao); return x; });
-            reconcileDurations(items);
-            render(items,{silent});
-            const total = j.total ?? items.length;
-            countBox.innerHTML = `ðŸ"Š <strong>${total}</strong> chamado${total!==1?'s':''} encontrado${total!==1?'s':''}`;
-          })
-          .catch(err=>{
-            console.error(err);
-            countBox.innerHTML='âŒ Erro ao carregar dados';
-            tbody.innerHTML='<tr><td class="empty" colspan="7">âš ï¸ Erro ao carregar chamados.</td></tr>';
-          });
-      }
+      
+function load({silent=false}={}){
+  if(!silent) tbody.innerHTML='<tr><td class="empty" colspan="7"><div class="loading"></div> Carregando chamados...</td></tr>';
+  const controller = new AbortController();
+  const to = setTimeout(()=>controller.abort(), 12000);
 
-      // Aplicar & Limpar
-      btnAplicar.addEventListener('click',()=>{ stopRealtime(); load({silent:false}); });
-      btnLimpar.addEventListener('click',()=>{
-        stopRealtime();
-        repSelect.value=''; statusSelect.value=''; deInput.value=''; ateInput.value=''; qInput.value='';
-        cache=[]; lastKeys=new Set(); countBox.innerHTML='ðŸ"Ž Use os filtros para buscar chamados';
-        tbody.innerHTML='<tr><td class="empty" colspan="7">🎯 Aplique filtros ou ative o Monitoramento.</td></tr>';
-      });
+  const url = '/api/chamados'+qs();
+  return fetch(url, {cache:'no-store', signal: controller.signal})
+    .then(async r=>{
+      clearTimeout(to);
+      const ct=r.headers.get('content-type')||''; 
+      const txt=await r.text();
+      if(!r.ok) throw new Error('HTTP '+r.status+' '+r.statusText+'
+'+txt.slice(0,500));
+      if(!ct.includes('application/json')) throw new Error('Conteúdo não-JSON da API:
+'+txt.slice(0,500));
+      return JSON.parse(txt);
+    })
+    .then(j=>{
+      const items = (j.items||[]).map(x=>{ x.prioridade = x.prioridade || parsePriority(x.descricao); return x; });
+      reconcileDurations(items);
+      render(items,{silent});
+      const total = j.total ?? items.length;
+      countBox.innerHTML = `📊 <strong>${total}</strong> chamado${total!==1?'s':''} encontrado${total!==1?'s':''}`;
+    })
+    .catch(err=>{
+      console.error('[/api/chamados] falhou:', err);
+      const msg = String(err && err.message || err);
+      countBox.innerHTML='❌ Erro ao carregar dados';
+      tbody.innerHTML='<tr><td class="empty" colspan="7">⚠️ Erro ao carregar chamados.<br><pre style="white-space:pre-wrap;margin-top:8px;color:#7f1d1d;background:#fff3f3;border:1px solid #fecaca;padding:10px;border-radius:8px;max-height:160px;overflow:auto">'+
+        (msg.replace(/[<>&]/g,m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m])))+
+      '</pre></td></tr>';
+    });
+}
 
-      // Tempo real
-      let realtimeTimer=null;
-      function startRealtime(){
-        btnRealtime.classList.add('is-on');
-        btnRealtime.textContent='Parar Monitoramento';
-        statusSelect.value='Em aberto'; repSelect.value=''; deInput.value=''; ateInput.value=''; qInput.value='';
-        load({silent:false}).then(()=>{ realtimeTimer=setInterval(()=>load({silent:true}),6000); });
-      }
-      function stopRealtime(){
-        btnRealtime.classList.remove('is-on');
-        btnRealtime.innerHTML='<span class="dot"></span> Monitoramento em Tempo Real';
-        if(realtimeTimer){ clearInterval(realtimeTimer); realtimeTimer=null; }
-      }
       btnRealtime.addEventListener('click',()=> realtimeTimer ? stopRealtime() : startRealtime());
 
       // Modal
