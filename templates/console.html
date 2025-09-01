@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Console — Painel & Cadastro</title>
   <link rel="icon" href="/static/favicon.png">
@@ -418,22 +418,26 @@
       }
 
       
+
 function load({silent=false}={}){
   if(!silent) tbody.innerHTML='<tr><td class="empty" colspan="7"><div class="loading"></div> Carregando chamados...</td></tr>';
   const controller = new AbortController();
-  const to = setTimeout(()=>controller.abort(), 12000);
+  const to = setTimeout(()=>controller.abort(), 15000); // 15s
 
   const url = '/api/chamados'+qs();
-  return fetch(url, {cache:'no-store', signal: controller.signal})
+  return fetch(url, {
+      cache:'no-store',
+      signal: controller.signal,
+      credentials: 'same-origin',
+      headers: { 'Accept': 'application/json' }
+  })
     .then(async r=>{
       clearTimeout(to);
       const ct=r.headers.get('content-type')||''; 
-      const txt=await r.text();
-      if(!r.ok) throw new Error('HTTP '+r.status+' '+r.statusText+'
-'+txt.slice(0,500));
-      if(!ct.includes('application/json')) throw new Error('Conteúdo não-JSON da API:
-'+txt.slice(0,500));
-      return JSON.parse(txt);
+      const text=await r.text();
+      if(!r.ok) throw new Error('HTTP '+r.status+' '+r.statusText+'\n'+text.slice(0,800));
+      if(!ct.includes('application/json')) throw new Error('Conteúdo não-JSON da API:\n'+text.slice(0,800));
+      return JSON.parse(text);
     })
     .then(j=>{
       const items = (j.items||[]).map(x=>{ x.prioridade = x.prioridade || parsePriority(x.descricao); return x; });
@@ -452,53 +456,6 @@ function load({silent=false}={}){
     });
 }
 
-      btnRealtime.addEventListener('click',()=> realtimeTimer ? stopRealtime() : startRealtime());
-
-      // Modal
-      const modal=painel.querySelector('#modal'), modalBody=painel.querySelector('#modalBody'), modalTitle=painel.querySelector('#modalTitle'), btnClose=painel.querySelector('#btnFecharModal');
-      const openModal=(title,html)=>{ modalTitle.textContent=title; modalBody.innerHTML=html; modal.style.display='flex'; };
-      const closeModal=()=>{ modal.style.display='none'; if(timerId){clearInterval(timerId);timerId=null;} };
-      btnClose.addEventListener('click',closeModal);
-      modal.addEventListener('click',e=>{ if(e.target===modal) closeModal(); });
-      document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
-
-      function fmtDur(ms){ if(ms<0) ms=0; const s=Math.floor(ms/1000); const d=Math.floor(s/86400); const h=String(Math.floor((s%86400)/3600)).padStart(2,'0'); const m=String(Math.floor((s%3600)/60)).padStart(2,'0'); const sec=String(s%60).padStart(2,'0'); return (d? d+'d ': '')+`${h}:${m}:${sec}`; }
-      let timerId=null;
-
-      tbody.addEventListener('click', (e)=>{
-        const btn=e.target.closest('button[data-action]'); if(!btn) return;
-        const i=Number(btn.getAttribute('data-i')); const item=cache[i]||{};
-        if(btn.getAttribute('data-action')==='ver'){
-          const prio = item.prioridade || parsePriority(item.descricao);
-          const txt = `ðŸ"– Prioridade: ${prio||'-'}\n\n` + (item.descricao||'Nenhuma descrição disponível.');
-          // Aqui aplicamos a conversão de markdown para HTML
-          const htmlContent = escapeHtmlButKeepBold(txt);
-          openModal('ðŸ"„ Descrição do chamado', htmlContent);
-          return;
-        }
-        if(btn.getAttribute('data-action')==='detalhes'){
-          const created = inferCreatedAt(item);
-          const lastAct = item.ultima_atividade ? new Date(item.ultima_atividade) : null;
-          const isLive = LIVE_SET.has((item.status||'').toLowerCase());
-
-          const dur = getDurationMs(item);
-          let html = '';
-          html += `ðŸ"‹ Título: ${esc(item.titulo||'-')}\n`;
-          html += `ðŸ"Š Status: ${esc(item.status||'-')}\n\n`;
-          html += `ðŸ• Criado em: ${created ? created.toLocaleString('pt-BR') : 'â€"'}\n`;
-          html += `â° Última atividade: ${lastAct ? lastAct.toLocaleString('pt-BR') : 'â€"'}\n\n`;
-          html += `â± Tempo em aberto/anÃ¡lise: <span id="durSpan">${fmtDur(dur)}</span>${isLive?' (contando)':''}`;
-
-          openModal('Detalhes do chamado', html);
-
-          function tick(){
-            if(!isLive) return;
-            const el = document.getElementById('durSpan');
-            if(!el) return;
-            el.textContent = fmtDur(getDurationMs(item));
-          }
-          if(isLive){ timerId=setInterval(tick,1000); }
-        }
       });
 
       // NotificaÃ§Ãµes (opcional)
@@ -667,6 +624,12 @@ function load({silent=false}={}){
   }catch(e){}
 })();
 
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const q = document.querySelector('#q, input[name="q"], input[type="search"]');
+  if(q){ q.setAttribute('placeholder','Título ou descrição...'); }
+});
 </script>
 </body>
 </html>
