@@ -74,8 +74,8 @@
 /* === Status: text color only === */
 #painel .status{background:transparent!important;border:0!important;padding:0!important}
 #painel .status.s-open{color:#22c55e}     /* Em aberto â€" verde claro */
-#painel .status.s-analise{color:#eab308}  /* Em anÃ¡lise â€" amarelo */
-#painel .status.s-versao{color:#f97316}   /* Aguardando versÃ£o â€" laranja */
+#painel .status.s-analise{color:#eab308}  /* Em análise â€" amarelo */
+#painel .status.s-versao{color:#f97316}   /* Aguardando versão â€" laranja */
 #painel .status.s-req{color:#3b82f6}      /* Requisição â€" azul */
 #painel .status.s-ok{color:#166534}       /* Resolvidos/Finalizado â€" verde escuro */
 #painel .status.s-drop{color:#ef4444}     /* Descartados â€" vermelho */
@@ -102,7 +102,7 @@
 <body>
   <header class="header">
     <h1>Console Administrativo</h1>
-    <div class="subtitle">Gerencie chamados e usuários em uma Ãºnica interface</div>
+    <div class="subtitle">Gerencie chamados e usuários em uma única interface</div>
   </header>
 
   <nav class="tabs" role="tablist">
@@ -124,8 +124,8 @@
           <select id="fStatus" class="select">
             <option value="">Todos os status</option>
             <option>Em aberto</option>
-            <option>Em anÃ¡lise</option>
-            <option>Aguardando versÃ£o</option>
+            <option>Em análise</option>
+            <option>Aguardando versão</option>
             <option>Aguardando Requisição</option>
             <option>Finalizado</option>
             <option>Descartado</option>
@@ -133,12 +133,12 @@
         </div>
         <div class="filter-group"><label>Data inicial</label><input id="fDe" type="date" class="input"></div>
         <div class="filter-group"><label>Data final</label><input id="fAte" type="date" class="input"></div>
-        <div class="filter-group"><label>Buscar por</label><input id="fQ" class="input" placeholder="Título ou descriÃ§Ã£o..."></div>
+        <div class="filter-group"><label>Buscar por</label><input id="fQ" class="input" placeholder="Título ou descrição..."></div>
       </div>
 
       <div class="actions">
         <button class="btn btn--primary" id="btnAplicar">ðŸ"Ž Aplicar Filtros</button>
-        <button class="btn" id="btnLimpar">ðŸ§¹ Limpar</button>
+        <button class="btn" id="btnLimpar">🧹 Limpar</button>
         <button class="btn btn--live push-right" id="btnRealtime"><span class="dot"></span> Monitoramento em Tempo Real</button>
       </div>
 
@@ -322,9 +322,9 @@
   if (m.includes('em aberto')) return 'status s-open';
   if (m.includes('anÃ¡lise') || m.includes('analise')) return 'status s-analise';
   if (m.includes('versÃ£o') || m.includes('versao')) return 'status s-versao';
-  if (m.includes('abrir requisiÃ§Ã£o') || m.includes('abrir requisicao') ||
-      m.includes('aguardando requisiÃ§Ã£o') || m.includes('aguardando requisicao') ||
-      m.includes('requisiÃ§Ã£o') || m.includes('requisicao')) return 'status s-req';
+  if (m.includes('abrir requisição') || m.includes('abrir requisicao') ||
+      m.includes('aguardando requisição') || m.includes('aguardando requisicao') ||
+      m.includes('requisição') || m.includes('requisicao')) return 'status s-req';
   if (m.includes('finalizado') || m.includes('resolvido') || m.includes('resolvidos')) return 'status s-ok';
   if (m.includes('descart')) return 'status s-drop';
   return 'status';
@@ -441,7 +441,7 @@
         stopRealtime();
         repSelect.value=''; statusSelect.value=''; deInput.value=''; ateInput.value=''; qInput.value='';
         cache=[]; lastKeys=new Set(); countBox.innerHTML='ðŸ"Ž Use os filtros para buscar chamados';
-        tbody.innerHTML='<tr><td class="empty" colspan="7">ðŸŽ¯ Aplique filtros ou ative o Monitoramento.</td></tr>';
+        tbody.innerHTML='<tr><td class="empty" colspan="7">🎯 Aplique filtros ou ative o Monitoramento.</td></tr>';
       });
 
       // Tempo real
@@ -491,7 +491,7 @@
           html += `ðŸ"‹ Título: ${esc(item.titulo||'-')}\n`;
           html += `ðŸ"Š Status: ${esc(item.status||'-')}\n\n`;
           html += `ðŸ• Criado em: ${created ? created.toLocaleString('pt-BR') : 'â€"'}\n`;
-          html += `â° Ãšltima atividade: ${lastAct ? lastAct.toLocaleString('pt-BR') : 'â€"'}\n\n`;
+          html += `â° Última atividade: ${lastAct ? lastAct.toLocaleString('pt-BR') : 'â€"'}\n\n`;
           html += `â± Tempo em aberto/anÃ¡lise: <span id="durSpan">${fmtDur(dur)}</span>${isLive?' (contando)':''}`;
 
           openModal('Detalhes do chamado', html);
@@ -652,7 +652,7 @@
         if (t.includes('em aberto')) el.classList.add('s-open');
         else if (t.includes('em anÃ¡lise') || t.includes('em analise')) el.classList.add('s-analise');
         else if (t.includes('aguardando versÃ£o') || t.includes('aguardando versao')) el.classList.add('s-versao');
-        else if (t.includes('abrir requisiÃ§Ã£o') || t.includes('abrir requisicao') || t.includes('aguardando requisiÃ§Ã£o') || t.includes('aguardando requisicao') || t.includes('requisiÃ§Ã£o') || t.includes('requisicao')) el.classList.add('s-req');
+        else if (t.includes('abrir requisição') || t.includes('abrir requisicao') || t.includes('aguardando requisição') || t.includes('aguardando requisicao') || t.includes('requisição') || t.includes('requisicao')) el.classList.add('s-req');
         else if (t.includes('finalizado') || t.includes('resolvido') || t.includes('resolvidos')) el.classList.add('s-ok');
         else if (t.includes('descart')) el.classList.add('s-drop');
       });
