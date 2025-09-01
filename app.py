@@ -166,9 +166,11 @@ def get_list_id():
                     if lid:
                         app.config['TRELLO_LIST_ID'] = lid
                         return lid
-        print(f"[WARN] Lista '{LIST_NAME}' não encontrada no board {BOARD_ID}.")
+        if app.debug:
+            print(f"[WARN] Lista '{LIST_NAME}' não encontrada no board {BOARD_ID}.")
     except Exception as e:
-        print("[WARN] Falha ao resolver LIST_ID:", e)
+        if app.debug:
+            print("[WARN] Falha ao resolver LIST_ID:", e)
     return None
 
 try:
@@ -200,6 +202,8 @@ def trello_get(path: str, params: dict):
     p = {"key": API_KEY, "token": TOKEN}
     p.update(params or {})
     r = requests.get(f"{TRELLO_BASE}{path}", params=p, timeout=15)
+    if app.debug:
+        print(f"[TRELLO][GET] {path} -> {r.status_code}")
     if not r.ok:
         raise RuntimeError(f"[TRELLO][GET {path}] {r.status_code}: {r.text[:300]}")
     try:
@@ -208,14 +212,19 @@ def trello_get(path: str, params: dict):
         raise RuntimeError(f"[TRELLO][GET {path}] Resposta não é JSON: {r.text[:300]}")
 
 _trello_cache: dict = {}
-def cached_trello_get(path: str, params: dict, ttl: int = 5):
+def cached_trello_get(path: str, params: dict, ttl: int = 20):
+    """Cache simples em memória (default 20s)."""
     key = (path, tuple(sorted((params or {}).items())))
     now = time.monotonic()
     entry = _trello_cache.get(key)
     if entry:
         age = now - entry[1]
         if age < ttl:
+            if app.debug:
+                print(f"[CACHE] HIT {path} age={age:.1f}s")
             return entry[0]
+    if app.debug:
+        print(f"[CACHE] MISS {path}")
     value = trello_get(path, params)
     _trello_cache[key] = (value, now)
     return value
@@ -224,6 +233,8 @@ def trello_post(path: str, params: dict):
     p = {"key": API_KEY, "token": TOKEN}
     p.update(params or {})
     r = requests.post(f"{TRELLO_BASE}{path}", params=p, timeout=15)
+    if app.debug:
+        print(f"[TRELLO][POST] {path} -> {r.status_code}")
     if not r.ok:
         raise RuntimeError(f"[TRELLO][POST {path}] {r.status_code}: {r.text[:300]}")
     try:
@@ -236,6 +247,8 @@ def trello_attach_file(card_id: str, filename: str, fileobj, mimetype: str = Non
     files = {"file": (filename, fileobj, mimetype or "application/octet-stream")}
     p = {"key": API_KEY, "token": TOKEN}
     r = requests.post(url, params=p, files=files, timeout=60)
+    if app.debug:
+        print(f"[TRELLO][ATTACH] {filename} -> {r.status_code}")
     if not r.ok:
         print("[TRELLO][ATTACH] Falha:", r.status_code, r.text[:300])
 
@@ -248,6 +261,8 @@ def trello_clear_cover(card_id: str):
             json={"idAttachment": None},
             timeout=15
         )
+        if app.debug:
+            print(f"[TRELLO][COVER] clear -> {r.status_code}")
         if not r.ok:
             print("[TRELLO][COVER] Falha ao remover capa:", r.status_code, r.text[:300])
     except Exception as e:
@@ -426,6 +441,8 @@ def api_chamados():
             "whatsapp": whats,  # << novo campo para o front exibir o botão
         })
 
+    if app.debug:
+        print(f"[API] /api/chamados -> {len(items)} itens")
     return jsonify({"total": len(items), "items": items})
 
 
@@ -437,6 +454,7 @@ def api_representantes():
     permite que o front-end preencha selects dinamicamente sem manter
     listas duplicadas no JavaScript.
     """
+    reps = Representative.query.order_by(Representative.name.asc()).all
     reps = Representative.query.order_by(Representative.name.asc()).all()
     return jsonify([r.name for r in reps])
 
@@ -457,12 +475,18 @@ def login():
         session['user'] = username
         session['representante'] = user.representative.name
         session['fresh_cadastro'] = True
+        if app.debug:
+            print(f"[AUTH] login OK: {username}")
         return redirect(url_for('index'))
 
+    if app.debug:
+        print(f"[AUTH] login FAIL: {username}")
     return render_template('login.html', error='Usuário ou senha inválidos.')
 
 @app.route('/logout')
 def logout():
+    if app.debug:
+        print("[AUTH] logout")
     session.clear()
     return redirect(url_for('login'))
 
@@ -472,22 +496,46 @@ def logout():
 @app.route("/salvar", methods=["POST"])
 def salvar():
     data = request.form if request.form else (request.json or {})
-    nome          = (data.get("nome") or "").strip()
+    nome           = (data.get("nome") or "").strip()
     whatsapp       = (data.get("whatsapp") or "").strip()
-    representante = ((session.get('representante') or data.get('representante') or '')).strip()
-    suporte       = (data.get("suporte") or "").strip()
-    sistema       = (data.get("sistema") or "").strip()
-    modulo        = (data.get("modulo") or "").strip()
-    ocorrencia    = (data.get("ocorrencia") or "").strip()
-    descricao     = (data.get("descricao") or "").strip()
-    observacao    = (data.get("observacao") or "").strip()
-    prioridade    = (data.get("prioridade") or "").strip()
+    representante  = ((session.get('representante') or data.get('representante') or '')).strip()
+    suporte        = (data.get("suporte") or "").strip()
+    sistema        = (data.get("sistema") or "").strip()
+    modulo         = (data.get("modulo") or "").strip()
+    ocorrencia     = (data.get("ocorrencia") or "").strip()
+    descricao      = (data.get("descricao") or "").strip()
+    observacao     = (data.get("observacao") or "").strip()
+    prioridade     = (data.get("prioridade") or "").strip()
 
-    obrig = [nome, whatsapp, representante, suporte, sistema, modulo, ocorrencia, prioridade]
-    if not all(obrig):
-        return jsonify(success=False, message="Campos obrigatórios faltando."), 400
-    # Validação simples de whatsapp: exigir ao menos 15 digitos contando com os parênteses
-    if len(whatsapp) < 13 or (not any(c.isdigit() for c in whatsapp)):
+    # ---- Melhor mensagem de erro: listar faltantes
+    labels = {
+        "nome": "Nome",
+        "whatsapp": "Whatsapp",
+        "representante": "Representante",
+        "suporte": "Suporte",
+        "sistema": "Sistema",
+        "modulo": "Módulo",
+        "ocorrencia": "Ocorrência",
+        "prioridade": "Prioridade",
+    }
+    faltando = [labels[k] for k, v in {
+        "nome": nome,
+        "whatsapp": whatsapp,
+        "representante": representante,
+        "suporte": suporte,
+        "sistema": sistema,
+        "modulo": modulo,
+        "ocorrencia": ocorrencia,
+        "prioridade": prioridade,
+    }.items() if not v]
+
+    if faltando:
+        msg = "Campos obrigatórios faltando: " + ", ".join(faltando) + "."
+        return jsonify(success=False, message=msg), 400
+
+    # ---- Validação de WhatsApp: exigir dígitos suficientes
+    digits = re.sub(r"\D+", "", whatsapp)
+    if len(digits) < 10:
         return jsonify(success=False, message="Informe um telefone válido no campo Whatsapp."), 400
 
     titulo = f"{nome} - {sistema} ({ocorrencia})"
@@ -723,4 +771,5 @@ def console_redirect():
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
+    # Ative debug=True em dev para ver os logs condicionais
     app.run(host="0.0.0.0", port=port, debug=True)
