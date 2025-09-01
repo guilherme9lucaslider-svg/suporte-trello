@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Console â€" Painel & Cadastro</title>
+  <title>Console - Painel & Cadastro</title>
   <link rel="icon" href="/static/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -137,8 +137,8 @@
       </div>
 
       <div class="actions">
-        <button class="btn btn--primary" id="btnAplicar">ðŸ"Ž Aplicar Filtros</button>
-        <button class="btn" id="btnLimpar">🧹 Limpar</button>
+        <button class="btn btn--primary" id="btnAplicar">Aplicar Filtros</button>
+        <button class="btn" id="btnLimpar">Limpar</button>
         <button class="btn btn--live push-right" id="btnRealtime"><span class="dot"></span> Monitoramento em Tempo Real</button>
       </div>
 
@@ -348,15 +348,15 @@
 
       function buildRowHTML(it,i){
         const prio = it.prioridade || parsePriority(it.descricao);
-        const trelloLink = it.url ? ('<a class="cell-btn" style="border-color:#8b5cf6;background:linear-gradient(135deg,#f3e8ff 0%,#ede9fe 100%);color:#8b5cf6" href="'+esc(it.url)+'" target="_blank" rel="noopener">ðŸ"— Trello</a>') : '-';
+        const trelloLink = it.url ? ('<a class="cell-btn" style="border-color:#8b5cf6;background:linear-gradient(135deg,#f3e8ff 0%,#ede9fe 100%);color:#8b5cf6" href="'+esc(it.url)+'" target="_blank" rel="noopener">Trello</a>') : '-';
         return (
           '<tr data-key="'+esc(keyFor(it)||String(i))+'">'+
             '<td class="title" title="'+esc(it.titulo)+'">'+esc(it.titulo)+'</td>'+
             '<td>'+esc(it.representante||"-")+'</td>'+
             '<td><span class="'+statusClass(it.status)+'">'+esc(it.status||"-")+'</span></td>'+
-            '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="detalhes">ðŸ"‹ Detalhes</button></td>'+
+            '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="detalhes">Detalhes</button></td>'+
             '<td class="prio">'+esc(prio||"-")+'</td>'+
-            '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="ver">ðŸ' Ver</button></td>'+
+            '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="ver">Ver</button></td>'+
             '<td>'+trelloLink+'</td>'+
           '</tr>'
         );
@@ -441,7 +441,7 @@
         stopRealtime();
         repSelect.value=''; statusSelect.value=''; deInput.value=''; ateInput.value=''; qInput.value='';
         cache=[]; lastKeys=new Set(); countBox.innerHTML='ðŸ"Ž Use os filtros para buscar chamados';
-        tbody.innerHTML='<tr><td class="empty" colspan="7">🎯 Aplique filtros ou ative o Monitoramento.</td></tr>';
+        tbody.innerHTML='<tr><td class="empty" colspan="7"> Aplique filtros ou ative o Monitoramento.</td></tr>';
       });
 
       // Tempo real
@@ -478,7 +478,7 @@
           const txt = `ðŸ"– Prioridade: ${prio||'-'}\n\n` + (item.descricao||'Nenhuma descrição disponível.');
           // Aqui aplicamos a conversão de markdown para HTML
           const htmlContent = escapeHtmlButKeepBold(txt);
-          openModal('ðŸ"„ Descrição do chamado', htmlContent);
+          openModal('Descrição do chamado', htmlContent);
           return;
         }
         if(btn.getAttribute('data-action')==='detalhes'){
