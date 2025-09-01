@@ -58,7 +58,7 @@
     #painel .status{background:transparent!important;border:0!important;padding:0!important;min-width:unset;font-weight:600;font-size:14px;color:var(--ink)}
     #painel .count{font-size:14px;color:var(--muted);font-weight:500;margin-bottom:16px;padding:12px 16px;background:#fff;border-radius:16px;border:1px solid var(--stroke)}
     #painel .table-wrap{overflow-x:auto}
-    #painel table{min-width:800px}
+    #painel table{min-width:1000px}
     #painel .title{max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;color:var(--ink)}
     #painel .modal{position:fixed;inset:0;background:rgba(15,23,42,.7);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:9999}
     #painel .modal__box{width:min(800px,95vw);max-height:85vh;overflow:auto;background:#fff;border:1px solid var(--stroke);border-radius:16px;padding:32px;box-shadow:var(--shadow)}
@@ -73,14 +73,31 @@
 
 /* === Status: text color only === */
 #painel .status{background:transparent!important;border:0!important;padding:0!important}
-#painel .status.s-open{color:#22c55e}     /* Em aberto â€" verde claro */
-#painel .status.s-analise{color:#eab308}  /* Em análise â€" amarelo */
-#painel .status.s-versao{color:#f97316}   /* Aguardando versão â€" laranja */
-#painel .status.s-req{color:#3b82f6}      /* Requisição â€" azul */
-#painel .status.s-ok{color:#166534}       /* Resolvidos/Finalizado â€" verde escuro */
-#painel .status.s-drop{color:#ef4444}     /* Descartados â€" vermelho */
+#painel .status.s-open{color:#22c55e}     /* Em aberto — verde claro */
+#painel .status.s-analise{color:#eab308}  /* Em análise — amarelo */
+#painel .status.s-versao{color:#f97316}   /* Aguardando versão — laranja */
+#painel .status.s-req{color:#3b82f6}      /* Requisição — azul */
+#painel .status.s-ok{color:#166534}       /* Resolvidos/Finalizado — verde escuro */
+#painel .status.s-drop{color:#ef4444}     /* Descartados — vermelho */
 
-/* === Trello (isolado por atributo, nÃ£o afeta 'Ver'/'Detalhes') === */
+/* === WhatsApp button === */
+#painel a[data-kind="whatsapp-link"]{
+  background: linear-gradient(135deg,#25d366 0%, #128c7e 100%) !important;
+  border: 1px solid #25d366 !important;
+  color: #ffffff !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 12px;
+  text-decoration: none;
+  padding: 6px 10px;
+  line-height: 1;
+}
+#painel a[data-kind="whatsapp-link"]:hover{ filter: brightness(1.1); }
+
+/* === Trello (isolado por atributo, não afeta 'Ver'/'Detalhes') === */
 #painel a[data-kind="trello-link"]{
   background: linear-gradient(135deg,#93c5fd 0%, #60a5fa 100%) !important;
   border: 1px solid #60a5fa !important;
@@ -133,11 +150,11 @@
         </div>
         <div class="filter-group"><label>Data inicial</label><input id="fDe" type="date" class="input"></div>
         <div class="filter-group"><label>Data final</label><input id="fAte" type="date" class="input"></div>
-        <div class="filter-group"><label>Buscar por</label><input id="fQ" class="input" placeholder="Título ou descriÃ§Ã£o..."></div>
+        <div class="filter-group"><label>Buscar por</label><input id="fQ" class="input" placeholder="Título ou descrição..."></div>
       </div>
 
       <div class="actions">
-        <button class="btn btn--primary" id="btnAplicar">🔎 Aplicar Filtros</button>
+        <button class="btn btn--primary" id="btnAplicar">🔍 Aplicar Filtros</button>
         <button class="btn" id="btnLimpar">🧹 Limpar</button>
         <button class="btn btn--live push-right" id="btnRealtime"><span class="dot"></span> Monitoramento em Tempo Real</button>
       </div>
@@ -155,11 +172,12 @@
                 <th>Detalhes</th>
                 <th>Prioridade</th>
                 <th>Descrição</th>
+                <th>WhatsApp</th>
                 <th>Ações</th>
               </tr>
             </thead>
             <tbody id="tbody">
-              <tr><td class="empty" colspan="7"><div class="loading"></div> Carregando chamados...</td></tr>
+              <tr><td class="empty" colspan="8"><div class="loading"></div> Carregando chamados...</td></tr>
             </tbody>
           </table>
         </div>
@@ -190,7 +208,7 @@
               <tr data-id="{{ r.id }}">
                 <td><strong>{{ r.name }}</strong></td>
                 <td class="actions">
-                  <form method="post" action="/admin/rep/{{ r.id }}/delete" onsubmit="return confirm('Remover representante? (somente se nÃ£o houver usuários)')">
+                  <form method="post" action="/admin/rep/{{ r.id }}/delete" onsubmit="return confirm('Remover representante? (somente se não houver usuários)')">
                     <button class="btn btn--ghost" type="submit">Remover</button>
                   </form>
                 </td>
@@ -212,26 +230,26 @@
             <option value="{{ r.id }}">{{ r.name }}</option>
             {% endfor %}
           </select>
-          <input name="username" required placeholder="Nome de usuÃ¡rio">
+          <input name="username" required placeholder="Nome de usuário">
           <input name="password" type="password" required placeholder="Senha">
-          <button class="btn" type="submit">Adicionar UsuÃ¡rio</button>
+          <button class="btn" type="submit">Adicionar Usuário</button>
         </form>
         <div class="table-container">
           <table id="t-users">
-            <thead><tr><th>UsuÃ¡rio</th><th>Representante</th><th style="width:140px;">Ações</th></tr></thead>
+            <thead><tr><th>Usuário</th><th>Representante</th><th style="width:140px;">Ações</th></tr></thead>
             <tbody>
               {% for u in users %}
               <tr data-id="{{ u.id }}">
                 <td><strong>{{ u.username }}</strong></td>
                 <td><span class="pill">{{ u.representative.name }}</span></td>
                 <td class="actions">
-                  <form method="post" action="/admin/user/{{ u.id }}/delete" onsubmit="return confirm('Remover usuÃ¡rio?')">
+                  <form method="post" action="/admin/user/{{ u.id }}/delete" onsubmit="return confirm('Remover usuário?')">
                     <button class="btn btn--ghost" type="submit">Remover</button>
                   </form>
                 </td>
               </tr>
               {% else %}
-              <tr><td colspan="3" class="empty-state">Nenhum usuÃ¡rio cadastrado</td></tr>
+              <tr><td colspan="3" class="empty-state">Nenhum usuário cadastrado</td></tr>
               {% endfor %}
             </tbody>
           </table>
@@ -292,8 +310,24 @@
       const btnAplicar = painel.querySelector('#btnAplicar');
       const btnLimpar = painel.querySelector('#btnLimpar');
       const notifSound = painel.querySelector('#notifSound');
+      const modal = painel.querySelector('#modal');
+      const modalTitle = painel.querySelector('#modalTitle');
+      const modalBody = painel.querySelector('#modalBody');
+      const btnFecharModal = painel.querySelector('#btnFecharModal');
 
-      const LIVE_SET = new Set(['em aberto','em anÃ¡lise']);
+      const LIVE_SET = new Set(['em aberto','em análise']);
+
+      // Modal handlers
+      btnFecharModal.addEventListener('click', () => {
+        modal.style.display = 'none';
+      });
+
+      // Clique no backdrop fecha modal
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.style.display = 'none';
+        }
+      });
 
       // Durations persistence
       const DUR_NS = 'painel_durations_v2';
@@ -318,17 +352,17 @@
 
       const esc = s => String(s||"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
       const statusClass = (s) => {
-  const m = (s||'').toLowerCase();
-  if (m.includes('em aberto')) return 'status s-open';
-  if (m.includes('anÃ¡lise') || m.includes('analise')) return 'status s-analise';
-  if (m.includes('versÃ£o') || m.includes('versao')) return 'status s-versao';
-  if (m.includes('abrir requisiÃ§Ã£o') || m.includes('abrir requisicao') ||
-      m.includes('aguardando requisiÃ§Ã£o') || m.includes('aguardando requisicao') ||
-      m.includes('requisiÃ§Ã£o') || m.includes('requisicao')) return 'status s-req';
-  if (m.includes('finalizado') || m.includes('resolvido') || m.includes('resolvidos')) return 'status s-ok';
-  if (m.includes('descart')) return 'status s-drop';
-  return 'status';
-};
+        const m = (s||'').toLowerCase();
+        if (m.includes('em aberto')) return 'status s-open';
+        if (m.includes('análise') || m.includes('analise')) return 'status s-analise';
+        if (m.includes('versão') || m.includes('versao')) return 'status s-versao';
+        if (m.includes('abrir requisição') || m.includes('abrir requisicao') ||
+            m.includes('aguardando requisição') || m.includes('aguardando requisicao') ||
+            m.includes('requisição') || m.includes('requisicao')) return 'status s-req';
+        if (m.includes('finalizado') || m.includes('resolvido') || m.includes('resolvidos')) return 'status s-ok';
+        if (m.includes('descart')) return 'status s-drop';
+        return 'status';
+      };
 
       const parsePriority = (desc) => {
         const m = (desc||'').match(/\*\*Prioridade:\*\*\s*([^\n]+)/i);
@@ -345,27 +379,92 @@
       }
 
       let cache = []; let lastKeys = new Set();
+      let isRealTimeActive = false;
+
+      // Função para ativar/desativar monitoramento em tempo real
+      function toggleRealTime() {
+        isRealTimeActive = !isRealTimeActive;
+        if (isRealTimeActive) {
+          btnRealtime.classList.add('is-on');
+          btnRealtime.innerHTML = 'Parar Monitoramento';
+          startRealTimeMonitoring();
+        } else {
+          btnRealtime.classList.remove('is-on');
+          btnRealtime.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
+          stopRealTimeMonitoring();
+        }
+      }
+
+      let realTimeInterval;
+
+      function startRealTimeMonitoring() {
+        realTimeInterval = setInterval(() => {
+          if (isRealTimeActive) {
+            load({silent: true});
+          }
+        }, 30000); // 30 segundos
+      }
+
+      function stopRealTimeMonitoring() {
+        if (realTimeInterval) {
+          clearInterval(realTimeInterval);
+          realTimeInterval = null;
+        }
+      }
+
+      btnRealtime.addEventListener('click', toggleRealTime);
 
       function buildRowHTML(it,i){
         const prio = it.prioridade || parsePriority(it.descricao);
-        const trelloLink = it.url ? ('<a class="cell-btn" style="border-color:#8b5cf6;background:linear-gradient(135deg,#f3e8ff 0%,#ede9fe 100%);color:#8b5cf6" href="'+esc(it.url)+'" target="_blank" rel="noopener">ðŸ"— Trello</a>') : '-';
+        const trelloLink = it.url ? ('<a data-kind="trello-link" href="'+esc(it.url)+'" target="_blank" rel="noopener">🔗 Trello</a>') : '-';
+        
+        // Botão WhatsApp
+        let whatsappLink = '-';
+        if (it.whatsapp && it.whatsapp.length >= 10) {
+          const whatsappUrl = 'https://wa.me/55' + it.whatsapp;
+          whatsappLink = '<a data-kind="whatsapp-link" href="'+whatsappUrl+'" target="_blank" rel="noopener">💬 WhatsApp</a>';
+        }
+        
         return (
           '<tr data-key="'+esc(keyFor(it)||String(i))+'">'+
             '<td class="title" title="'+esc(it.titulo)+'">'+esc(it.titulo)+'</td>'+
             '<td>'+esc(it.representante||"-")+'</td>'+
             '<td><span class="'+statusClass(it.status)+'">'+esc(it.status||"-")+'</span></td>'+
-            '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="detalhes">ðŸ"‹ Detalhes</button></td>'+
+            '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="detalhes">📋 Detalhes</button></td>'+
             '<td class="prio">'+esc(prio||"-")+'</td>'+
-            '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="ver">ðŸ' Ver</button></td>'+
+            '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="ver">👁 Ver</button></td>'+
+            '<td>'+whatsappLink+'</td>'+
             '<td>'+trelloLink+'</td>'+
           '</tr>'
         );
       }
 
+      // Adicionar event listener para ações dos botões
+      tbody.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        
+        const i = parseInt(btn.getAttribute('data-i'));
+        const action = btn.getAttribute('data-action');
+        const item = cache[i];
+        
+        if (!item) return;
+        
+        if (action === 'detalhes') {
+          modalTitle.textContent = 'Detalhes do Chamado';
+          modalBody.innerHTML = escapeHtmlButKeepBold(item.descricao || 'Sem descrição');
+          modal.style.display = 'flex';
+        } else if (action === 'ver') {
+          modalTitle.textContent = 'Visualizar Chamado';
+          modalBody.innerHTML = escapeHtmlButKeepBold(item.descricao || 'Sem descrição');
+          modal.style.display = 'flex';
+        }
+      });
+
       function render(items,{silent=false}={}){
         const prev = lastKeys;
         tbody.innerHTML = items.length ? items.map(buildRowHTML).join('') :
-          '<tr><td class="empty" colspan="7">ðŸ"Ž Nenhum chamado encontrado.<br><span style="font-size:14px;opacity:.7;">Ajuste os filtros ou verifique a busca.</span></td></tr>';
+          '<tr><td class="empty" colspan="8">📋 Nenhum chamado encontrado.<br><span style="font-size:14px;opacity:.7;">Ajuste os filtros ou verifique a busca.</span></td></tr>';
         if (silent){
           [...tbody.querySelectorAll('tr[data-key]')].forEach(tr=>{
             const k=tr.getAttribute('data-key'); if(!prev.has(k)) tr.classList.add('row-new');
@@ -417,48 +516,55 @@
         return rec.acc + (isLive && rec.lastStart!=null ? (nowMs() - rec.lastStart) : 0);
       }
 
-      
+      function load({silent=false}={}){
+        if(!silent) tbody.innerHTML='<tr><td class="empty" colspan="8"><div class="loading"></div> Carregando chamados...</td></tr>';
+        const controller = new AbortController();
+        const to = setTimeout(()=>controller.abort(), 15000); // 15s
 
-function load({silent=false}={}){
-  if(!silent) tbody.innerHTML='<tr><td class="empty" colspan="7"><div class="loading"></div> Carregando chamados...</td></tr>';
-  const controller = new AbortController();
-  const to = setTimeout(()=>controller.abort(), 15000); // 15s
+        const url = '/api/chamados'+qs();
+        return fetch(url, {
+            cache:'no-store',
+            signal: controller.signal,
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json' }
+        })
+          .then(async r=>{
+            clearTimeout(to);
+            const ct=r.headers.get('content-type')||''; 
+            const text=await r.text();
+            if(!r.ok) throw new Error('HTTP '+r.status+' '+r.statusText+'\n'+text.slice(0,800));
+            if(!ct.includes('application/json')) throw new Error('Conteúdo não-JSON da API:\n'+text.slice(0,800));
+            return JSON.parse(text);
+          })
+          .then(j=>{
+            const items = (j.items||[]).map(x=>{ x.prioridade = x.prioridade || parsePriority(x.descricao); return x; });
+            reconcileDurations(items);
+            render(items,{silent});
+            const total = j.total ?? items.length;
+            countBox.innerHTML = `📊 <strong>${total}</strong> chamado${total!==1?'s':''} encontrado${total!==1?'s':''}`;
+          })
+          .catch(err=>{
+            console.error('[/api/chamados] falhou:', err);
+            const msg = String(err && err.message || err);
+            countBox.innerHTML='❌ Erro ao carregar dados';
+            tbody.innerHTML='<tr><td class="empty" colspan="8">⚠️ Erro ao carregar chamados.<br><pre style="white-space:pre-wrap;margin-top:8px;color:#7f1d1d;background:#fff3f3;border:1px solid #fecaca;padding:10px;border-radius:8px;max-height:160px;overflow:auto">'+
+              (msg.replace(/[<>&]/g,m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m])))+
+            '</pre></td></tr>';
+          });
+      }
 
-  const url = '/api/chamados'+qs();
-  return fetch(url, {
-      cache:'no-store',
-      signal: controller.signal,
-      credentials: 'same-origin',
-      headers: { 'Accept': 'application/json' }
-  })
-    .then(async r=>{
-      clearTimeout(to);
-      const ct=r.headers.get('content-type')||''; 
-      const text=await r.text();
-      if(!r.ok) throw new Error('HTTP '+r.status+' '+r.statusText+'\n'+text.slice(0,800));
-      if(!ct.includes('application/json')) throw new Error('Conteúdo não-JSON da API:\n'+text.slice(0,800));
-      return JSON.parse(text);
-    })
-    .then(j=>{
-      const items = (j.items||[]).map(x=>{ x.prioridade = x.prioridade || parsePriority(x.descricao); return x; });
-      reconcileDurations(items);
-      render(items,{silent});
-      const total = j.total ?? items.length;
-      countBox.innerHTML = `📊 <strong>${total}</strong> chamado${total!==1?'s':''} encontrado${total!==1?'s':''}`;
-    })
-    .catch(err=>{
-      console.error('[/api/chamados] falhou:', err);
-      const msg = String(err && err.message || err);
-      countBox.innerHTML='❌ Erro ao carregar dados';
-      tbody.innerHTML='<tr><td class="empty" colspan="7">⚠️ Erro ao carregar chamados.<br><pre style="white-space:pre-wrap;margin-top:8px;color:#7f1d1d;background:#fff3f3;border:1px solid #fecaca;padding:10px;border-radius:8px;max-height:160px;overflow:auto">'+
-        (msg.replace(/[<>&]/g,m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m])))+
-      '</pre></td></tr>';
-    });
-}
-
+      // Event listeners
+      btnAplicar.addEventListener('click', () => load({silent: false}));
+      btnLimpar.addEventListener('click', () => {
+        repSelect.value = '';
+        statusSelect.value = '';
+        deInput.value = '';
+        ateInput.value = '';
+        qInput.value = '';
+        load({silent: false});
       });
 
-      // NotificaÃ§Ãµes (opcional)
+      // Notificações (opcional)
       function ensureNotifPermission(){
         if(!('Notification' in window)) return;
         if(Notification.permission==='default'){
@@ -479,7 +585,7 @@ function load({silent=false}={}){
       function notifyNew(item){
         try{
           const title = 'Novo chamado em aberto';
-          const body  = `${item.titulo || 'Sem título'}\nRep.: ${item.representante || '-'}${item.status ? ' â€¢ '+item.status : ''}`;
+          const body  = `${item.titulo || 'Sem título'}\nRep.: ${item.representante || '-'}${item.status ? ' • '+item.status : ''}`;
           if('Notification' in window && Notification.permission==='granted'){
             const n = new Notification(title,{ body, icon:'/static/icon-192.png', tag: keyFor(item) });
             n.onclick = ()=>{ if(item.url) window.open(item.url,'_blank'); };
@@ -489,6 +595,7 @@ function load({silent=false}={}){
       }
 
       setInterval(()=>{
+        if (!isRealTimeActive) return;
         fetch('/api/chamados?status='+encodeURIComponent('Em aberto'))
           .then(r=>r.ok?r.json():{items:[]})
           .then(j=>{
@@ -555,7 +662,7 @@ function load({silent=false}={}){
       const tbody = document.querySelector('#t-users tbody');
       if(!tbody) return;
       if(!users || !users.length){
-        tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Nenhum usuÃ¡rio cadastrado</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Nenhum usuário cadastrado</td></tr>';
       } else {
         tbody.innerHTML = users.map(u => (
           '<tr data-id=\"'+u.id+'\">'+
@@ -585,51 +692,52 @@ function load({silent=false}={}){
       const form = e.target;
       apiPostForm('/admin/user/new', form)
         .then(j => { if(j && j.users){ renderUsersList(j.users); form.reset(); } })
-        .catch(() => alert('Erro ao salvar usuÃ¡rio.'));
+        .catch(() => alert('Erro ao salvar usuário.'));
       return false;
     }
   
-(function(){
-  try{
-    const __render = window.render || function(items, opts){};
-    window.render = function(items, opts){
-      __render(items, opts);
-      // Compact action buttons only
-      document.querySelectorAll('#tbl tbody button[data-action]').forEach(b=>b.classList.add('btn--xs'));
+    (function(){
+      try{
+        const __render = window.render || function(items, opts){};
+        window.render = function(items, opts){
+          __render(items, opts);
+          // Compact action buttons only
+          document.querySelectorAll('#tbl tbody button[data-action]').forEach(b=>b.classList.add('btn--xs'));
 
-      // Status color (if renderer didn't apply classes)
-      document.querySelectorAll('#tbl tbody .status').forEach(el => {
-        const t = (el.textContent||'').trim().toLowerCase();
-        el.classList.remove('s-open','s-analise','s-versao','s-req','s-ok','s-drop');
-        if (t.includes('em aberto')) el.classList.add('s-open');
-        else if (t.includes('em anÃ¡lise') || t.includes('em analise')) el.classList.add('s-analise');
-        else if (t.includes('aguardando versÃ£o') || t.includes('aguardando versao')) el.classList.add('s-versao');
-        else if (t.includes('abrir requisiÃ§Ã£o') || t.includes('abrir requisicao') || t.includes('aguardando requisiÃ§Ã£o') || t.includes('aguardando requisicao') || t.includes('requisiÃ§Ã£o') || t.includes('requisicao')) el.classList.add('s-req');
-        else if (t.includes('finalizado') || t.includes('resolvido') || t.includes('resolvidos')) el.classList.add('s-ok');
-        else if (t.includes('descart')) el.classList.add('s-drop');
-      });
+          // Status color (if renderer didn't apply classes)
+          document.querySelectorAll('#tbl tbody .status').forEach(el => {
+            const t = (el.textContent||'').trim().toLowerCase();
+            el.classList.remove('s-open','s-analise','s-versao','s-req','s-ok','s-drop');
+            if (t.includes('em aberto')) el.classList.add('s-open');
+            else if (t.includes('em análise') || t.includes('em analise')) el.classList.add('s-analise');
+            else if (t.includes('aguardando versão') || t.includes('aguardando versao')) el.classList.add('s-versao');
+            else if (t.includes('abrir requisição') || t.includes('abrir requisicao') || t.includes('aguardando requisição') || t.includes('aguardando requisicao') || t.includes('requisição') || t.includes('requisicao')) el.classList.add('s-req');
+            else if (t.includes('finalizado') || t.includes('resolvido') || t.includes('resolvidos')) el.classList.add('s-ok');
+            else if (t.includes('descart')) el.classList.add('s-drop');
+          });
 
-      // Trello to blue compact button (isolated via attribute)
-      document.querySelectorAll('#tbl tbody a').forEach(a=>{
-        const href = (a.getAttribute('href')||'').toLowerCase();
-        if(href.includes('trello.com') || /trello/i.test(a.textContent||'')){
-          a.setAttribute('data-kind','trello-link');
-          if(!a.classList.contains('btn')) a.classList.add('btn');
-          if(!a.classList.contains('btn--xs')) a.classList.add('btn--xs');
-        }else if(a.getAttribute('data-kind')==='trello-link'){
-          a.removeAttribute('data-kind');
-        }
-      });
-    };
-  }catch(e){}
-})();
+          // Trello to blue compact button (isolated via attribute)
+          document.querySelectorAll('#tbl tbody a').forEach(a=>{
+            const href = (a.getAttribute('href')||'').toLowerCase();
+            if(href.includes('trello.com') || /trello/i.test(a.textContent||'')){
+              a.setAttribute('data-kind','trello-link');
+              if(!a.classList.contains('btn')) a.classList.add('btn');
+              if(!a.classList.contains('btn--xs')) a.classList.add('btn--xs');
+            }else if(a.getAttribute('data-kind')==='trello-link'){
+              a.removeAttribute('data-kind');
+            }
+          });
+        };
+      }catch(e){}
+    })();
+  </script>
 
-</script>
-<script>
-document.addEventListener('DOMContentLoaded', function(){
-  const q = document.querySelector('#q, input[name="q"], input[type="search"]');
-  if(q){ q.setAttribute('placeholder','Título ou descrição...'); }
-});
-</script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function(){
+      const q = document.querySelector('#q, input[name="q"], input[type="search"]');
+      if(q){ q.setAttribute('placeholder','Título ou descrição...'); }
+    });
+  </script>
+
 </body>
 </html>
