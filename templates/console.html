@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Console â€” Painel & Cadastro</title>
+  <title>Console â€" Painel & Cadastro</title>
   <link rel="icon" href="/static/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -73,12 +73,12 @@
 
 /* === Status: text color only === */
 #painel .status{background:transparent!important;border:0!important;padding:0!important}
-#painel .status.s-open{color:#22c55e}     /* Em aberto â€“ verde claro */
-#painel .status.s-analise{color:#eab308}  /* Em anÃ¡lise â€“ amarelo */
-#painel .status.s-versao{color:#f97316}   /* Aguardando versÃ£o â€“ laranja */
-#painel .status.s-req{color:#3b82f6}      /* RequisiÃ§Ã£o â€“ azul */
-#painel .status.s-ok{color:#166534}       /* Resolvidos/Finalizado â€“ verde escuro */
-#painel .status.s-drop{color:#ef4444}     /* Descartados â€“ vermelho */
+#painel .status.s-open{color:#22c55e}     /* Em aberto â€" verde claro */
+#painel .status.s-analise{color:#eab308}  /* Em anÃ¡lise â€" amarelo */
+#painel .status.s-versao{color:#f97316}   /* Aguardando versÃ£o â€" laranja */
+#painel .status.s-req{color:#3b82f6}      /* RequisiÃ§Ã£o â€" azul */
+#painel .status.s-ok{color:#166534}       /* Resolvidos/Finalizado â€" verde escuro */
+#painel .status.s-drop{color:#ef4444}     /* Descartados â€" vermelho */
 
 /* === Trello (isolado por atributo, nÃ£o afeta 'Ver'/'Detalhes') === */
 #painel a[data-kind="trello-link"]{
@@ -137,7 +137,7 @@
       </div>
 
       <div class="actions">
-        <button class="btn btn--primary" id="btnAplicar">ðŸ”Ž Aplicar Filtros</button>
+        <button class="btn btn--primary" id="btnAplicar">ðŸ"Ž Aplicar Filtros</button>
         <button class="btn" id="btnLimpar">ðŸ§¹ Limpar</button>
         <button class="btn btn--live push-right" id="btnRealtime"><span class="dot"></span> Monitoramento em Tempo Real</button>
       </div>
@@ -241,6 +241,33 @@
   </main>
 
   <script>
+    // Função para converter markdown simples (asteriscos duplos) em HTML
+    function convertMarkdownToHtml(text) {
+      if (!text) return text;
+      
+      // Converte **texto** em <strong>texto</strong>
+      return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    }
+
+    // Função para escapar HTML mas preservar tags permitidas
+    function escapeHtmlButKeepBold(text) {
+      if (!text) return '';
+      
+      // Primeiro converte markdown para HTML
+      const withBold = convertMarkdownToHtml(text);
+      
+      // Escapa HTML mas preserva as tags <strong>
+      return withBold
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        // Restaura as tags <strong> que foram escapadas
+        .replace(/&lt;strong&gt;/g, '<strong>')
+        .replace(/&lt;\/strong&gt;/g, '</strong>');
+    }
+
     // Tabs
     const tabs = document.querySelectorAll('.tab');
     tabs.forEach(btn => btn.addEventListener('click', () => {
@@ -321,15 +348,15 @@
 
       function buildRowHTML(it,i){
         const prio = it.prioridade || parsePriority(it.descricao);
-        const trelloLink = it.url ? ('<a class="cell-btn" style="border-color:#8b5cf6;background:linear-gradient(135deg,#f3e8ff 0%,#ede9fe 100%);color:#8b5cf6" href="'+esc(it.url)+'" target="_blank" rel="noopener">ðŸ”— Trello</a>') : '-';
+        const trelloLink = it.url ? ('<a class="cell-btn" style="border-color:#8b5cf6;background:linear-gradient(135deg,#f3e8ff 0%,#ede9fe 100%);color:#8b5cf6" href="'+esc(it.url)+'" target="_blank" rel="noopener">ðŸ"— Trello</a>') : '-';
         return (
           '<tr data-key="'+esc(keyFor(it)||String(i))+'">'+
             '<td class="title" title="'+esc(it.titulo)+'">'+esc(it.titulo)+'</td>'+
             '<td>'+esc(it.representante||"-")+'</td>'+
             '<td><span class="'+statusClass(it.status)+'">'+esc(it.status||"-")+'</span></td>'+
-            '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="detalhes">ðŸ“‹ Detalhes</button></td>'+
+            '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="detalhes">ðŸ"‹ Detalhes</button></td>'+
             '<td class="prio">'+esc(prio||"-")+'</td>'+
-            '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="ver">ðŸ‘ Ver</button></td>'+
+            '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="ver">ðŸ' Ver</button></td>'+
             '<td>'+trelloLink+'</td>'+
           '</tr>'
         );
@@ -338,7 +365,7 @@
       function render(items,{silent=false}={}){
         const prev = lastKeys;
         tbody.innerHTML = items.length ? items.map(buildRowHTML).join('') :
-          '<tr><td class="empty" colspan="7">ðŸ”Ž Nenhum chamado encontrado.<br><span style="font-size:14px;opacity:.7;">Ajuste os filtros ou verifique a busca.</span></td></tr>';
+          '<tr><td class="empty" colspan="7">ðŸ"Ž Nenhum chamado encontrado.<br><span style="font-size:14px;opacity:.7;">Ajuste os filtros ou verifique a busca.</span></td></tr>';
         if (silent){
           [...tbody.querySelectorAll('tr[data-key]')].forEach(tr=>{
             const k=tr.getAttribute('data-key'); if(!prev.has(k)) tr.classList.add('row-new');
@@ -399,12 +426,12 @@
             reconcileDurations(items);
             render(items,{silent});
             const total = j.total ?? items.length;
-            countBox.innerHTML = `ðŸ“Š <strong>${total}</strong> chamado${total!==1?'s':''} encontrado${total!==1?'s':''}`;
+            countBox.innerHTML = `ðŸ"Š <strong>${total}</strong> chamado${total!==1?'s':''} encontrado${total!==1?'s':''}`;
           })
           .catch(err=>{
             console.error(err);
-            countBox.innerHTML='âŒ Erro ao carregar dados';
-            tbody.innerHTML='<tr><td class="empty" colspan="7">âš ï¸ Erro ao carregar chamados.</td></tr>';
+            countBox.innerHTML='âŒ Erro ao carregar dados';
+            tbody.innerHTML='<tr><td class="empty" colspan="7">âš ï¸ Erro ao carregar chamados.</td></tr>';
           });
       }
 
@@ -413,7 +440,7 @@
       btnLimpar.addEventListener('click',()=>{
         stopRealtime();
         repSelect.value=''; statusSelect.value=''; deInput.value=''; ateInput.value=''; qInput.value='';
-        cache=[]; lastKeys=new Set(); countBox.innerHTML='ðŸ”Ž Use os filtros para buscar chamados';
+        cache=[]; lastKeys=new Set(); countBox.innerHTML='ðŸ"Ž Use os filtros para buscar chamados';
         tbody.innerHTML='<tr><td class="empty" colspan="7">ðŸŽ¯ Aplique filtros ou ative o Monitoramento.</td></tr>';
       });
 
@@ -448,8 +475,10 @@
         const i=Number(btn.getAttribute('data-i')); const item=cache[i]||{};
         if(btn.getAttribute('data-action')==='ver'){
           const prio = item.prioridade || parsePriority(item.descricao);
-          const txt = `ðŸ”– Prioridade: ${prio||'-'}\n\n` + (item.descricao||'Nenhuma descriÃ§Ã£o disponÃ­vel.');
-          openModal('ðŸ“„ DescriÃ§Ã£o do chamado', esc(txt));
+          const txt = `ðŸ"– Prioridade: ${prio||'-'}\n\n` + (item.descricao||'Nenhuma descriÃ§Ã£o disponÃ­vel.');
+          // Aqui aplicamos a conversão de markdown para HTML
+          const htmlContent = escapeHtmlButKeepBold(txt);
+          openModal('ðŸ"„ DescriÃ§Ã£o do chamado', htmlContent);
           return;
         }
         if(btn.getAttribute('data-action')==='detalhes'){
@@ -459,11 +488,11 @@
 
           const dur = getDurationMs(item);
           let html = '';
-          html += `ðŸ“‹ TÃ­tulo: ${esc(item.titulo||'-')}\n`;
-          html += `ðŸ“Š Status: ${esc(item.status||'-')}\n\n`;
-          html += `ðŸ• Criado em: ${created ? created.toLocaleString('pt-BR') : 'â€”'}\n`;
-          html += `â° Ãšltima atividade: ${lastAct ? lastAct.toLocaleString('pt-BR') : 'â€”'}\n\n`;
-          html += `â± Tempo em aberto/anÃ¡lise: <span id="durSpan">${fmtDur(dur)}</span>${isLive?' (contando)':''}`;
+          html += `ðŸ"‹ TÃ­tulo: ${esc(item.titulo||'-')}\n`;
+          html += `ðŸ"Š Status: ${esc(item.status||'-')}\n\n`;
+          html += `ðŸ• Criado em: ${created ? created.toLocaleString('pt-BR') : 'â€"'}\n`;
+          html += `â° Ãšltima atividade: ${lastAct ? lastAct.toLocaleString('pt-BR') : 'â€"'}\n\n`;
+          html += `â± Tempo em aberto/anÃ¡lise: <span id="durSpan">${fmtDur(dur)}</span>${isLive?' (contando)':''}`;
 
           openModal('Detalhes do chamado', html);
 
