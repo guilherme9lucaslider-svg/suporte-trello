@@ -26,7 +26,6 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import requests
-import hashlib
 
 
 # -----------------------------------------------------------------------------
@@ -288,26 +287,6 @@ def _auth_guard():
             return redirect(url_for("admin_home"))
 
 # -----------------------------------------------------------------------------
-# Error handler global (sempre JSON para /api/*)
-# -----------------------------------------------------------------------------
-from werkzeug.exceptions import HTTPException
-
-@app.errorhandler(Exception)
-def _global_error_handler(e):
-    try:
-        code = 500
-        msg = "Erro interno no servidor."
-        if isinstance(e, HTTPException):
-            code = e.code or 500
-            msg = e.description or msg
-        print('[ERROR]', repr(e))
-        if request.path.startswith('/api/'):
-            return _json({"success": False, "message": msg}, status=code)
-        return make_response(msg, code)
-    except Exception:
-        return make_response('Erro interno no servidor.', 500)
-
-# -----------------------------------------------------------------------------
 # Páginas principais (usuário)
 # -----------------------------------------------------------------------------
 @app.route("/")
@@ -350,12 +329,7 @@ def api_chamados():
     if session.get('user') and not session.get('admin'):
         f_rep = session.get('representante', '').strip()
 
-    # Checagem de credenciais do Trello
-    if not API_KEY or not TOKEN or not BOARD_ID:
-        return _json({"success": False, "message": "Trello não configurado. Defina TRELLO_KEY, TRELLO_TOKEN e TRELLO_BOARD."}, 500)
-
-    try:
-        lists = cached_trello_get(f"/boards/{BOARD_ID}/lists", params={})
+    lists = cached_trello_get(f"/boards/{BOARD_ID}/lists", params={})
     id_to_list = {l["id"]: l.get("name", "") for l in lists}
 
     cards = cached_trello_get(
@@ -366,9 +340,6 @@ def api_chamados():
             "members": "false"
         }
     )
-
-    except Exception as e:
-        return _json({"success": False, "message": "Falha ao consultar o Trello: " + _clean_err_msg(e)}, 502)
 
     items = []
     for c in cards:
@@ -411,8 +382,8 @@ def api_chamados():
             "url": url,
             "ultima_atividade": ultima,
         })
-    return _json({"total": len(items), "items": items})
-ems})
+
+    return jsonify({"total": len(items), "items": items})
 
 
 @app.route("/api/representantes")
@@ -424,7 +395,7 @@ def api_representantes():
     listas duplicadas no JavaScript.
     """
     reps = Representative.query.order_by(Representative.name.asc()).all()
-    return _json([r.name for r in reps])
+    return jsonify([r.name for r in reps])
 
 # -----------------------------------------------------------------------------
 # Login / Logout (USUÁRIO)
@@ -471,10 +442,10 @@ def salvar():
 
     obrig = [nome, whatsapp, representante, suporte, sistema, modulo, ocorrencia, prioridade]
     if not all(obrig):
-        return _json({"success": False, "message": "Campos obrigatórios faltando."}, 400)
+        return jsonify(success=False, message="Campos obrigatórios faltando."), 400
     # Validação simples de whatsapp: exigir ao menos 15 digitos contando com os parênteses
     if len(whatsapp) < 13 or (not any(c.isdigit() for c in whatsapp)):
-        return _json({"success": False, "message": "Informe um telefone válido no campo Whatsapp."}, 400)
+        return jsonify(success=False, message="Informe um telefone válido no campo Whatsapp."), 400
 
     titulo = f"{nome} - {sistema} ({ocorrencia})"
     desc = (
@@ -492,7 +463,7 @@ def salvar():
 
     lid = get_list_id()
     if not lid:
-        return _json({"success": False, "message": "LIST_ID não configurado. Ajuste TRELLO_LIST/TRELLO_LIST_ID."}, 500)
+        return jsonify(success=False, message="LIST_ID não configurado. Ajuste TRELLO_LIST/TRELLO_LIST_ID."), 500
 
     params = {"idList": lid, "name": titulo, "desc": desc}
     label_id = LABEL_IDS.get(prioridade)
@@ -512,13 +483,13 @@ def salvar():
                 trello_attach_file(card_id, secure_filename(f.filename), f.stream, f.mimetype)
 
         trello_clear_cover(card_id)
-        return _json({"success": True, "message": "Chamado criado com sucesso no Trello!"})
+        return jsonify(success=True, message="Chamado criado com sucesso no Trello!")
     except Exception as e:
         # Erros de rede ou da API do Trello são capturados e exibidos de forma amigável.
         err_msg = str(e)
         # Remover partes sensíveis da mensagem que contenham tokens ou chaves.
         err_msg = re.sub(r"[A-Za-z0-9]{32,}", "***", err_msg)
-        return _json({"success": False, "message": f"Falha ao criar o chamado: {err_msg}"}, 400)
+        return jsonify(success=False, message=f"Falha ao criar o chamado: {err_msg}"), 400
 
 # -----------------------------------------------------------------------------
 # Downloads / versão
