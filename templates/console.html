@@ -241,7 +241,27 @@
   </main>
 
   <script>
-    // Tabs
+    
+    // Função para converter markdown simples (**texto**) em HTML <strong>
+    function convertMarkdownToHtml(text) {
+      if (!text) return text;
+      return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    }
+    // Escapa HTML mas preserva <strong>
+    function escapeHtmlButKeepBold(text) {
+      if (!text) return '';
+      const withBold = convertMarkdownToHtml(text);
+      return withBold
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/&lt;strong&gt;/g, '<strong>')
+        .replace(/&lt;\/strong&gt;/g, '</strong>');
+    }
+    
+// Tabs
     const tabs = document.querySelectorAll('.tab');
     tabs.forEach(btn => btn.addEventListener('click', () => {
       tabs.forEach(b => b.setAttribute('aria-selected','false'));
