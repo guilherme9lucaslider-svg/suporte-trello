@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Console — Painel & Cadastro</title>
+  <title>Console â€" Painel & Cadastro</title>
   <link rel="icon" href="/static/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -73,14 +73,14 @@
 
 /* === Status: text color only === */
 #painel .status{background:transparent!important;border:0!important;padding:0!important}
-#painel .status.s-open{color:#22c55e}     /* Em aberto – verde claro */
-#painel .status.s-analise{color:#eab308}  /* Em análise – amarelo */
-#painel .status.s-versao{color:#f97316}   /* Aguardando versão – laranja */
-#painel .status.s-req{color:#3b82f6}      /* Requisição – azul */
-#painel .status.s-ok{color:#166534}       /* Resolvidos/Finalizado – verde escuro */
-#painel .status.s-drop{color:#ef4444}     /* Descartados – vermelho */
+#painel .status.s-open{color:#22c55e}     /* Em aberto â€" verde claro */
+#painel .status.s-analise{color:#eab308}  /* Em anÃ¡lise â€" amarelo */
+#painel .status.s-versao{color:#f97316}   /* Aguardando versÃ£o â€" laranja */
+#painel .status.s-req{color:#3b82f6}      /* RequisiÃ§Ã£o â€" azul */
+#painel .status.s-ok{color:#166534}       /* Resolvidos/Finalizado â€" verde escuro */
+#painel .status.s-drop{color:#ef4444}     /* Descartados â€" vermelho */
 
-/* === Trello (isolado por atributo, não afeta 'Ver'/'Detalhes') === */
+/* === Trello (isolado por atributo, nÃ£o afeta 'Ver'/'Detalhes') === */
 #painel a[data-kind="trello-link"]{
   background: linear-gradient(135deg,#93c5fd 0%, #60a5fa 100%) !important;
   border: 1px solid #60a5fa !important;
@@ -102,12 +102,12 @@
 <body>
   <header class="header">
     <h1>Console Administrativo</h1>
-    <div class="subtitle">Gerencie chamados e usuários em uma única interface</div>
+    <div class="subtitle">Gerencie chamados e usuÃ¡rios em uma Ãºnica interface</div>
   </header>
 
   <nav class="tabs" role="tablist">
     <button class="tab" role="tab" aria-selected="true" data-target="#painel">Painel de Chamados</button>
-    <button class="tab" role="tab" aria-selected="false" data-target="#cadastro">Cadastro de Usuários</button>
+    <button class="tab" role="tab" aria-selected="false" data-target="#cadastro">Cadastro de UsuÃ¡rios</button>
   </nav>
 
   <main>
@@ -124,21 +124,21 @@
           <select id="fStatus" class="select">
             <option value="">Todos os status</option>
             <option>Em aberto</option>
-            <option>Em análise</option>
-            <option>Aguardando versão</option>
-            <option>Aguardando Requisição</option>
+            <option>Em anÃ¡lise</option>
+            <option>Aguardando versÃ£o</option>
+            <option>Aguardando RequisiÃ§Ã£o</option>
             <option>Finalizado</option>
             <option>Descartado</option>
           </select>
         </div>
         <div class="filter-group"><label>Data inicial</label><input id="fDe" type="date" class="input"></div>
         <div class="filter-group"><label>Data final</label><input id="fAte" type="date" class="input"></div>
-        <div class="filter-group"><label>Buscar por</label><input id="fQ" class="input" placeholder="Título ou descrição..."></div>
+        <div class="filter-group"><label>Buscar por</label><input id="fQ" class="input" placeholder="TÃ­tulo ou descriÃ§Ã£o..."></div>
       </div>
 
       <div class="actions">
-        <button class="btn btn--primary" id="btnAplicar">🔎 Aplicar Filtros</button>
-        <button class="btn" id="btnLimpar">🧹 Limpar</button>
+        <button class="btn btn--primary" id="btnAplicar">ðŸ"Ž Aplicar Filtros</button>
+        <button class="btn" id="btnLimpar">ðŸ§¹ Limpar</button>
         <button class="btn btn--live push-right" id="btnRealtime"><span class="dot"></span> Monitoramento em Tempo Real</button>
       </div>
 
@@ -149,13 +149,13 @@
           <table id="tbl">
             <thead>
               <tr>
-                <th>Título</th>
+                <th>TÃ­tulo</th>
                 <th>Representante</th>
                 <th>Status</th>
                 <th>Detalhes</th>
                 <th>Prioridade</th>
-                <th>Descrição</th>
-                <th>Ações</th>
+                <th>DescriÃ§Ã£o</th>
+                <th>AÃ§Ãµes</th>
               </tr>
             </thead>
             <tbody id="tbody">
@@ -175,7 +175,7 @@
       <audio id="notifSound" src="/static/notify.mp3" preload="auto"></audio>
     </section>
 
-    <section id="cadastro" class="view" role="tabpanel" aria-label="Cadastro de Usuários">
+    <section id="cadastro" class="view" role="tabpanel" aria-label="Cadastro de UsuÃ¡rios">
       <div class="card">
         <h3>Representantes</h3>
         <form id="form-rep" class="row" onsubmit="return criarRep(event)" style="margin-bottom: 24px;">
@@ -184,13 +184,13 @@
         </form>
         <div class="table-container">
           <table id="t-reps">
-            <thead><tr><th>Nome</th><th style="width:140px;">Ações</th></tr></thead>
+            <thead><tr><th>Nome</th><th style="width:140px;">AÃ§Ãµes</th></tr></thead>
             <tbody>
               {% for r in reps %}
               <tr data-id="{{ r.id }}">
                 <td><strong>{{ r.name }}</strong></td>
                 <td class="actions">
-                  <form method="post" action="/admin/rep/{{ r.id }}/delete" onsubmit="return confirm('Remover representante? (somente se não houver usuários)')">
+                  <form method="post" action="/admin/rep/{{ r.id }}/delete" onsubmit="return confirm('Remover representante? (somente se nÃ£o houver usuÃ¡rios)')">
                     <button class="btn btn--ghost" type="submit">Remover</button>
                   </form>
                 </td>
@@ -204,7 +204,7 @@
       </div>
 
       <div class="card">
-        <h3>Usuários</h3>
+        <h3>UsuÃ¡rios</h3>
         <form id="form-user" class="row" onsubmit="return criarUser(event)" style="margin-bottom: 24px;">
           <select name="representative_id" required>
             <option value="">Selecione o representante</option>
@@ -212,26 +212,26 @@
             <option value="{{ r.id }}">{{ r.name }}</option>
             {% endfor %}
           </select>
-          <input name="username" required placeholder="Nome de usuário">
+          <input name="username" required placeholder="Nome de usuÃ¡rio">
           <input name="password" type="password" required placeholder="Senha">
-          <button class="btn" type="submit">Adicionar Usuário</button>
+          <button class="btn" type="submit">Adicionar UsuÃ¡rio</button>
         </form>
         <div class="table-container">
           <table id="t-users">
-            <thead><tr><th>Usuário</th><th>Representante</th><th style="width:140px;">Ações</th></tr></thead>
+            <thead><tr><th>UsuÃ¡rio</th><th>Representante</th><th style="width:140px;">AÃ§Ãµes</th></tr></thead>
             <tbody>
               {% for u in users %}
               <tr data-id="{{ u.id }}">
                 <td><strong>{{ u.username }}</strong></td>
                 <td><span class="pill">{{ u.representative.name }}</span></td>
                 <td class="actions">
-                  <form method="post" action="/admin/user/{{ u.id }}/delete" onsubmit="return confirm('Remover usuário?')">
+                  <form method="post" action="/admin/user/{{ u.id }}/delete" onsubmit="return confirm('Remover usuÃ¡rio?')">
                     <button class="btn btn--ghost" type="submit">Remover</button>
                   </form>
                 </td>
               </tr>
               {% else %}
-              <tr><td colspan="3" class="empty-state">Nenhum usuário cadastrado</td></tr>
+              <tr><td colspan="3" class="empty-state">Nenhum usuÃ¡rio cadastrado</td></tr>
               {% endfor %}
             </tbody>
           </table>
@@ -241,6 +241,33 @@
   </main>
 
   <script>
+    // Função para converter markdown simples (asteriscos duplos) em HTML
+    function convertMarkdownToHtml(text) {
+      if (!text) return text;
+      
+      // Converte **texto** em <strong>texto</strong>
+      return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    }
+
+    // Função para escapar HTML mas preservar tags permitidas
+    function escapeHtmlButKeepBold(text) {
+      if (!text) return '';
+      
+      // Primeiro converte markdown para HTML
+      const withBold = convertMarkdownToHtml(text);
+      
+      // Escapa HTML mas preserva as tags <strong>
+      return withBold
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        // Restaura as tags <strong> que foram escapadas
+        .replace(/&lt;strong&gt;/g, '<strong>')
+        .replace(/&lt;\/strong&gt;/g, '</strong>');
+    }
+
     // Tabs
     const tabs = document.querySelectorAll('.tab');
     tabs.forEach(btn => btn.addEventListener('click', () => {
@@ -266,7 +293,7 @@
       const btnLimpar = painel.querySelector('#btnLimpar');
       const notifSound = painel.querySelector('#notifSound');
 
-      const LIVE_SET = new Set(['em aberto','em análise']);
+      const LIVE_SET = new Set(['em aberto','em anÃ¡lise']);
 
       // Durations persistence
       const DUR_NS = 'painel_durations_v2';
@@ -293,11 +320,11 @@
       const statusClass = (s) => {
   const m = (s||'').toLowerCase();
   if (m.includes('em aberto')) return 'status s-open';
-  if (m.includes('análise') || m.includes('analise')) return 'status s-analise';
-  if (m.includes('versão') || m.includes('versao')) return 'status s-versao';
-  if (m.includes('abrir requisição') || m.includes('abrir requisicao') ||
-      m.includes('aguardando requisição') || m.includes('aguardando requisicao') ||
-      m.includes('requisição') || m.includes('requisicao')) return 'status s-req';
+  if (m.includes('anÃ¡lise') || m.includes('analise')) return 'status s-analise';
+  if (m.includes('versÃ£o') || m.includes('versao')) return 'status s-versao';
+  if (m.includes('abrir requisiÃ§Ã£o') || m.includes('abrir requisicao') ||
+      m.includes('aguardando requisiÃ§Ã£o') || m.includes('aguardando requisicao') ||
+      m.includes('requisiÃ§Ã£o') || m.includes('requisicao')) return 'status s-req';
   if (m.includes('finalizado') || m.includes('resolvido') || m.includes('resolvidos')) return 'status s-ok';
   if (m.includes('descart')) return 'status s-drop';
   return 'status';
@@ -321,15 +348,15 @@
 
       function buildRowHTML(it,i){
         const prio = it.prioridade || parsePriority(it.descricao);
-        const trelloLink = it.url ? ('<a class="cell-btn" style="border-color:#8b5cf6;background:linear-gradient(135deg,#f3e8ff 0%,#ede9fe 100%);color:#8b5cf6" href="'+esc(it.url)+'" target="_blank" rel="noopener">🔗 Trello</a>') : '-';
+        const trelloLink = it.url ? ('<a class="cell-btn" style="border-color:#8b5cf6;background:linear-gradient(135deg,#f3e8ff 0%,#ede9fe 100%);color:#8b5cf6" href="'+esc(it.url)+'" target="_blank" rel="noopener">ðŸ"— Trello</a>') : '-';
         return (
           '<tr data-key="'+esc(keyFor(it)||String(i))+'">'+
             '<td class="title" title="'+esc(it.titulo)+'">'+esc(it.titulo)+'</td>'+
             '<td>'+esc(it.representante||"-")+'</td>'+
             '<td><span class="'+statusClass(it.status)+'">'+esc(it.status||"-")+'</span></td>'+
-            '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="detalhes">📋 Detalhes</button></td>'+
+            '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="detalhes">ðŸ"‹ Detalhes</button></td>'+
             '<td class="prio">'+esc(prio||"-")+'</td>'+
-            '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="ver">👁 Ver</button></td>'+
+            '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="ver">ðŸ' Ver</button></td>'+
             '<td>'+trelloLink+'</td>'+
           '</tr>'
         );
@@ -338,7 +365,7 @@
       function render(items,{silent=false}={}){
         const prev = lastKeys;
         tbody.innerHTML = items.length ? items.map(buildRowHTML).join('') :
-          '<tr><td class="empty" colspan="7">🔎 Nenhum chamado encontrado.<br><span style="font-size:14px;opacity:.7;">Ajuste os filtros ou verifique a busca.</span></td></tr>';
+          '<tr><td class="empty" colspan="7">ðŸ"Ž Nenhum chamado encontrado.<br><span style="font-size:14px;opacity:.7;">Ajuste os filtros ou verifique a busca.</span></td></tr>';
         if (silent){
           [...tbody.querySelectorAll('tr[data-key]')].forEach(tr=>{
             const k=tr.getAttribute('data-key'); if(!prev.has(k)) tr.classList.add('row-new');
@@ -399,12 +426,12 @@
             reconcileDurations(items);
             render(items,{silent});
             const total = j.total ?? items.length;
-            countBox.innerHTML = `📊 <strong>${total}</strong> chamado${total!==1?'s':''} encontrado${total!==1?'s':''}`;
+            countBox.innerHTML = `ðŸ"Š <strong>${total}</strong> chamado${total!==1?'s':''} encontrado${total!==1?'s':''}`;
           })
           .catch(err=>{
             console.error(err);
-            countBox.innerHTML='❌ Erro ao carregar dados';
-            tbody.innerHTML='<tr><td class="empty" colspan="7">⚠️ Erro ao carregar chamados.</td></tr>';
+            countBox.innerHTML='âŒ Erro ao carregar dados';
+            tbody.innerHTML='<tr><td class="empty" colspan="7">âš ï¸ Erro ao carregar chamados.</td></tr>';
           });
       }
 
@@ -413,8 +440,8 @@
       btnLimpar.addEventListener('click',()=>{
         stopRealtime();
         repSelect.value=''; statusSelect.value=''; deInput.value=''; ateInput.value=''; qInput.value='';
-        cache=[]; lastKeys=new Set(); countBox.innerHTML='🔎 Use os filtros para buscar chamados';
-        tbody.innerHTML='<tr><td class="empty" colspan="7">🎯 Aplique filtros ou ative o Monitoramento.</td></tr>';
+        cache=[]; lastKeys=new Set(); countBox.innerHTML='ðŸ"Ž Use os filtros para buscar chamados';
+        tbody.innerHTML='<tr><td class="empty" colspan="7">ðŸŽ¯ Aplique filtros ou ative o Monitoramento.</td></tr>';
       });
 
       // Tempo real
@@ -448,8 +475,10 @@
         const i=Number(btn.getAttribute('data-i')); const item=cache[i]||{};
         if(btn.getAttribute('data-action')==='ver'){
           const prio = item.prioridade || parsePriority(item.descricao);
-          const txt = `🔖 Prioridade: ${prio||'-'}\n\n` + (item.descricao||'Nenhuma descrição disponível.');
-          openModal('📄 Descrição do chamado', esc(txt));
+          const txt = `ðŸ"– Prioridade: ${prio||'-'}\n\n` + (item.descricao||'Nenhuma descriÃ§Ã£o disponÃ­vel.');
+          // Aqui aplicamos a conversão de markdown para HTML
+          const htmlContent = escapeHtmlButKeepBold(txt);
+          openModal('ðŸ"„ DescriÃ§Ã£o do chamado', htmlContent);
           return;
         }
         if(btn.getAttribute('data-action')==='detalhes'){
@@ -459,11 +488,11 @@
 
           const dur = getDurationMs(item);
           let html = '';
-          html += `📋 Título: ${esc(item.titulo||'-')}\n`;
-          html += `📊 Status: ${esc(item.status||'-')}\n\n`;
-          html += `🕐 Criado em: ${created ? created.toLocaleString('pt-BR') : '—'}\n`;
-          html += `⏰ Última atividade: ${lastAct ? lastAct.toLocaleString('pt-BR') : '—'}\n\n`;
-          html += `⏱ Tempo em aberto/análise: <span id="durSpan">${fmtDur(dur)}</span>${isLive?' (contando)':''}`;
+          html += `ðŸ"‹ TÃ­tulo: ${esc(item.titulo||'-')}\n`;
+          html += `ðŸ"Š Status: ${esc(item.status||'-')}\n\n`;
+          html += `ðŸ• Criado em: ${created ? created.toLocaleString('pt-BR') : 'â€"'}\n`;
+          html += `â° Ãšltima atividade: ${lastAct ? lastAct.toLocaleString('pt-BR') : 'â€"'}\n\n`;
+          html += `â± Tempo em aberto/anÃ¡lise: <span id="durSpan">${fmtDur(dur)}</span>${isLive?' (contando)':''}`;
 
           openModal('Detalhes do chamado', html);
 
@@ -477,7 +506,7 @@
         }
       });
 
-      // Notificações (opcional)
+      // NotificaÃ§Ãµes (opcional)
       function ensureNotifPermission(){
         if(!('Notification' in window)) return;
         if(Notification.permission==='default'){
@@ -498,7 +527,7 @@
       function notifyNew(item){
         try{
           const title = 'Novo chamado em aberto';
-          const body  = `${item.titulo || 'Sem título'}\nRep.: ${item.representante || '-'}${item.status ? ' • '+item.status : ''}`;
+          const body  = `${item.titulo || 'Sem tÃ­tulo'}\nRep.: ${item.representante || '-'}${item.status ? ' â€¢ '+item.status : ''}`;
           if('Notification' in window && Notification.permission==='granted'){
             const n = new Notification(title,{ body, icon:'/static/icon-192.png', tag: keyFor(item) });
             n.onclick = ()=>{ if(item.url) window.open(item.url,'_blank'); };
@@ -574,7 +603,7 @@
       const tbody = document.querySelector('#t-users tbody');
       if(!tbody) return;
       if(!users || !users.length){
-        tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Nenhum usuário cadastrado</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Nenhum usuÃ¡rio cadastrado</td></tr>';
       } else {
         tbody.innerHTML = users.map(u => (
           '<tr data-id=\"'+u.id+'\">'+
@@ -604,7 +633,7 @@
       const form = e.target;
       apiPostForm('/admin/user/new', form)
         .then(j => { if(j && j.users){ renderUsersList(j.users); form.reset(); } })
-        .catch(() => alert('Erro ao salvar usuário.'));
+        .catch(() => alert('Erro ao salvar usuÃ¡rio.'));
       return false;
     }
   
@@ -621,9 +650,9 @@
         const t = (el.textContent||'').trim().toLowerCase();
         el.classList.remove('s-open','s-analise','s-versao','s-req','s-ok','s-drop');
         if (t.includes('em aberto')) el.classList.add('s-open');
-        else if (t.includes('em análise') || t.includes('em analise')) el.classList.add('s-analise');
-        else if (t.includes('aguardando versão') || t.includes('aguardando versao')) el.classList.add('s-versao');
-        else if (t.includes('abrir requisição') || t.includes('abrir requisicao') || t.includes('aguardando requisição') || t.includes('aguardando requisicao') || t.includes('requisição') || t.includes('requisicao')) el.classList.add('s-req');
+        else if (t.includes('em anÃ¡lise') || t.includes('em analise')) el.classList.add('s-analise');
+        else if (t.includes('aguardando versÃ£o') || t.includes('aguardando versao')) el.classList.add('s-versao');
+        else if (t.includes('abrir requisiÃ§Ã£o') || t.includes('abrir requisicao') || t.includes('aguardando requisiÃ§Ã£o') || t.includes('aguardando requisicao') || t.includes('requisiÃ§Ã£o') || t.includes('requisicao')) el.classList.add('s-req');
         else if (t.includes('finalizado') || t.includes('resolvido') || t.includes('resolvidos')) el.classList.add('s-ok');
         else if (t.includes('descart')) el.classList.add('s-drop');
       });
