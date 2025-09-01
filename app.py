@@ -5,6 +5,7 @@ import sys
 import re
 import time
 import json
+import hashlib
 from pathlib import Path
 from datetime import datetime
 from functools import wraps
@@ -311,6 +312,46 @@ def _parse_rep_from_desc(desc: str) -> str:
     m = re.search(r"\*\*Representante:\*\*\s*(.+)", desc)
     return (m.group(1).strip() if m else "").strip()
 
+# ==== Helpers de WhatsApp ====
+def _only_digits(s: str) -> str:
+    return re.sub(r"\D+", "", s or "")
+
+def _normalize_phone_br(raw: str) -> str:
+    """
+    Normaliza para E.164 BR sem o '+', ex.: 5511987654321.
+    - remove não dígitos
+    - garante DDI 55 quando vier 10/11 dígitos
+    - injeta '9' após o DDD quando faltar (celular antigo)
+    """
+    d = _only_digits(raw).lstrip("0")
+    if not d.startswith("55") and len(d) in (10, 11):
+        d = "55" + d
+    sem_ddi = d[2:] if d.startswith("55") else d
+    if len(sem_ddi) == 10:  # faltou o 9 do celular
+        d = "55" + sem_ddi[:2] + "9" + sem_ddi[2:]
+    return d
+
+def _parse_whatsapp_from_desc(desc: str) -> str:
+    """
+    Procura um WhatsApp no texto (padrão **Whatsapp:** ... ou número solto).
+    Retorna normalizado (ex.: 5511987654321) ou ''.
+    """
+    text = desc or ""
+
+    # 1) padrão explícito **Whatsapp:** ...
+    m = re.search(r"\*\*?\s*whats?app\s*:\s*\**\s*([+()\d\-\s]{8,})", text, flags=re.I)
+    if m:
+        n = _normalize_phone_br(m.group(1))
+        return n if re.fullmatch(r"\d{12,13}", n) else ""
+
+    # 2) fallback: primeira sequência que parece telefone BR
+    m2 = re.search(r"(?:\+?55\s*)?(?:\(?\d{2}\)?\s*)?(?:9?\s*\d{4})[-\s]?\d{4}", text, flags=re.I)
+    if m2:
+        n = _normalize_phone_br(m2.group(0))
+        return n if re.fullmatch(r"\d{12,13}", n) else ""
+
+    return ""
+
 def _iso_date_only(s: str):
     try:
         return datetime.strptime(s, "%Y-%m-%d").date()
@@ -352,6 +393,7 @@ def api_chamados():
         ultima = dt_raw
 
         representante = _parse_rep_from_desc(desc)
+        whats = _parse_whatsapp_from_desc(desc)  # << inclui WhatsApp
 
         if f_rep and representante != f_rep:
             continue
@@ -381,6 +423,7 @@ def api_chamados():
             "status": status,
             "url": url,
             "ultima_atividade": ultima,
+            "whatsapp": whats,  # << novo campo para o front exibir o botão
         })
 
     return jsonify({"total": len(items), "items": items})
@@ -391,7 +434,7 @@ def api_representantes():
     """
     Endpoint público para retornar a lista de representantes cadastrados.
     Retorna um array de strings com os nomes em ordem alfabética. Isso
-    permite que o front‑end preencha selects dinamicamente sem manter
+    permite que o front-end preencha selects dinamicamente sem manter
     listas duplicadas no JavaScript.
     """
     reps = Representative.query.order_by(Representative.name.asc()).all()
