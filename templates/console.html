@@ -319,20 +319,7 @@
 
       let cache = []; let lastKeys = new Set();
 
-      
-      function extractContato(desc){
-        if(!desc) return null;
-        const m = desc.match(/\*\*Contato:\*\*\s*([^\n\r]+)/i);
-        if(!m) return null;
-        const raw = String(m[1]||'').trim();
-        const digits = raw.replace(/\D+/g,'');
-        if(!digits) return null;
-        let d = digits;
-        if(!(d.startsWith('55'))) d = '55'+d;
-        if(d.length < 12 || d.length > 13) return null;
-        return d;
-      }
-    function buildRowHTML(it,i){
+      function buildRowHTML(it,i){
         const prio = it.prioridade || parsePriority(it.descricao);
         const trelloLink = it.url ? ('<a class="cell-btn" style="border-color:#8b5cf6;background:linear-gradient(135deg,#f3e8ff 0%,#ede9fe 100%);color:#8b5cf6" href="'+esc(it.url)+'" target="_blank" rel="noopener">🔗 Trello</a>') : '-';
         return (
@@ -342,7 +329,7 @@
             '<td><span class="'+statusClass(it.status)+'">'+esc(it.status||"-")+'</span></td>'+
             '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="detalhes">📋 Detalhes</button></td>'+
             '<td class="prio">'+esc(prio||"-")+'</td>'+
-            '<td><div class="actions">'+'<button class="btn btn--ghost" data-i="'+i+'" data-action="ver">👁 Ver</button>'+(function(){ const wa=extractContato(it.descricao); return wa ? '<a class="btn btn--ghost" data-kind="wa-link" href="https://wa.me/'+wa+'" target="_blank" rel="noopener">💬 Enviar mensagem</a>' : ''; })()+'</div></td>'++
+            '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="ver">👁 Ver</button></td>'+
             '<td>'+trelloLink+'</td>'+
           '</tr>'
         );
