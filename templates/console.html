@@ -67,9 +67,19 @@
     #painel .loading{display:inline-block;width:16px;height:16px;border:2px solid var(--stroke);border-radius:50%;border-top-color:var(--primary);animation:spin 1s ease-in-out infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
   
-/* === Compact rows & buttons === */
-#painel table .btn.btn--xs{padding:6px 10px;line-height:1;border-radius:10px;font-size:12px}
-#painel table td{padding-top:8px;padding-bottom:8px}
+/* === Compact rows & buttons (unificar tamanho) === */
+#painel table .btn.btn--xs,
+#painel a[data-kind="whatsapp-link"],
+#painel a[data-kind="trello-link"] {
+  padding: 6px 10px;
+  line-height: 1;
+  border-radius: 10px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  font-weight: 700;
+}
+
 
 /* === Status: text color only === */
 #painel .status{background:transparent!important;border:0!important;padding:0!important}
