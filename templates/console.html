@@ -465,29 +465,19 @@ function buildRowHTML(it,i){
 
       // Alterar status: atualiza cor e move card no Trello
       tbody.addEventListener('change', async (e) => {
-  const sel = e.target.closest('select.status-select');
-  if (!sel) return;
-  const novoStatus = sel.value;
-  sel.className = 'status-select ' + statusClass(novoStatus); // pinta já
-  const id = sel.getAttribute('data-id');
-  if(!id){ alert('ID do card ausente. Recarregue a página.'); return; }
-  sel.disabled = true;
-  try {
-    const resp = await fetch('/api/chamados/'+encodeURIComponent(id)+'/status', {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ status: novoStatus })
-    });
-    const j = await resp.json().catch(()=>({}));
-    if (!resp.ok || j.success === false) {
-      alert(j.message || 'Falha ao mover card no Trello');
-    }
-  } catch (err) {
-    console.error(err);
-    alert('Erro na requisição de status: '+ err.message);
-  } finally {
-    sel.disabled = false;
-  }
-});
+        const sel = e.target.closest('select.status-select');
+        if (!sel) return;
+        const novoStatus = sel.value;
+        // atualiza cor local imediatamente
+        sel.className = 'status-select ' + statusClass(novoStatus);
+        // mover no Trello via backend
+        const url = sel.getAttribute('data-url') || '';
+        try {
+          const resp = await fetch('/api/chamados/status', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ status: novoStatus, url })
+          });
           const j = await resp.json().catch(()=>({}));
           if (!resp.ok || j.ok === false) {
             alert(j.message || 'Falha ao mover card no Trello');
