@@ -83,14 +83,17 @@
       height: 28px !important;
       box-sizing: border-box !important;
       text-decoration: none;
+      vertical-align: middle !important;  /* ADICIONE ESTA LINHA */
     }
 	
 	#painel table .actions {
-      display: flex !important;
-      justify-content: center !important;
-      align-items: center !important;
-      min-height: 40px !important;
-    }
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  height: 28px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
 
     /* === Botões Ver/Detalhes ghost compactos === */
     #painel table .btn--ghost {
@@ -107,7 +110,7 @@
     #painel table td {
       vertical-align: middle !important;
       padding: 6px 16px !important;
-	  height: auto !important;
+	  height: 40px !important;
     }
 
     /* === Status cores === */
