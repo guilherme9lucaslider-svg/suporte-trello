@@ -152,6 +152,12 @@
 }
 #painel a[data-kind="trello-link"]:hover{ filter: brightness(.98); }
 
+#painel [data-kind="trello-link"] .icon {
+  width: 16px;   /* ajusta proporcional ao texto */
+  height: 16px;
+  display: inline-block;
+}
+
 </style>
 </head>
 <body>
@@ -423,7 +429,13 @@
 
       function buildRowHTML(it,i){
         const prio = it.prioridade || parsePriority(it.descricao);
-        const trelloLink = it.url ? ('<a data-kind="trello-link" href="'+esc(it.url)+'" target="_blank" rel="noopener">🔗 Trello</a>') : '-';
+        const trelloLink = it.url
+  ? `
+    <a data-kind="trello-link" href="${esc(it.url)}" target="_blank" rel="noopener">
+      <img src="/static/trello.png" alt="Trello" class="icon"> Trello
+    </a>`
+  : '-';
+
         let whatsappLink = '-';
         if (it.whatsapp && String(it.whatsapp).replace(/\D/g,'').length >= 8) {
           const phoneEsc = String(it.whatsapp).replace(/'/g, "\\'");
