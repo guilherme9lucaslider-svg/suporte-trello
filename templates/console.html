@@ -13,6 +13,7 @@
       --primary: #006056; --primary-light: #0a8a7a; --primary-dark: #004d44;
       --surface: #ffffff; --surface-hover:#f5f9f8; --ink:#0f1f1c; --muted:#64748b;
       --stroke:#e2e8f0; --stroke-light:#f1f5f9;
+      --radius:16px; --radius-lg:24px;
       --shadow-sm:0 2px 8px rgba(0,96,86,.08); --shadow:0 8px 32px rgba(0,96,86,.12);
       --gradient-primary:linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
     }
@@ -38,15 +39,21 @@
     .row{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
     input,select{padding:12px 16px;border:2px solid var(--stroke);border-radius:16px;background:#fff;font-size:14px;font-weight:500;color:var(--ink);transition:.2s;min-width:180px}
     input:focus,select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,96,86,.1)}
-    .btn{border:none;background:#fff;color:var(--ink);padding:12px 20px;border-radius:16px;cursor:pointer;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:10px;transition:.2s;box-shadow:var(--shadow-sm);border:1px solid var(--stroke)}
+    .btn{border:none;background:var(--gradient-primary);color:#fff;padding:12px 20px;border-radius:16px;cursor:pointer;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:10px;transition:.2s;box-shadow:var(--shadow-sm)}
     .btn:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
-    .btn--primary{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%);color:#fff;border-color:var(--primary-dark)}
     .btn--ghost{background:#fff;color:var(--primary);border:1px solid var(--stroke);box-shadow:none}
     .actions{display:flex;gap:8px;align-items:center}
     /* Painel */
     #painel .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;background:#fff;padding:24px;border:1px solid var(--stroke);border-radius:24px;box-shadow:var(--shadow);margin-bottom:24px}
     #painel .actions{display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap;align-items:center}
     #painel .actions .push-right{margin-left:auto}
+    #painel .btn{border:1px solid var(--stroke);background:#fff;border-radius:16px;padding:12px 20px;color:var(--ink)}
+    #painel .btn--primary{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%);color:#fff;border-color:var(--primary-dark)}
+    /* Monitoramento */
+    #painel .btn--live{background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:#fff;border-color:#059669}
+    #painel .btn--live .dot{width:12px;height:12px;border-radius:999px;background:#ef4444;display:inline-block}
+    #painel .btn--live.is-on{background:linear-gradient(135deg,#fecaca 0%, #fca5a5 100%);color:#7f1d1d;border-color:#f87171;box-shadow:0 0 0 4px rgba(248,113,113,.25)}
+    #painel .btn--live.is-on .dot{display:none}
     /* Status somente texto */
     #painel .status{background:transparent!important;border:0!important;padding:0!important;min-width:unset;font-weight:600;font-size:14px;color:var(--ink)}
     #painel .count{font-size:14px;color:var(--muted);font-weight:500;margin-bottom:16px;padding:12px 16px;background:#fff;border-radius:16px;border:1px solid var(--stroke)}
@@ -77,40 +84,60 @@
       box-sizing: border-box !important;
       text-decoration: none;
     }
-    /* === Ghost compactos === */
-    #painel table .btn--ghost { background:#fff !important; color:var(--primary) !important; border:1px solid var(--stroke) !important; box-shadow:none !important; }
-    #painel table .btn--ghost:hover { background:var(--surface-hover) !important; transform:none !important; }
+
+    /* === Botões Ver/Detalhes ghost compactos === */
+    #painel table .btn--ghost {
+      background: #fff !important;
+      color: var(--primary) !important;
+      border: 1px solid var(--stroke) !important;
+      box-shadow: none !important;
+    }
+    #painel table .btn--ghost:hover { background: var(--surface-hover) !important; transform: none !important; }
 
     /* === Linhas compactas === */
     #painel table td { padding: 12px 16px !important; }
 
     /* === Status cores === */
-    #painel .status.s-open{color:#22c55e} .status.s-analise{color:#eab308} .status.s-versao{color:#f97316}
-    #painel .status.s-req{color:#3b82f6} .status.s-ok{color:#166534} .status.s-drop{color:#ef4444}
+    #painel .status.s-open{color:#22c55e}
+    #painel .status.s-analise{color:#eab308}
+    #painel .status.s-versao{color:#f97316}
+    #painel .status.s-req{color:#3b82f6}
+    #painel .status.s-ok{color:#166534}
+    #painel .status.s-drop{color:#ef4444}
 
     /* === WhatsApp === */
     #painel [data-kind="whatsapp-link"]{
       background: linear-gradient(135deg,#25d366 0%, #128c7e 100%) !important;
       border: 1px solid transparent !important;
       color: #ffffff !important;
-      display: inline-flex; align-items: center; gap: 6px;
-      border-radius: 10px; font-weight: 700; font-size: 12px;
-      padding: 6px 10px; line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 12px;
+      padding: 6px 10px;
+      line-height: 1;
     }
-    #painel [data-kind="whatsapp-link"] .icon { width:16px; height:16px; display:inline-block; }
-    #painel [data-kind="whatsapp-link"]:hover{ filter:brightness(1.05); transform:translateY(-2px); box-shadow:var(--shadow); }
+    #painel [data-kind="whatsapp-link"] .icon { width: 16px; height: 16px; display: inline-block; }
+    #painel [data-kind="whatsapp-link"]:hover{ filter: brightness(1.05); transform: translateY(-2px); box-shadow: var(--shadow); }
 
     /* === Trello === */
     #painel a[data-kind="trello-link"]{
       background: linear-gradient(135deg,#93c5fd 0%, #60a5fa 100%) !important;
       border: 1px solid transparent !important;
       color: #ffffff !important;
-      display: inline-flex; align-items: center; gap: 6px;
-      border-radius: 10px; font-weight: 700; font-size: 12px;
-      padding: 6px 10px; line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 12px;
+      padding: 6px 10px;
+      line-height: 1;
     }
-    #painel a[data-kind="trello-link"] .icon { width:16px; height:16px; display:inline-block; }
-    #painel a[data-kind="trello-link"]:hover{ filter:brightness(.98); transform:translateY(-2px); box-shadow:var(--shadow); }
+    #painel a[data-kind="trello-link"] .icon { width: 16px; height: 16px; display: inline-block; }
+    #painel a[data-kind="trello-link"]:hover{ filter: brightness(.98); transform: translateY(-2px); box-shadow: var(--shadow); }
   </style>
 </head>
 <body>
@@ -255,8 +282,9 @@
     </section>
   </main>
 
-  <!-- Helpers (fora do initPainel) -->
+  <!-- ===== Helpers separados (fora de qualquer <script> aninhado) ===== -->
   <script>
+    // Modal helpers
     let __timerId = null;
     function openModal(title, html) {
       const modal = document.getElementById('modal');
@@ -275,11 +303,15 @@
     document.getElementById('btnFecharModal')?.addEventListener('click', closeModal);
     document.getElementById('modal')?.addEventListener('click', (e)=>{ if (e.target.id==='modal') closeModal(); });
 
-    function fmtDur(ms){ ms=Math.max(0,ms|0); const s=Math.floor(ms/1000);
-      const hh=String(Math.floor(s/3600)).padStart(2,'0');
-      const mm=String(Math.floor((s%3600)/60)).padStart(2,'0');
-      const ss=String(s%60).padStart(2,'0'); return `${hh}:${mm}:${ss}`; }
-
+    // Durations
+    function fmtDur(ms){
+      ms = Math.max(0, ms|0);
+      const s = Math.floor(ms/1000);
+      const hh = String(Math.floor(s/3600)).padStart(2,'0');
+      const mm = String(Math.floor((s%3600)/60)).padStart(2,'0');
+      const ss = String(s%60).padStart(2,'0');
+      return `${hh}:${mm}:${ss}`;
+    }
     function inferCreatedAt(item){
       if (item && item.id && /^[0-9a-f]{24}$/i.test(item.id)) {
         const secs = parseInt(item.id.substring(0,8), 16);
@@ -290,7 +322,12 @@
       return null;
     }
 
-    function normalizeBRPhone(raw){ let n=String(raw||'').replace(/\D/g,''); n=n.replace(/^55+/, ''); return '55'+n; }
+    // WhatsApp helpers (app desktop)
+    function normalizeBRPhone(raw){
+      let n = String(raw || '').replace(/\D/g, '');
+      n = n.replace(/^55+/, '');
+      return '55' + n;
+    }
     function openWhatsApp(rawPhone, text){
       const phone = normalizeBRPhone(rawPhone);
       const q = text ? ('&text=' + encodeURIComponent(text)) : '';
@@ -300,8 +337,9 @@
     window.openWhatsApp = openWhatsApp;
   </script>
 
-  <!-- App principal -->
+  <!-- ===== App principal ===== -->
   <script>
+    // Tabs
     const tabs = document.querySelectorAll('.tab');
     tabs.forEach(btn => btn.addEventListener('click', () => {
       tabs.forEach(b => b.setAttribute('aria-selected','false'));
@@ -325,21 +363,29 @@
       const btnAplicar = painel.querySelector('#btnAplicar');
       const btnLimpar = painel.querySelector('#btnLimpar');
 
+      const LIVE_SET = new Set(['em aberto','em análise']);
+
       const esc = s => String(s||"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
       const statusClass = (s) => {
         const m = (s||'').toLowerCase();
         if (m.includes('em aberto')) return 'status s-open';
         if (m.includes('análise') || m.includes('analise')) return 'status s-analise';
         if (m.includes('versão') || m.includes('versao')) return 'status s-versao';
-        if (m.includes('abrir requisição') || m.includes('aguardando requisição') || m.includes('requisição')) return 'status s-req';
+        if (m.includes('abrir requisição') || m.includes('abrir requisicao') ||
+            m.includes('aguardando requisição') || m.includes('aguardando requisicao') ||
+            m.includes('requisição') || m.includes('requisicao')) return 'status s-req';
         if (m.includes('finalizado') || m.includes('resolvido') || m.includes('resolvidos')) return 'status s-ok';
         if (m.includes('descart')) return 'status s-drop';
         return 'status';
       };
-      const parsePriority = (desc) => (desc||'').match(/\*\*Prioridade:\*\*\s*([^\n]+)/i)?.[1]?.trim() || '-';
+      const parsePriority = (desc) => {
+        const m = (desc||'').match(/\*\*Prioridade:\*\*\s*([^\n]+)/i);
+        return m ? m[1].trim() : '-';
+      };
 
       let cache = []; let lastKeys = new Set();
-      let isRealTimeActive = false; let realTimeInterval = null;
+      let isRealTimeActive = false;
+      let realTimeInterval = null;
 
       function toggleRealTime() {
         isRealTimeActive = !isRealTimeActive;
@@ -394,9 +440,7 @@
         const action = btn.getAttribute('data-action');
 
         if (action === 'ver') {
-          const safe = (item.descricao || 'Nenhuma descrição disponível.')
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-          openModal('📄 Descrição do chamado', safe);
+          openModal('📄 Descrição do chamado', (item.descricao || 'Nenhuma descrição disponível.').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'));
           return;
         }
         if (action === 'detalhes') {
@@ -451,6 +495,7 @@
         return p.length ? '?'+p.join('&') : '';
       }
 
+      // Fetch com timeout e tratamento de retorno não-JSON
       function withTimeout(p, ms){ return Promise.race([p, new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timeout após '+ms+'ms')), ms))]); }
 
       function load({silent=false}={}){
@@ -468,12 +513,12 @@
             const text=await r.text();
             if(!r.ok) throw new Error('HTTP '+r.status+' '+r.statusText+'\n'+text.slice(0,800));
             let data;
-            try{ data = JSON.parse(text); }
+            try{ data = ct.includes('application/json') ? JSON.parse(text) : JSON.parse(text); }
             catch(e){ throw new Error('Conteúdo não-JSON da API:\n'+text.slice(0,800)); }
             return Array.isArray(data) ? { items: data, total: data.length } : data;
           })
           .then(j=>{
-            const items = (j.items||[]).map(x=>{ x.prioridade = x.prioridade || parsePriority(x.descricao); return x; });
+            const items = (j.items||[]).map(x=>{ x.prioridade = x.prioridade || (x.descricao||'').match(/\*\*Prioridade:\*\*\s*([^\n]+)/i)?.[1] || '-'; return x; });
             render(items,{silent});
             const total = j.total ?? items.length;
             countBox.innerHTML = `📊 <strong>${total}</strong> chamado${total!==1?'s':''} encontrado${total!==1?'s':''}`;
@@ -489,10 +534,15 @@
 
       btnAplicar.addEventListener('click', () => load({silent: false}));
       btnLimpar.addEventListener('click', () => {
-        repSelect.value = ''; statusSelect.value = ''; deInput.value = ''; ateInput.value = ''; qInput.value = '';
+        repSelect.value = '';
+        statusSelect.value = '';
+        deInput.value = '';
+        ateInput.value = '';
+        qInput.value = '';
         load({silent: false});
       });
 
+      // Carga inicial
       load({silent:false});
     })();
   </script>
