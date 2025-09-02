@@ -335,7 +335,7 @@
       const webURL = 'https://wa.me/' + phone + (text ? ('?text=' + encodeURIComponent(text)) : '');
       // Try app; fallback to web
       let redirected = false;
-      try { window.location.href = appURL; redirected = true; } catch {}
+      try { window.location.href = appURL; redirected = true; } catch (e) {}
       setTimeout(() => { if (!redirected) window.open(webURL, '_blank', 'noopener'); }, 400);
     } catch { window.location.href = url; }
     }
