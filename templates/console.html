@@ -312,15 +312,15 @@
       const ss = String(s%60).padStart(2,'0');
       return `${hh}:${mm}:${ss}`;
     }
-    function inferCreatedAt(item){
-      if (item && item.id && /^[0-9a-f]{24}$/i.test(item.id)) {
-        const secs = parseInt(item.id.substring(0,8), 16);
-        if (!Number.isNaN(secs)) return new Date(secs * 1000);
-      }
-      if (item && item.created_at) return new Date(item.created_at);
-      if (item && item.ultima_atividade) { try { return new Date(item.ultima_atividade); } catch(e){} }
-      return null;
-    }
+    function inferCreatedAt(item) {
+  if (item && item.created_at) return new Date(item.created_at);
+  if (item && item.id && /^[0-9a-f]{24}$/i.test(item.id)) {
+    const secs = parseInt(item.id.substring(0,8), 16);
+    if (!Number.isNaN(secs)) return new Date(secs * 1000);
+  }
+  return null;
+}
+
 
     // WhatsApp helpers (app desktop)
     function normalizeBRPhone(raw){
@@ -445,11 +445,26 @@
         }
         if (action === 'detalhes') {
           const created = inferCreatedAt(item);
-          const lastAct = item.ultima_atividade ? new Date(item.ultima_atividade) : null;
-          const isLive  = /^(em aberto|em análise)$/i.test(item.status||'');
+const isLive  = /^(em aberto|em análise)$/i.test((item.status||'').toLowerCase());
 
-          const startTs = (created ? created.getTime() : (lastAct ? lastAct.getTime() : Date.now()));
-          const stopTs  = isLive ? Date.now() : (lastAct ? lastAct.getTime() : startTs);
+// início SEMPRE na criação
+const startTs = (created ? created.getTime() : Date.now());
+
+// fim somente quando NÃO estiver em status vivo
+let endDate = null;
+// prioridade: closed_at > status_changed_at > ultima_atividade (apenas se NÃO estiver vivo)
+if (!isLive) {
+  if (item.closed_at) {
+    endDate = new Date(item.closed_at);
+  } else if (item.status_changed_at) {
+    endDate = new Date(item.status_changed_at);
+  } else if (item.ultima_atividade) {
+    endDate = new Date(item.ultima_atividade);
+  }
+}
+
+const stopTs = endDate ? endDate.getTime() : null;
+
 
           let html = '';
           html += `📋 Título: ${(item.titulo || '-').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}<br>`;
@@ -462,14 +477,19 @@
           openModal('Detalhes do chamado', html);
 
           function tick(){
-            const now = isLive ? Date.now() : stopTs;
-            const ms  = now - startTs;
-            const el  = document.getElementById('durSpan');
-            if (el) el.textContent = fmtDur(ms);
-          }
-          tick();
-          if (isLive) { if (window.__timerId) clearInterval(window.__timerId); window.__timerId = setInterval(tick, 1000); }
-        }
+  const now = isLive ? Date.now() : (stopTs ?? Date.now());
+  const ms  = now - startTs;
+  const el  = document.getElementById('durSpan');
+  if (el) el.textContent = fmtDur(ms);
+}
+tick();
+if (isLive) {
+  if (timerId) clearInterval(timerId);
+  timerId = setInterval(tick, 1000);
+} else {
+  if (timerId) { clearInterval(timerId); timerId = null; }
+}
+
       });
 
       function render(items,{silent=false}={}){
