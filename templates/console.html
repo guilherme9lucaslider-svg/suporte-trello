@@ -41,13 +41,13 @@
     input:focus,select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,96,86,.1)}
     .btn{border:none;background:var(--gradient-primary);color:#fff;padding:12px 20px;border-radius:16px;cursor:pointer;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:10px;transition:.2s;box-shadow:var(--shadow-sm)}
     .btn:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
-    .btn--ghost{background:#fff;color:var(--primary);border:2px solid var(--stroke);box-shadow:none}
+    .btn--ghost{background:#fff;color:var(--primary);border:1px solid var(--stroke);box-shadow:none}
     .actions{display:flex;gap:8px;align-items:center}
     /* Painel */
     #painel .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;background:#fff;padding:24px;border:1px solid var(--stroke);border-radius:24px;box-shadow:var(--shadow);margin-bottom:24px}
     #painel .actions{display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap;align-items:center}
     #painel .actions .push-right{margin-left:auto}
-    #painel .btn{border:2px solid var(--stroke);background:#fff;border-radius:16px;padding:12px 20px;color:var(--ink)}
+    #painel .btn{border:1px solid var(--stroke);background:#fff;border-radius:16px;padding:12px 20px;color:var(--ink)}
     #painel .btn--primary{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%);color:#fff;border-color:var(--primary-dark)}
     /* Monitoramento */
     #painel .btn--live{background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:#fff;border-color:#059669}
@@ -63,102 +63,82 @@
     #painel .modal{position:fixed;inset:0;background:rgba(15,23,42,.7);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:9999}
     #painel .modal__box{width:min(800px,95vw);max-height:85vh;overflow:auto;background:#fff;border:1px solid var(--stroke);border-radius:16px;padding:32px;box-shadow:var(--shadow)}
     #painel .modal__title{font-weight:800;font-size:24px;margin-bottom:20px}
-    #painel .modal__body{white-space:pre-wrap;border:2px solid var(--stroke);background:linear-gradient(135deg,#f8fafc 0%,#f1f5f9 100%);border-radius:12px;padding:20px;font-family:ui-monospace,Consolas,Menlo,monospace;font-size:14px;line-height:1.6;color:var(--ink);max-height:400px;overflow-y:auto}
+    #painel .modal__body{white-space:pre-wrap;border:1px solid var(--stroke);background:linear-gradient(135deg,#f8fafc 0%,#f1f5f9 100%);border-radius:12px;padding:20px;font-family:ui-monospace,Consolas,Menlo,monospace;font-size:14px;line-height:1.6;color:var(--ink);max-height:400px;overflow-y:auto}
     #painel .loading{display:inline-block;width:16px;height:16px;border:2px solid var(--stroke);border-radius:50%;border-top-color:var(--primary);animation:spin 1s ease-in-out infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
-  
-/* === BOTÕES COMPACTOS UNIFICADOS NA TABELA === */
-#painel table .btn,
-#painel table [data-kind="whatsapp-link"],
-#painel table [data-kind="trello-link"] {
-  padding: 6px 10px !important;
-  line-height: 1 !important;
-  border-radius: 10px !important;
-  font-size: 12px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  font-weight: 700 !important;
-  gap: 6px !important;
-  min-width: unset !important;
-  height: 28px !important;
-  box-sizing: border-box !important;
-}
 
-/* === Botões Ver/Detalhes com estilo ghost compacto === */
-#painel table .btn--ghost {
-  background: #fff !important;
-  color: var(--primary) !important;
-  border: 1px solid var(--stroke) !important;
-  box-shadow: none !important;
-}
-#painel table .btn--ghost:hover {
-  background: var(--surface-hover) !important;
-  transform: none !important;
-}
+    /* === BOTÕES COMPACTOS NA TABELA === */
+    #painel table .btn,
+    #painel table [data-kind="whatsapp-link"],
+    #painel table [data-kind="trello-link"] {
+      padding: 6px 10px !important;
+      line-height: 1 !important;
+      border-radius: 10px !important;
+      font-size: 12px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      font-weight: 700 !important;
+      gap: 6px !important;
+      min-width: unset !important;
+      height: 28px !important;
+      box-sizing: border-box !important;
+      text-decoration: none;
+    }
 
-/* === Reduzir padding das células para linhas mais compactas === */
-#painel table td {
-  padding: 12px 16px !important;
-}
+    /* === Botões Ver/Detalhes ghost compactos === */
+    #painel table .btn--ghost {
+      background: #fff !important;
+      color: var(--primary) !important;
+      border: 1px solid var(--stroke) !important;
+      box-shadow: none !important;
+    }
+    #painel table .btn--ghost:hover { background: var(--surface-hover) !important; transform: none !important; }
 
-/* === Status: text color only === */
-#painel .status{background:transparent!important;border:0!important;padding:0!important}
-#painel .status.s-open{color:#22c55e}
-#painel .status.s-analise{color:#eab308}
-#painel .status.s-versao{color:#f97316}
-#painel .status.s-req{color:#3b82f6}
-#painel .status.s-ok{color:#166534}
-#painel .status.s-drop{color:#ef4444}
+    /* === Linhas compactas === */
+    #painel table td { padding: 12px 16px !important; }
 
-/* === WhatsApp (aplica para <a> e <button>) === */
-#painel [data-kind="whatsapp-link"]{
-  background: linear-gradient(135deg,#25d366 0%, #128c7e 100%) !important;
-  border: 1px solid transparent !important;
-  color: #ffffff !important;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border-radius: 10px;
-  font-weight: 700;
-  font-size: 12px;
-  text-decoration: none;
-  padding: 6px 10px;
-  line-height: 1;
-}
-#painel [data-kind="whatsapp-link"]:hover{ filter: brightness(1.1); }
+    /* === Status cores === */
+    #painel .status.s-open{color:#22c55e}
+    #painel .status.s-analise{color:#eab308}
+    #painel .status.s-versao{color:#f97316}
+    #painel .status.s-req{color:#3b82f6}
+    #painel .status.s-ok{color:#166534}
+    #painel .status.s-drop{color:#ef4444}
 
-#painel [data-kind="whatsapp-link"] .icon {
-  width: 16px;   /* ajusta proporcional ao texto */
-  height: 16px;
-  display: inline-block;
-}
+    /* === WhatsApp === */
+    #painel [data-kind="whatsapp-link"]{
+      background: linear-gradient(135deg,#25d366 0%, #128c7e 100%) !important;
+      border: 1px solid transparent !important;
+      color: #ffffff !important;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 12px;
+      padding: 6px 10px;
+      line-height: 1;
+    }
+    #painel [data-kind="whatsapp-link"] .icon { width: 16px; height: 16px; display: inline-block; }
+    #painel [data-kind="whatsapp-link"]:hover{ filter: brightness(1.05); transform: translateY(-2px); box-shadow: var(--shadow); }
 
-
-
-/* === Trello (isolado por atributo) === */
-#painel a[data-kind="trello-link"]{
-  background: linear-gradient(135deg,#93c5fd 0%, #60a5fa 100%) !important;
-  border: 1px solid transparent !important;
-  color: #ffffff !important;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border-radius: 10px;
-  font-weight: 700;
-  font-size: 12px;
-  text-decoration: none;
-  padding: 6px 10px;
-  line-height: 1;
-}
-#painel a[data-kind="trello-link"]:hover{ filter: brightness(.98); }
-
-#painel [data-kind="trello-link"] .icon {
-  width: 16px;   /* ajusta proporcional ao texto */
-  height: 16px;
-  display: inline-block;
-}
-
-</style>
+    /* === Trello === */
+    #painel a[data-kind="trello-link"]{
+      background: linear-gradient(135deg,#93c5fd 0%, #60a5fa 100%) !important;
+      border: 1px solid transparent !important;
+      color: #ffffff !important;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 12px;
+      padding: 6px 10px;
+      line-height: 1;
+    }
+    #painel a[data-kind="trello-link"] .icon { width: 16px; height: 16px; display: inline-block; }
+    #painel a[data-kind="trello-link"]:hover{ filter: brightness(.98); transform: translateY(-2px); box-shadow: var(--shadow); }
+  </style>
 </head>
 <body>
   <header class="header">
@@ -302,21 +282,63 @@
     </section>
   </main>
 
+  <!-- ===== Helpers separados (fora de qualquer <script> aninhado) ===== -->
   <script>
-    // Markdown simples para <strong>
-    function convertMarkdownToHtml(text) {
-      if (!text) return text;
-      return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    // Modal helpers
+    let __timerId = null;
+    function openModal(title, html) {
+      const modal = document.getElementById('modal');
+      const modalTitle = document.getElementById('modalTitle');
+      const modalBody = document.getElementById('modalBody');
+      if (__timerId) { clearInterval(__timerId); __timerId = null; }
+      modalTitle.textContent = title;
+      modalBody.innerHTML = html;
+      modal.style.display = 'flex';
     }
-    function escapeHtmlButKeepBold(text) {
-      if (!text) return '';
-      const withBold = convertMarkdownToHtml(text);
-      return withBold
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;').replace(/'/g, '&#39;')
-        .replace(/&lt;strong&gt;/g, '<strong>').replace(/&lt;\/strong&gt;/g, '</strong>');
+    function closeModal(){
+      const modal = document.getElementById('modal');
+      if (__timerId) { clearInterval(__timerId); __timerId = null; }
+      modal.style.display = 'none';
+    }
+    document.getElementById('btnFecharModal')?.addEventListener('click', closeModal);
+    document.getElementById('modal')?.addEventListener('click', (e)=>{ if (e.target.id==='modal') closeModal(); });
+
+    // Durations
+    function fmtDur(ms){
+      ms = Math.max(0, ms|0);
+      const s = Math.floor(ms/1000);
+      const hh = String(Math.floor(s/3600)).padStart(2,'0');
+      const mm = String(Math.floor((s%3600)/60)).padStart(2,'0');
+      const ss = String(s%60).padStart(2,'0');
+      return `${hh}:${mm}:${ss}`;
+    }
+    function inferCreatedAt(item){
+      if (item && item.id && /^[0-9a-f]{24}$/i.test(item.id)) {
+        const secs = parseInt(item.id.substring(0,8), 16);
+        if (!Number.isNaN(secs)) return new Date(secs * 1000);
+      }
+      if (item && item.created_at) return new Date(item.created_at);
+      if (item && item.ultima_atividade) { try { return new Date(item.ultima_atividade); } catch(e){} }
+      return null;
     }
 
+    // WhatsApp helpers (app desktop)
+    function normalizeBRPhone(raw){
+      let n = String(raw || '').replace(/\D/g, '');
+      n = n.replace(/^55+/, '');
+      return '55' + n;
+    }
+    function openWhatsApp(rawPhone, text){
+      const phone = normalizeBRPhone(rawPhone);
+      const q = text ? ('&text=' + encodeURIComponent(text)) : '';
+      const url = 'whatsapp://send?phone=' + phone + q;
+      try { window.open(url, '_self'); } catch { window.location.href = url; }
+    }
+    window.openWhatsApp = openWhatsApp;
+  </script>
+
+  <!-- ===== App principal ===== -->
+  <script>
     // Tabs
     const tabs = document.querySelectorAll('.tab');
     tabs.forEach(btn => btn.addEventListener('click', () => {
@@ -340,35 +362,8 @@
       const btnRealtime = painel.querySelector('#btnRealtime');
       const btnAplicar = painel.querySelector('#btnAplicar');
       const btnLimpar = painel.querySelector('#btnLimpar');
-      const notifSound = painel.querySelector('#notifSound');
-      const modal = painel.querySelector('#modal');
-      const modalTitle = painel.querySelector('#modalTitle');
-      const modalBody = painel.querySelector('#modalBody');
-      const btnFecharModal = painel.querySelector('#btnFecharModal');
 
       const LIVE_SET = new Set(['em aberto','em análise']);
-
-      btnFecharModal.addEventListener('click', () => { modal.style.display = 'none'; });
-      modal.addEventListener('click', (e) => { if (e.target === modal) { modal.style.display = 'none'; } });
-
-      const DUR_NS = 'painel_durations_v2';
-      const loadDurations = () => { try{return JSON.parse(localStorage.getItem(DUR_NS))||{};}catch(e){return {}} };
-      const saveDurations = d => localStorage.setItem(DUR_NS, JSON.stringify(d));
-      let durations = loadDurations();
-      const nowMs = () => Date.now();
-      const keyFor = it => it.id || it.url || it.titulo;
-
-      (function hydrateRepsFromServerSide(){
-        const options = [...document.querySelectorAll('#t-reps tbody tr td strong')].map(el => el.textContent.trim()).filter(Boolean);
-        const added = new Set();
-        for(const name of options){
-          if(added.has(name)) continue;
-          added.add(name);
-          const o = document.createElement('option');
-          o.value = name; o.textContent = name;
-          repSelect.appendChild(o);
-        }
-      })();
 
       const esc = s => String(s||"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
       const statusClass = (s) => {
@@ -383,7 +378,6 @@
         if (m.includes('descart')) return 'status s-drop';
         return 'status';
       };
-
       const parsePriority = (desc) => {
         const m = (desc||'').match(/\*\*Prioridade:\*\*\s*([^\n]+)/i);
         return m ? m[1].trim() : '-';
@@ -391,66 +385,40 @@
 
       let cache = []; let lastKeys = new Set();
       let isRealTimeActive = false;
+      let realTimeInterval = null;
 
-      // ====== WhatsApp ======
-      function normalizeBRPhone(raw){
-        let n = String(raw || '').replace(/\D/g, '');
-        n = n.replace(/^55+/, '');
-        return '55' + n;
-      }
-      function openWhatsApp(rawPhone, text){
-        const phone = normalizeBRPhone(rawPhone);
-        const q = text ? ('&text=' + encodeURIComponent(text)) : '';
-        const url = 'whatsapp://send?phone=' + phone + q;
-        try { window.open(url, '_self'); }
-        catch { window.location.href = url; }
-      }
-      window.openWhatsApp = openWhatsApp;
-
-      // ====== Real-time ======
       function toggleRealTime() {
         isRealTimeActive = !isRealTimeActive;
         if (isRealTimeActive) {
           btnRealtime.classList.add('is-on');
           btnRealtime.textContent = 'Parar Monitoramento';
-          startRealTimeMonitoring();
+          realTimeInterval = setInterval(() => { if (isRealTimeActive) load({silent:true}); }, 30000);
         } else {
           btnRealtime.classList.remove('is-on');
           btnRealtime.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
-          stopRealTimeMonitoring();
+          if (realTimeInterval) { clearInterval(realTimeInterval); realTimeInterval = null; }
         }
       }
-      let realTimeInterval;
-      function startRealTimeMonitoring() {
-        realTimeInterval = setInterval(() => { if (isRealTimeActive) load({silent: true}); }, 30000);
-      }
-      function stopRealTimeMonitoring() { if (realTimeInterval) { clearInterval(realTimeInterval); realTimeInterval = null; } }
       btnRealtime.addEventListener('click', toggleRealTime);
 
       function buildRowHTML(it,i){
         const prio = it.prioridade || parsePriority(it.descricao);
-        const trelloLink = it.url
-  ? `<a data-kind="trello-link" class="btn" href="${esc(it.url)}" target="_blank" rel="noopener">
-       <img src="/static/trello.png" alt="Trello" class="icon"> Trello
-     </a>`
-  : '-';
-
+        const trelloLink = it.url ? (`
+          <a data-kind="trello-link" class="btn" href="${esc(it.url)}" target="_blank" rel="noopener">
+            <img src="/static/trello.png" alt="Trello" class="icon"> Trello
+          </a>`) : '-';
 
         let whatsappLink = '-';
         if (it.whatsapp && String(it.whatsapp).replace(/\D/g,'').length >= 8) {
           const phoneEsc = String(it.whatsapp).replace(/'/g, "\\'");
           const onClick = `openWhatsApp('${phoneEsc}')`;
-         whatsappLink = `
-  <button data-kind="whatsapp-link" class="btn" type="button" onclick="${onClick}">
-    <img src="/static/whatsapp.png" alt="WhatsApp" class="icon"> WhatsApp
-  </button>
-`;
-
-
-
+          whatsappLink = `<button data-kind="whatsapp-link" class="btn" type="button" onclick="${onClick}">
+            <img src="/static/whatsapp.png" alt="WhatsApp" class="icon"> WhatsApp
+          </button>`;
         }
+
         return (
-          '<tr data-key="'+esc(keyFor(it)||String(i))+'">'+
+          '<tr data-key="'+esc(it.id || it.url || it.titulo || String(i))+'">'+
             '<td class="title" title="'+esc(it.titulo)+'">'+esc(it.titulo)+'</td>'+
             '<td>'+esc(it.representante||"-")+'</td>'+
             '<td><span class="'+statusClass(it.status)+'">'+esc(it.status||"-")+'</span></td>'+
@@ -463,104 +431,46 @@
         );
       }
 
-	  
-	  
-  // --- Helpers usados nos botões ---
-  const modal       = document.getElementById('modal');
-  const modalTitle  = document.getElementById('modalTitle');
-  const modalBody   = document.getElementById('modalBody');
-  const btnFecharModal = document.getElementById('btnFecharModal');
+      tbody.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-action]');
+        if (!btn) return;
 
-  let timerId = null;
+        const i = Number(btn.getAttribute('data-i'));
+        const item = cache[i] || {};
+        const action = btn.getAttribute('data-action');
 
-  function openModal(title, html) {
-    // limpa qualquer timer antigo
-    if (timerId) { clearInterval(timerId); timerId = null; }
-    modalTitle.textContent = title;
-    modalBody.innerHTML = html;
-    modal.style.display = 'flex';
-  }
+        if (action === 'ver') {
+          openModal('📄 Descrição do chamado', (item.descricao || 'Nenhuma descrição disponível.').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'));
+          return;
+        }
+        if (action === 'detalhes') {
+          const created = inferCreatedAt(item);
+          const lastAct = item.ultima_atividade ? new Date(item.ultima_atividade) : null;
+          const isLive  = /^(em aberto|em análise)$/i.test(item.status||'');
 
-  // Formata duração em HH:MM:SS
-  function fmtDur(ms) {
-    ms = Math.max(0, ms|0);
-    const s = Math.floor(ms/1000);
-    const hh = String(Math.floor(s/3600)).padStart(2,'0');
-    const mm = String(Math.floor((s%3600)/60)).padStart(2,'0');
-    const ss = String(s%60).padStart(2,'0');
-    return `${hh}:${mm}:${ss}`;
-  }
+          const startTs = (created ? created.getTime() : (lastAct ? lastAct.getTime() : Date.now()));
+          const stopTs  = isLive ? Date.now() : (lastAct ? lastAct.getTime() : startTs);
 
-  // Tenta inferir "criado em" a partir do padrão ObjectId do Mongo ou campos comuns
-  function inferCreatedAt(item) {
-    if (item && item.id && /^[0-9a-f]{24}$/i.test(item.id)) {
-      const secs = parseInt(item.id.substring(0,8), 16);
-      if (!Number.isNaN(secs)) return new Date(secs * 1000);
-    }
-    if (item && item.created_at) return new Date(item.created_at);
-    if (item && item.ultima_atividade) {
-      try { return new Date(item.ultima_atividade); } catch(e){}
-    }
-    return null;
-  }
+          let html = '';
+          html += `📋 Título: ${(item.titulo || '-').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}<br>`;
+          html += `👤 Representante: ${(item.representante || '-') }<br>`;
+          html += `📊 Status: ${(item.status || '-') }<br><br>`;
+          html += `🕐 Criado em: ${created ? created.toLocaleString('pt-BR') : '—'}<br>`;
+          html += `⏰ Última atividade: ${lastAct ? lastAct.toLocaleString('pt-BR') : '—'}<br><br>`;
+          html += `⏱ Duração ${isLive?'(contando)':'(fechada)'}: <span id="durSpan">calculando…</span>`;
 
-  // Fechar modal: limpar timer também
-  btnFecharModal?.addEventListener('click', () => {
-    if (timerId) { clearInterval(timerId); timerId = null; }
-    modal.style.display = 'none';
-  });
-  modal?.addEventListener('click', (e) => {
-    if (e.target === modal) {
-      if (timerId) { clearInterval(timerId); timerId = null; }
-      modal.style.display = 'none';
-    }
-  });
+          openModal('Detalhes do chamado', html);
 
-
-	  
-	  tbody.addEventListener('click', (e) => {
-  const btn = e.target.closest('button[data-action]');
-  if (!btn) return;
-
-  if (timerId) { clearInterval(timerId); timerId = null; }
-
-  const i = Number(btn.getAttribute('data-i'));
-  const item = cache[i] || {};
-  const action = btn.getAttribute('data-action');
-
-  if (action === 'ver') {
-    openModal('📄 Descrição do chamado', escapeHtmlButKeepBold(item.descricao || 'Nenhuma descrição disponível.'));
-    return;
-  }
-
-  if (action === 'detalhes') {
-    const created = inferCreatedAt(item);
-    const lastAct = item.ultima_atividade ? new Date(item.ultima_atividade) : null;
-    const isLive  = /^(em aberto|em análise)$/i.test(item.status||'');
-
-    const startTs = (created ? created.getTime() : (lastAct ? lastAct.getTime() : Date.now()));
-    const stopTs  = isLive ? Date.now() : (lastAct ? lastAct.getTime() : startTs);
-
-    let html = '';
-    html += `📋 Título: ${escapeHtmlButKeepBold(item.titulo || '-')}\n`;
-    html += `📊 Status: ${escapeHtmlButKeepBold(item.status || '-')}\n\n`;
-    html += `🕐 Criado em: ${created ? created.toLocaleString('pt-BR') : '—'}\n`;
-    html += `⏰ Última atividade: ${lastAct ? lastAct.toLocaleString('pt-BR') : '—'}\n\n`;
-    html += `⏱ Duração ${isLive?'(contando)':'(fechada)'}: <span id="durSpan">calculando…</span>`;
-
-    openModal('Detalhes do chamado', html);
-
-    function tick(){
-      const now = isLive ? Date.now() : stopTs;
-      const ms  = now - startTs;
-      const el  = document.getElementById('durSpan');
-      if (el) el.textContent = fmtDur(ms);
-    }
-    tick();
-    if (isLive) timerId = setInterval(tick, 1000);
-  }
-});
-
+          function tick(){
+            const now = isLive ? Date.now() : stopTs;
+            const ms  = now - startTs;
+            const el  = document.getElementById('durSpan');
+            if (el) el.textContent = fmtDur(ms);
+          }
+          tick();
+          if (isLive) { if (window.__timerId) clearInterval(window.__timerId); window.__timerId = setInterval(tick, 1000); }
+        }
+      });
 
       function render(items,{silent=false}={}){
         const prev = lastKeys;
@@ -571,7 +481,7 @@
             const k=tr.getAttribute('data-key'); if(!prev.has(k)) tr.classList.add('row-new');
           });
         }
-        lastKeys = new Set(items.map(it => keyFor(it)||it.titulo));
+        lastKeys = new Set(items.map(it => it.id || it.url || it.titulo));
         cache = items;
       }
 
@@ -585,10 +495,8 @@
         return p.length ? '?'+p.join('&') : '';
       }
 
-      // ====== Carregamento robusto (resolve "Carregando..." preso) ======
-      function withTimeout(p, ms){
-        return Promise.race([p, new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timeout após '+ms+'ms')), ms))]);
-      }
+      // Fetch com timeout e tratamento de retorno não-JSON
+      function withTimeout(p, ms){ return Promise.race([p, new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timeout após '+ms+'ms')), ms))]); }
 
       function load({silent=false}={}){
         if(!silent) tbody.innerHTML='<tr><td class="empty" colspan="8"><div class="loading"></div> Carregando chamados...</td></tr>';
@@ -610,7 +518,7 @@
             return Array.isArray(data) ? { items: data, total: data.length } : data;
           })
           .then(j=>{
-            const items = (j.items||[]).map(x=>{ x.prioridade = x.prioridade || parsePriority(x.descricao); return x; });
+            const items = (j.items||[]).map(x=>{ x.prioridade = x.prioridade || (x.descricao||'').match(/\*\*Prioridade:\*\*\s*([^\n]+)/i)?.[1] || '-'; return x; });
             render(items,{silent});
             const total = j.total ?? items.length;
             countBox.innerHTML = `📊 <strong>${total}</strong> chamado${total!==1?'s':''} encontrado${total!==1?'s':''}`;
@@ -637,22 +545,6 @@
       // Carga inicial
       load({silent:false});
     })();
-  </script>
-
-  <!-- Funções do WhatsApp no final para não interferir na carga do painel -->
-  <script>
-    function normalizeBRPhone(raw){
-      let n = String(raw || '').replace(/\D/g, '');
-      n = n.replace(/^55+/, '');
-      return '55' + n;
-    }
-    function openWhatsApp(rawPhone, text){
-      const phone = normalizeBRPhone(rawPhone);
-      const q = text ? ('&text=' + encodeURIComponent(text)) : '';
-      const url = 'whatsapp://send?phone=' + phone + q;
-      try { window.open(url, '_self'); }
-      catch { window.location.href = url; }
-    }
   </script>
 </body>
 </html>
