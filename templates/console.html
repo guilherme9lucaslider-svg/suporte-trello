@@ -337,8 +337,8 @@
       let redirected = false;
       try { window.location.href = appURL; redirected = true; } catch (e) {}
       setTimeout(() => { if (!redirected) window.open(webURL, '_blank', 'noopener'); }, 400);
-    } catch { window.location.href = url; }
     }
+
     window.openWhatsApp = openWhatsApp;
   </script>
 
