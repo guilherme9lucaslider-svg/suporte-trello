@@ -463,40 +463,105 @@
         );
       }
 
-      tbody.addEventListener('click', (e)=>{
-            const btn=e.target.closest('button[data-action]'); if(!btn) return;
-            const i=Number(btn.getAttribute('data-i')); const item=cache[i]||{};
-            if(btn.getAttribute('data-action')==='ver'){
-              openModal('📄 Descrição do chamado', esc(item.descricao||'Nenhuma descrição disponível.'));
-              return;
-            }
-            if(btn.getAttribute('data-action')==='detalhes'){
-              const created = inferCreatedAt(item);
-              const lastAct = item.ultima_atividade ? new Date(item.ultima_atividade) : null;
-              const isLive = /^(em aberto|em análise)$/i.test(item.status||'');
+      <script>
+	  
+	  
+  // --- Helpers usados nos botões ---
+  const modal       = document.getElementById('modal');
+  const modalTitle  = document.getElementById('modalTitle');
+  const modalBody   = document.getElementById('modalBody');
+  const btnFecharModal = document.getElementById('btnFecharModal');
 
-              const startTs = (created ? created.getTime() : (lastAct ? lastAct.getTime() : Date.now()));
-              const stopTs  = isLive ? Date.now() : (lastAct ? lastAct.getTime() : startTs);
+  let timerId = null;
 
-              let html = '';
-              html += `📋 Título: ${esc(item.titulo||'-')}\n`;
-              html += `📊 Status: ${esc(item.status||'-')}\n\n`;
-              html += `🕐 Criado em: ${created ? created.toLocaleString('pt-BR') : '—'}\n`;
-              html += `⏰ Última atividade: ${lastAct ? lastAct.toLocaleString('pt-BR') : '—'}\n\n`;
-              html += `⏱ Duração ${isLive?'(contando)':'(fechada)'}: <span id="durSpan">calculando…</span>`;
+  function openModal(title, html) {
+    // limpa qualquer timer antigo
+    if (timerId) { clearInterval(timerId); timerId = null; }
+    modalTitle.textContent = title;
+    modalBody.innerHTML = html;
+    modal.style.display = 'flex';
+  }
 
-              openModal('Detalhes do chamado', html);
+  // Formata duração em HH:MM:SS
+  function fmtDur(ms) {
+    ms = Math.max(0, ms|0);
+    const s = Math.floor(ms/1000);
+    const hh = String(Math.floor(s/3600)).padStart(2,'0');
+    const mm = String(Math.floor((s%3600)/60)).padStart(2,'0');
+    const ss = String(s%60).padStart(2,'0');
+    return `${hh}:${mm}:${ss}`;
+  }
 
-              function tick(){
-                const now = isLive ? Date.now() : stopTs;
-                const ms = now - startTs;
-                const el = document.getElementById('durSpan');
-                if(el) el.textContent = fmtDur(ms);
-              }
-              tick();
-              if(isLive){ timerId=setInterval(tick,1000); }
-            }
-          });
+  // Tenta inferir "criado em" a partir do padrão ObjectId do Mongo ou campos comuns
+  function inferCreatedAt(item) {
+    if (item && item.id && /^[0-9a-f]{24}$/i.test(item.id)) {
+      const secs = parseInt(item.id.substring(0,8), 16);
+      if (!Number.isNaN(secs)) return new Date(secs * 1000);
+    }
+    if (item && item.created_at) return new Date(item.created_at);
+    if (item && item.ultima_atividade) {
+      try { return new Date(item.ultima_atividade); } catch(e){}
+    }
+    return null;
+  }
+
+  // Fechar modal: limpar timer também
+  btnFecharModal?.addEventListener('click', () => {
+    if (timerId) { clearInterval(timerId); timerId = null; }
+    modal.style.display = 'none';
+  });
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      if (timerId) { clearInterval(timerId); timerId = null; }
+      modal.style.display = 'none';
+    }
+  });
+</script>
+
+	  
+	  tbody.addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-action]');
+  if (!btn) return;
+
+  if (timerId) { clearInterval(timerId); timerId = null; }
+
+  const i = Number(btn.getAttribute('data-i'));
+  const item = cache[i] || {};
+  const action = btn.getAttribute('data-action');
+
+  if (action === 'ver') {
+    openModal('📄 Descrição do chamado', escapeHtmlButKeepBold(item.descricao || 'Nenhuma descrição disponível.'));
+    return;
+  }
+
+  if (action === 'detalhes') {
+    const created = inferCreatedAt(item);
+    const lastAct = item.ultima_atividade ? new Date(item.ultima_atividade) : null;
+    const isLive  = /^(em aberto|em análise)$/i.test(item.status||'');
+
+    const startTs = (created ? created.getTime() : (lastAct ? lastAct.getTime() : Date.now()));
+    const stopTs  = isLive ? Date.now() : (lastAct ? lastAct.getTime() : startTs);
+
+    let html = '';
+    html += `📋 Título: ${escapeHtmlButKeepBold(item.titulo || '-')}\n`;
+    html += `📊 Status: ${escapeHtmlButKeepBold(item.status || '-')}\n\n`;
+    html += `🕐 Criado em: ${created ? created.toLocaleString('pt-BR') : '—'}\n`;
+    html += `⏰ Última atividade: ${lastAct ? lastAct.toLocaleString('pt-BR') : '—'}\n\n`;
+    html += `⏱ Duração ${isLive?'(contando)':'(fechada)'}: <span id="durSpan">calculando…</span>`;
+
+    openModal('Detalhes do chamado', html);
+
+    function tick(){
+      const now = isLive ? Date.now() : stopTs;
+      const ms  = now - startTs;
+      const el  = document.getElementById('durSpan');
+      if (el) el.textContent = fmtDur(ms);
+    }
+    tick();
+    if (isLive) timerId = setInterval(tick, 1000);
+  }
+});
+
 
       function render(items,{silent=false}={}){
         const prev = lastKeys;
