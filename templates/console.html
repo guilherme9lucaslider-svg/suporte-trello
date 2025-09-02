@@ -320,6 +320,12 @@
   }
   return null;
 }
+$/i.test(item.id)) {
+    const secs = parseInt(item.id.substring(0,8), 16);
+    if (!Number.isNaN(secs)) return new Date(secs * 1000);
+  }
+  return null;
+}
 
 
     // WhatsApp helpers (app desktop)
@@ -386,6 +392,7 @@
       let cache = []; let lastKeys = new Set();
       let isRealTimeActive = false;
       let realTimeInterval = null;
+      let timerId = null;
 
       function toggleRealTime() {
         isRealTimeActive = !isRealTimeActive;
@@ -445,6 +452,7 @@
         }
         if (action === 'detalhes') {
           const created = inferCreatedAt(item);
+const lastAct = item.ultima_atividade ? new Date(item.ultima_atividade) : null;
 const isLive  = /^(em aberto|em análise)$/i.test((item.status||'').toLowerCase());
 
 // início SEMPRE na criação
@@ -489,7 +497,9 @@ if (isLive) {
 } else {
   if (timerId) { clearInterval(timerId); timerId = null; }
 }
+}
 
+      });
       });
 
       function render(items,{silent=false}={}){
