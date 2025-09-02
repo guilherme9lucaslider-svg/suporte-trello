@@ -430,11 +430,11 @@
       function buildRowHTML(it,i){
         const prio = it.prioridade || parsePriority(it.descricao);
         const trelloLink = it.url
-  ? `
-    <a data-kind="trello-link" href="${esc(it.url)}" target="_blank" rel="noopener">
-      <img src="/static/trello.png" alt="Trello" class="icon"> Trello
-    </a>`
+  ? `<a data-kind="trello-link" class="btn" href="${esc(it.url)}" target="_blank" rel="noopener">
+       <img src="/static/trello.png" alt="Trello" class="icon"> Trello
+     </a>`
   : '-';
+
 
         let whatsappLink = '-';
         if (it.whatsapp && String(it.whatsapp).replace(/\D/g,'').length >= 8) {
