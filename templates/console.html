@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Console Administrativo</title>
+  <title>Console — Painel & Cadastro</title>
   <link rel="icon" href="/static/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -104,6 +104,25 @@
     #painel .status.s-req{color:#3b82f6}
     #painel .status.s-ok{color:#166534}
     #painel .status.s-drop{color:#ef4444}
+
+    /* === Select de status dentro da coluna === */
+    #painel select.status-select {
+      border: 0;
+      background: transparent;
+      font-weight: 600;
+      font-size: 14px;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      color: var(--ink);
+      appearance: none;
+      -moz-appearance: none;
+      -webkit-appearance: none;
+      outline: none;
+    }
+    #painel select.status-select option {
+      color: var(--ink);
+    }
 
     /* === WhatsApp === */
     #painel [data-kind="whatsapp-link"]{
@@ -396,6 +415,21 @@
         if (m.includes('descart')) return 'status s-drop';
         return 'status';
       };
+
+      // Cor (hex) de cada status. Utilizado para colorir o <select> na coluna de status.
+      const statusColor = (s) => {
+        const m = (s || '').toLowerCase();
+        if (m.includes('em aberto')) return '#22c55e';
+        if (m.includes('análise') || m.includes('analise')) return '#eab308';
+        if (m.includes('versão') || m.includes('versao')) return '#f97316';
+        if (m.includes('abrir requisição') || m.includes('abrir requisicao') ||
+            m.includes('aguardando requisição') || m.includes('aguardando requisicao') ||
+            m.includes('requisição') || m.includes('requisicao')) return '#3b82f6';
+        if (m.includes('finalizado') || m.includes('resolvido') || m.includes('resolvidos')) return '#166534';
+        if (m.includes('descart')) return '#ef4444';
+        // padrão: cor principal
+        return 'var(--ink)';
+      };
       const parsePriority = (desc) => {
         const m = (desc||'').match(/\*\*Prioridade:\*\*\s*([^\n]+)/i);
         return m ? m[1].trim() : '-';
@@ -487,19 +521,23 @@
           </button>`;
         }
 
-        // Select para mudar status
+        // Select para mudar status (agora dentro da própria coluna de status)
         const statusOptions = STATUS_OPTIONS.map(opt => {
           const selected = opt === it.status ? ' selected' : '';
           return `<option value="${esc(opt)}"${selected}>${esc(opt)}</option>`;
         }).join('');
-        const statusSelect = `<select class="status-select" data-id="${esc(it.id||'')}" style="margin-top:4px;">${statusOptions}</select>`;
-        const actionsHtml = `<div class="actions" style="display:flex;flex-direction:column;gap:4px;">${trelloLink}${statusSelect}</div>`;
+        // Cor do status para o select
+        const statusCol = statusColor(it.status);
+        const statusSelect = `<select class="status-select" data-id="${esc(it.id||'')}" style="color:${statusCol}">${statusOptions}</select>`;
+        // Ações: apenas botão do Trello
+        const actionsHtml = `<div class="actions" style="display:flex;flex-direction:column;gap:4px;">${trelloLink}</div>`;
 
         return (
           '<tr data-key="'+esc(it.id || it.url || it.titulo || String(i))+'">'+
             '<td class="title" title="'+esc(it.titulo)+'">'+esc(it.titulo)+'</td>'+ 
             '<td>'+esc(it.representante||"-")+'</td>'+
-            '<td><span class="'+statusClass(it.status)+'">'+esc(it.status||"-")+'</span></td>'+ 
+            // Coluna de status contém o <select>
+            '<td>'+statusSelect+'</td>'+ 
             '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="detalhes">📋 Detalhes</button></td>'+ 
             '<td class="prio">'+esc(prio||"-")+'</td>'+ 
             '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="ver">👁 Ver</button></td>'+ 
@@ -566,13 +604,8 @@
         }).then(r => r.json()).then(resp => {
           sel.disabled = false;
           if (resp && resp.success) {
-            // Atualiza a célula de status
-            const row = sel.closest('tr');
-            const span = row ? row.querySelector('td:nth-child(3) span') : null;
-            if (span) {
-              span.textContent = newStatus;
-              span.className = statusClass(newStatus);
-            }
+            // Ajusta a cor da opção selecionada
+            sel.style.color = statusColor(newStatus);
           } else {
             alert((resp && resp.message) || 'Erro ao atualizar status.');
           }
