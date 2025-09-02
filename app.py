@@ -7,7 +7,7 @@ import time
 import json
 import hashlib
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import wraps
 
 from flask import (
@@ -195,6 +195,14 @@ LIST_STATUS_MAP = {
     "Descartados": "Descartado",
 }
 
+def _infer_created_from_trello_id(tid: str) -> str | None:
+    """Infer ISO8601 UTC (Z) creation time from Trello card id (ObjectId-like)."""
+    try:
+        secs = int(tid[:8], 16)
+        dt = datetime.fromtimestamp(secs, tz=timezone.utc)
+        return dt.isoformat().replace("+00:00", "Z")
+    except Exception:
+        return None
 def _allowed(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXT
 
@@ -319,7 +327,7 @@ def index():
 
 @app.route("/painel")
 def painel():
-    return render_template("painel.html")
+    return redirect(url_for("admin_home"))
 
 def _parse_rep_from_desc(desc: str) -> str:
     if not desc:
@@ -399,6 +407,8 @@ def api_chamados():
 
     items = []
     for c in cards:
+        card_id = c.get("id")
+        created_at = _infer_created_from_trello_id(card_id) if card_id else None
         titulo = c.get("name","").strip()
         desc   = c.get("desc","") or ""
         lista  = id_to_list.get(c.get("idList",""), "")
@@ -454,7 +464,6 @@ def api_representantes():
     permite que o front-end preencha selects dinamicamente sem manter
     listas duplicadas no JavaScript.
     """
-    reps = Representative.query.order_by(Representative.name.asc()).all
     reps = Representative.query.order_by(Representative.name.asc()).all()
     return jsonify([r.name for r in reps])
 

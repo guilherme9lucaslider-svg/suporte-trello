@@ -520,7 +520,10 @@
     const tipoSelect  = document.getElementById('tipo');
     const descricaoTxt= document.getElementById('descricao');
     const obsTxt      = document.getElementById('observacao');
-    if(representanteLogado && repSelect){ repSelect.value = representanteLogado; }
+    if (representanteLogado && repSelect) {
+      // Garante valor (independente de ser <select> ou <input type=hidden>)
+      try { repSelect.value = representanteLogado; } catch(e){}
+    }
     const prioridadeGroup = document.getElementById('prioridadeGroup');
 
     const btnSalvar = document.getElementById('btnSalvar');
@@ -533,15 +536,20 @@
 
     // Representante logado injetado pelo backend (null se não houver)
 
-    // Se há um representante logado, preenche o select e desativa edição
-    if(representanteLogado){
-      repSelect.innerHTML = '';
-      const opt = document.createElement('option');
-      opt.value = representanteLogado;
-      opt.textContent = representanteLogado;
-      opt.selected = true;
-      repSelect.appendChild(opt);
-      repSelect.setAttribute('disabled','true');
+    // Se há um representante logado, ajusta de forma segura conforme o tipo de elemento
+    if (representanteLogado && repSelect) {
+      if (repSelect.tagName === 'SELECT') {
+        repSelect.innerHTML = '';
+        const opt = document.createElement('option');
+        opt.value = representanteLogado;
+        opt.textContent = representanteLogado;
+        opt.selected = true;
+        repSelect.appendChild(opt);
+        repSelect.setAttribute('disabled','true');
+      } else {
+        // input hidden: só garante o valor
+        try { repSelect.value = representanteLogado; } catch(e){}
+      }
     }
 
     // ===== Overlay =====

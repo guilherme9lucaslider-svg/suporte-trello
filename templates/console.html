@@ -331,8 +331,12 @@
     function openWhatsApp(rawPhone, text){
       const phone = normalizeBRPhone(rawPhone);
       const q = text ? ('&text=' + encodeURIComponent(text)) : '';
-      const url = 'whatsapp://send?phone=' + phone + q;
-      try { window.open(url, '_self'); } catch { window.location.href = url; }
+      const appURL = 'whatsapp://send?phone=' + phone + q;
+      const webURL = 'https://wa.me/' + phone + (text ? ('?text=' + encodeURIComponent(text)) : '');
+      let opened = false;
+      try { window.location.href = appURL; opened = true; } catch {}
+      setTimeout(() => { if (!opened) window.open(webURL, '_blank', 'noopener'); }, 400);
+    } catch { window.location.href = url; }
     }
     window.openWhatsApp = openWhatsApp;
   </script>
