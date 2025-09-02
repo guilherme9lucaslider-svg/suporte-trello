@@ -96,6 +96,11 @@
 
     /* === Linhas compactas === */
     #painel table td { padding: 12px 16px !important; }
+    /* Alinha o conteúdo verticalmente e mantém linhas mais finas */
+    #painel table td {
+      vertical-align: middle !important;
+      padding: 8px 16px !important;
+    }
 
     /* === Status cores === */
     #painel .status.s-open{color:#22c55e}
@@ -119,6 +124,8 @@
       -moz-appearance: none;
       -webkit-appearance: none;
       outline: none;
+      height: 28px;
+      line-height: 28px;
     }
     #painel select.status-select option {
       color: var(--ink);
@@ -529,8 +536,8 @@
         // Cor do status para o select
         const statusCol = statusColor(it.status);
         const statusSelect = `<select class="status-select" data-id="${esc(it.id||'')}" style="color:${statusCol}">${statusOptions}</select>`;
-        // Ações: apenas botão do Trello
-        const actionsHtml = `<div class="actions" style="display:flex;flex-direction:column;gap:4px;">${trelloLink}</div>`;
+        // Ações: apenas botão do Trello (aplica estilos via CSS .actions)
+        const actionsHtml = `<div class="actions">${trelloLink}</div>`;
 
         return (
           '<tr data-key="'+esc(it.id || it.url || it.titulo || String(i))+'">'+
