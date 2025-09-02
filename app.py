@@ -746,11 +746,16 @@ def api_chamados_export():
             },
         )
     elif fmt in ("xlsx", "xls"):
-        # Excel via pandas
+        # Excel via pandas. Use the XlsxWriter engine to avoid requiring openpyxl.
         df = pd.DataFrame(items)
         output = io.BytesIO()
-        with pd.ExcelWriter(output, engine="openpyxl") as writer:
-            df.to_excel(writer, index=False, sheet_name="Chamados")
+        # Use xlsxwriter engine to ensure compatibility with Python 3.13.
+        try:
+            with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+                df.to_excel(writer, index=False, sheet_name="Chamados")
+        except Exception as e:
+            # Fallback: if engine is unavailable, return error message.
+            return jsonify(success=False, message="Falha ao gerar Excel", detail=str(e)), 500
         excel_data = output.getvalue()
         output.close()
         fname = f"chamados_{now_str}.xlsx"
