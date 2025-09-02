@@ -96,24 +96,6 @@
 
     /* === Linhas compactas === */
     #painel table td { padding: 12px 16px !important; }
-	
-	/* Botões compactos também nas tabelas de cadastro */
-    #cadastro table .btn {
-      padding: 6px 10px !important;
-      line-height: 1 !important;
-      border-radius: 10px !important;
-      font-size: 12px !important;
-      height: 28px !important;
-      min-width: unset !important;
-      box-sizing: border-box !important;
-    }
-	
-	/* Linhas mais compactas na aba Cadastro */
-    #cadastro table td {
-      padding: 6px 10px !important;  /* antes era 16px 20px */
-      font-size: 14px;
-    }
-
 
     /* === Status cores === */
     #painel .status.s-open{color:#22c55e}
@@ -198,6 +180,8 @@
       <div class="actions">
         <button class="btn btn--primary" id="btnAplicar">🔍 Aplicar Filtros</button>
         <button class="btn" id="btnLimpar">🧹 Limpar</button>
+        <button class="btn" id="btnExportCsv">⬇️ CSV</button>
+        <button class="btn" id="btnExportExcel">⬇️ Excel</button>
         <button class="btn btn--live push-right" id="btnRealtime"><span class="dot"></span> Monitoramento em Tempo Real</button>
       </div>
 
@@ -223,6 +207,11 @@
             </tbody>
           </table>
         </div>
+      </div>
+
+      <!-- Paginação -->
+      <div id="pagination" style="text-align:center;margin:16px 0; display:none;">
+        <button class="btn" id="btnMore">Carregar mais</button>
       </div>
 
       <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
@@ -349,14 +338,9 @@
     function openWhatsApp(rawPhone, text){
       const phone = normalizeBRPhone(rawPhone);
       const q = text ? ('&text=' + encodeURIComponent(text)) : '';
-      const appURL = 'whatsapp://send?phone=' + phone + q;
-      const webURL = 'https://wa.me/' + phone + (text ? ('?text=' + encodeURIComponent(text)) : '');
-      // Try app; fallback to web
-      let redirected = false;
-      try { window.location.href = appURL; redirected = true; } catch (e) {}
-      setTimeout(() => { if (!redirected) window.open(webURL, '_blank', 'noopener'); }, 400);
+      const url = 'whatsapp://send?phone=' + phone + q;
+      try { window.open(url, '_self'); } catch { window.location.href = url; }
     }
-
     window.openWhatsApp = openWhatsApp;
   </script>
 
@@ -385,6 +369,17 @@
       const btnRealtime = painel.querySelector('#btnRealtime');
       const btnAplicar = painel.querySelector('#btnAplicar');
       const btnLimpar = painel.querySelector('#btnLimpar');
+      const btnExportCsv = painel.querySelector('#btnExportCsv');
+      const btnExportExcel = painel.querySelector('#btnExportExcel');
+      const btnMore = document.getElementById('btnMore');
+      const pagination = document.getElementById('pagination');
+
+      // Paginação e status
+      let page = 0;
+      const pageSize = 50;
+      let totalItems = 0;
+      // Opções de status para alteração
+      const STATUS_OPTIONS = ['Em aberto','Em análise','Aguardando versão','Aguardando Requisição','Finalizado','Descartado'];
 
       const LIVE_SET = new Set(['em aberto','em análise']);
 
@@ -410,16 +405,68 @@
       let isRealTimeActive = false;
       let realTimeInterval = null;
 
+      // Source for real-time Server Sent Events
+      let realtimeSource = null;
       function toggleRealTime() {
+        // Alterna estado
         isRealTimeActive = !isRealTimeActive;
         if (isRealTimeActive) {
+          // Ativa visualmente o botão
           btnRealtime.classList.add('is-on');
           btnRealtime.textContent = 'Parar Monitoramento';
-          realTimeInterval = setInterval(() => { if (isRealTimeActive) load({silent:true}); }, 30000);
+          // Fecha qualquer conexão anterior
+          if (realtimeSource) {
+            try { realtimeSource.close(); } catch(e){}
+            realtimeSource = null;
+          }
+          // Abre EventSource para receber atualizações
+          try {
+            realtimeSource = new EventSource('/api/chamados/stream');
+            realtimeSource.onmessage = function(ev){
+              try {
+                const data = JSON.parse(ev.data || '{}');
+                if (data && data.update) {
+                  // Carrega silenciosamente as novas entradas
+                  load({silent:true});
+                }
+              } catch(err) {
+                // falha de parse, ignora
+              }
+            };
+            realtimeSource.onerror = function(){
+              // Em caso de erro, tenta reconectar após 30s
+              try { realtimeSource.close(); } catch(e){}
+              realtimeSource = null;
+              setTimeout(() => {
+                if (isRealTimeActive) {
+                  try {
+                    realtimeSource = new EventSource('/api/chamados/stream');
+                    realtimeSource.onmessage = this.onmessage;
+                  } catch(e){}
+                }
+              }, 30000);
+            };
+          } catch(e) {
+            // Se não suportado, cai no intervalo de 30s
+            if (realTimeInterval) clearInterval(realTimeInterval);
+            realTimeInterval = setInterval(() => {
+              if (isRealTimeActive) load({silent:true});
+            }, 30000);
+          }
         } else {
+          // Desativa visualmente
           btnRealtime.classList.remove('is-on');
           btnRealtime.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
-          if (realTimeInterval) { clearInterval(realTimeInterval); realTimeInterval = null; }
+          // Fecha SSE se aberto
+          if (realtimeSource) {
+            try { realtimeSource.close(); } catch(e){}
+            realtimeSource = null;
+          }
+          // Limpa intervalo se existia
+          if (realTimeInterval) {
+            clearInterval(realTimeInterval);
+            realTimeInterval = null;
+          }
         }
       }
       btnRealtime.addEventListener('click', toggleRealTime);
@@ -440,16 +487,24 @@
           </button>`;
         }
 
+        // Select para mudar status
+        const statusOptions = STATUS_OPTIONS.map(opt => {
+          const selected = opt === it.status ? ' selected' : '';
+          return `<option value="${esc(opt)}"${selected}>${esc(opt)}</option>`;
+        }).join('');
+        const statusSelect = `<select class="status-select" data-id="${esc(it.id||'')}" style="margin-top:4px;">${statusOptions}</select>`;
+        const actionsHtml = `<div class="actions" style="display:flex;flex-direction:column;gap:4px;">${trelloLink}${statusSelect}</div>`;
+
         return (
           '<tr data-key="'+esc(it.id || it.url || it.titulo || String(i))+'">'+
-            '<td class="title" title="'+esc(it.titulo)+'">'+esc(it.titulo)+'</td>'+
+            '<td class="title" title="'+esc(it.titulo)+'">'+esc(it.titulo)+'</td>'+ 
             '<td>'+esc(it.representante||"-")+'</td>'+
-            '<td><span class="'+statusClass(it.status)+'">'+esc(it.status||"-")+'</span></td>'+
-            '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="detalhes">📋 Detalhes</button></td>'+
-            '<td class="prio">'+esc(prio||"-")+'</td>'+
-            '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="ver">👁 Ver</button></td>'+
-            '<td>'+whatsappLink+'</td>'+
-            '<td>'+trelloLink+'</td>'+
+            '<td><span class="'+statusClass(it.status)+'">'+esc(it.status||"-")+'</span></td>'+ 
+            '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="detalhes">📋 Detalhes</button></td>'+ 
+            '<td class="prio">'+esc(prio||"-")+'</td>'+ 
+            '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="ver">👁 Ver</button></td>'+ 
+            '<td>'+whatsappLink+'</td>'+ 
+            '<td>'+actionsHtml+'</td>'+ 
           '</tr>'
         );
       }
@@ -495,6 +550,38 @@
         }
       });
 
+      // Mudar status: envia requisição e atualiza a tabela
+      tbody.addEventListener('change', (e) => {
+        const sel = e.target.closest('select.status-select');
+        if (!sel) return;
+        const newStatus = sel.value;
+        const cardId = sel.getAttribute('data-id');
+        if (!cardId) return;
+        sel.disabled = true;
+        fetch('/api/chamados/'+encodeURIComponent(cardId)+'/status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus }),
+          credentials: 'same-origin',
+        }).then(r => r.json()).then(resp => {
+          sel.disabled = false;
+          if (resp && resp.success) {
+            // Atualiza a célula de status
+            const row = sel.closest('tr');
+            const span = row ? row.querySelector('td:nth-child(3) span') : null;
+            if (span) {
+              span.textContent = newStatus;
+              span.className = statusClass(newStatus);
+            }
+          } else {
+            alert((resp && resp.message) || 'Erro ao atualizar status.');
+          }
+        }).catch(err => {
+          sel.disabled = false;
+          alert('Erro ao atualizar status: '+err.message);
+        });
+      });
+
       function render(items,{silent=false}={}){
         const prev = lastKeys;
         tbody.innerHTML = items.length ? items.map(buildRowHTML).join('') :
@@ -521,50 +608,100 @@
       // Fetch com timeout e tratamento de retorno não-JSON
       function withTimeout(p, ms){ return Promise.race([p, new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timeout após '+ms+'ms')), ms))]); }
 
-      function load({silent=false}={}){
-        if(!silent) tbody.innerHTML='<tr><td class="empty" colspan="8"><div class="loading"></div> Carregando chamados...</td></tr>';
-        const url = '/api/chamados' + qs();
+      function load({silent=false, append=false}={}){
+        if(!silent) {
+          tbody.innerHTML = '<tr><td class="empty" colspan="8"><div class="loading"></div> Carregando chamados...</td></tr>';
+        }
+        const query = qs();
+        const sep = query ? '&' : '?';
+        const url = '/api/chamados' + query + sep + 'offset=' + (page * pageSize) + '&limit=' + pageSize;
         const req = fetch(url, {
-          cache:'no-store',
+          cache: 'no-store',
           credentials: 'same-origin',
           headers: { 'Accept': 'application/json, text/plain;q=0.9, */*;q=0.8' }
         });
-
-        withTimeout(req, 15000)
-          .then(async r=>{
-            const ct=r.headers.get('content-type')||''; 
-            const text=await r.text();
-            if(!r.ok) throw new Error('HTTP '+r.status+' '+r.statusText+'\n'+text.slice(0,800));
+        withTimeout(req, 20000)
+          .then(async r => {
+            const ct = r.headers.get('content-type') || '';
+            const text = await r.text();
+            if(!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText + '\n' + text.slice(0,800));
             let data;
-            try{ data = ct.includes('application/json') ? JSON.parse(text) : JSON.parse(text); }
-            catch(e){ throw new Error('Conteúdo não-JSON da API:\n'+text.slice(0,800)); }
+            try { data = ct.includes('application/json') ? JSON.parse(text) : JSON.parse(text); }
+            catch(e) { throw new Error('Conteúdo não-JSON da API:\n' + text.slice(0,800)); }
             return Array.isArray(data) ? { items: data, total: data.length } : data;
           })
-          .then(j=>{
-            const items = (j.items||[]).map(x=>{ x.prioridade = x.prioridade || (x.descricao||'').match(/\*\*Prioridade:\*\*\s*([^\n]+)/i)?.[1] || '-'; return x; });
-            render(items,{silent});
-            const total = j.total ?? items.length;
-            countBox.innerHTML = `📊 <strong>${total}</strong> chamado${total!==1?'s':''} encontrado${total!==1?'s':''}`;
+          .then(j => {
+            const items = (j.items || []).map(x => { x.prioridade = x.prioridade || (x.descricao || '').match(/\*\*Prioridade:\*\*\s*([^\n]+)/i)?.[1] || '-'; return x; });
+            totalItems = j.total ?? items.length;
+            if (append && page > 0) {
+              const combined = cache.concat(items);
+              render(combined, {silent});
+              cache = combined;
+            } else {
+              render(items, {silent});
+              cache = items;
+            }
+            // Atualiza contagem
+            countBox.innerHTML = `📊 <strong>${totalItems}</strong> chamado${totalItems!==1?'s':''} no total`;
+            // Mostra ou oculta botão 'Carregar mais'
+            if (cache.length < totalItems) {
+              pagination.style.display = 'block';
+            } else {
+              pagination.style.display = 'none';
+            }
           })
-          .catch(err=>{
+          .catch(err => {
             const msg = String(err && err.message || err);
-            countBox.innerHTML='❌ Erro ao carregar dados';
-            tbody.innerHTML='<tr><td class="empty" colspan="8">⚠️ Erro ao carregar chamados.<br><pre style="white-space:pre-wrap;margin-top:8px;color:#7f1d1d;background:#fff3f3;border:1px solid #fecaca;padding:10px;border-radius:8px;max-height:160px;overflow:auto">'+
-              (msg.replace(/[<>&]/g,m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m])))+
+            countBox.innerHTML = '❌ Erro ao carregar dados';
+            tbody.innerHTML = '<tr><td class="empty" colspan="8">⚠️ Erro ao carregar chamados.<br><pre style="white-space:pre-wrap;margin-top:8px;color:#7f1d1d;background:#fff3f3;border:1px solid #fecaca;padding:10px;border-radius:8px;max-height:160px;overflow:auto">' +
+              (msg.replace(/[<>&]/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]))) +
             '</pre></td></tr>';
           });
       }
 
-      btnAplicar.addEventListener('click', () => load({silent: false}));
+      // Aplica filtros: reseta a página e recarrega
+      btnAplicar.addEventListener('click', () => {
+        page = 0;
+        load({silent:false});
+      });
+      // Limpa filtros: reseta campos, página e recarrega
       btnLimpar.addEventListener('click', () => {
         repSelect.value = '';
         statusSelect.value = '';
         deInput.value = '';
         ateInput.value = '';
         qInput.value = '';
-        load({silent: false});
+        page = 0;
+        load({silent:false});
       });
-
+      // Export CSV
+      btnExportCsv.addEventListener('click', () => {
+        const query = qs();
+        const sep = query ? '&' : '?';
+        const url = '/api/chamados/export' + query + sep + 'format=csv';
+        window.open(url, '_blank');
+      });
+      // Export Excel
+      btnExportExcel.addEventListener('click', () => {
+        const query = qs();
+        const sep = query ? '&' : '?';
+        const url = '/api/chamados/export' + query + sep + 'format=xlsx';
+        window.open(url, '_blank');
+      });
+      // Paginação: carregar mais
+      btnMore.addEventListener('click', () => {
+        page++;
+        load({silent:false, append:true});
+      });
+      // Busca incremental no campo de texto (debounce)
+      let searchTimer = null;
+      qInput.addEventListener('input', () => {
+        if (searchTimer) clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+          page = 0;
+          load({silent:false});
+        }, 400);
+      });
       // Carga inicial
       load({silent:false});
     })();

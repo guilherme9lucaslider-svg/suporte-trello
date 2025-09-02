@@ -28,6 +28,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import requests
 
+# For exports
+import io
+import csv
+import pandas as pd
+
 
 # -----------------------------------------------------------------------------
 # Paths / App
@@ -195,14 +200,27 @@ LIST_STATUS_MAP = {
     "Descartados": "Descartado",
 }
 
+# Status string to Trello list name (inverse of LIST_STATUS_MAP).
+# Used for moving cards between lists via the Trello API.
+STATUS_TO_LIST_NAME = {v: k for k, v in LIST_STATUS_MAP.items()}
+
 def _infer_created_from_trello_id(tid: str) -> str | None:
-    """Infer ISO8601 UTC (Z) creation time from Trello card id (ObjectId-like)."""
+    """
+    Given a Trello card ID (24 hex characters), infer the creation timestamp.
+    Trello's IDs follow the MongoDB ObjectID format: the first 8 hex
+    characters represent the epoch timestamp in seconds. This helper returns
+    an ISO 8601 timestamp in UTC (with "Z" suffix) or None if the input
+    cannot be parsed.
+    """
     try:
+        if not tid or len(tid) < 8:
+            return None
         secs = int(tid[:8], 16)
         dt = datetime.fromtimestamp(secs, tz=timezone.utc)
         return dt.isoformat().replace("+00:00", "Z")
     except Exception:
         return None
+
 def _allowed(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXT
 
@@ -327,7 +345,7 @@ def index():
 
 @app.route("/painel")
 def painel():
-    return redirect(url_for("admin_home"))
+    return render_template("painel.html")
 
 def _parse_rep_from_desc(desc: str) -> str:
     if not desc:
@@ -407,8 +425,6 @@ def api_chamados():
 
     items = []
     for c in cards:
-        card_id = c.get("id")
-        created_at = _infer_created_from_trello_id(card_id) if card_id else None
         titulo = c.get("name","").strip()
         desc   = c.get("desc","") or ""
         lista  = id_to_list.get(c.get("idList",""), "")
@@ -456,6 +472,299 @@ def api_chamados():
     return jsonify({"total": len(items), "items": items})
 
 
+# ---------------------------------------------------------------------------
+# Nova implementação do endpoint /api/chamados com suporte a id, created_at,
+# paginação via offset/limit e filtragem.
+@app.route("/api/chamados")
+def api_chamados_v2():
+    f_rep   = (request.args.get("representante") or "").strip()
+    f_stat  = (request.args.get("status") or "").strip()
+    f_de    = _iso_date_only(request.args.get("de") or "")
+    f_ate   = _iso_date_only(request.args.get("ate") or "")
+    f_q     = (request.args.get("q") or "").strip().lower()
+    # Pagination params
+    try:
+        offset = int(request.args.get("offset", "0"))
+        if offset < 0:
+            offset = 0
+    except Exception:
+        offset = 0
+    try:
+        limit = int(request.args.get("limit", "0"))
+        if limit < 0:
+            limit = 0
+    except Exception:
+        limit = 0
+    # Force representative filter for non-admin users
+    if session.get("user") and not session.get("admin"):
+        f_rep = session.get("representante", "").strip()
+    # Build list mapping
+    lists = cached_trello_get(f"/boards/{BOARD_ID}/lists", params={})
+    id_to_list = {l["id"]: l.get("name", "") for l in lists}
+    # Fetch cards (include id)
+    cards = cached_trello_get(
+        f"/boards/{BOARD_ID}/cards",
+        params={
+            "fields": "name,desc,idList,dateLastActivity,shortUrl,id",
+            "attachments": "false",
+            "members": "false",
+        },
+    )
+    items: list[dict] = []
+    for c in cards:
+        titulo = (c.get("name") or "").strip()
+        desc   = c.get("desc") or ""
+        lista_id = c.get("idList") or ""
+        lista  = id_to_list.get(lista_id, "")
+        status = LIST_STATUS_MAP.get(lista, "Em aberto")
+        url    = c.get("shortUrl")
+        dt_raw = c.get("dateLastActivity")
+        ultima = dt_raw
+        representante = _parse_rep_from_desc(desc)
+        whats = _parse_whatsapp_from_desc(desc)
+        # Filters
+        if f_rep and representante != f_rep:
+            continue
+        if f_stat and status != f_stat:
+            continue
+        # Date range filter
+        if (f_de or f_ate) and dt_raw:
+            try:
+                d = datetime.fromisoformat(dt_raw.replace("Z", "+00:00")).date()
+                if f_de and d < f_de:
+                    continue
+                if f_ate and d > f_ate:
+                    continue
+            except Exception:
+                pass
+        # Text search
+        if f_q:
+            base = (titulo + "\n" + desc).lower()
+            if f_q not in base:
+                continue
+        card_id = c.get("id")
+        created_at = _infer_created_from_trello_id(card_id)
+        items.append({
+            "id": card_id,
+            "titulo": titulo,
+            "descricao": desc,
+            "representante": representante,
+            "lista": lista,
+            "status": status,
+            "url": url,
+            "ultima_atividade": ultima,
+            "whatsapp": whats,
+            "created_at": created_at,
+        })
+    total = len(items)
+    paginated = items
+    if limit:
+        paginated = items[offset:offset + limit]
+    if app.debug:
+        print(f"[API] /api/chamados -> {total} itens (retornando {len(paginated)})")
+    return jsonify({"total": total, "items": paginated})
+
+
+# ---------------------------------------------------------------------------
+# Endpoint para mudar o status (lista) de um card específico. Recebe JSON com
+# {"status": "Novo Status"} e move o card para a lista correspondente no
+# Trello. Apenas usuários autenticados podem realizar esta ação.
+@app.route("/api/chamados/<card_id>/status", methods=["POST"])
+def api_chamados_change_status(card_id: str):
+    if not card_id:
+        return jsonify(success=False, message="Id do card ausente"), 400
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+    except Exception:
+        data = {}
+    new_status = (data.get("status") or "").strip()
+    if not new_status:
+        return jsonify(success=False, message="Status ausente"), 400
+    # Resolve lista destino a partir do status
+    dest_list_name = STATUS_TO_LIST_NAME.get(new_status)
+    if not dest_list_name:
+        return jsonify(success=False, message="Status inválido"), 400
+    # Busca todas as listas do board para encontrar o id da lista destino
+    try:
+        lists = cached_trello_get(f"/boards/{BOARD_ID}/lists", params={})
+    except Exception:
+        lists = []
+    name_to_id = {lst.get("name"): lst.get("id") for lst in lists}
+    dest_list_id = name_to_id.get(dest_list_name)
+    if not dest_list_id:
+        return jsonify(success=False, message="Lista destino não encontrada"), 400
+    # Faz a requisição para mover o card
+    try:
+        resp = requests.put(
+            f"{TRELLO_BASE}/cards/{card_id}",
+            params={
+                "idList": dest_list_id,
+                "key": API_KEY,
+                "token": TOKEN,
+            },
+            timeout=30,
+        )
+        if not resp.ok:
+            return jsonify(success=False, message="Falha ao mover card", detail=resp.text), 500
+    except Exception as e:
+        return jsonify(success=False, message="Erro ao mover card", detail=str(e)), 500
+    return jsonify(success=True)
+
+
+# ---------------------------------------------------------------------------
+# Endpoint de streaming (Server-Sent Events) para monitoramento em tempo real.
+# Envia um evento sempre que houver mudança na lista de cards (id ou última
+# atividade). O cliente deve abrir uma EventSource neste endpoint. A verificação
+# é feita em intervalos de 10 segundos usando o cache da API do Trello para
+# minimizar requisições.
+@app.route("/api/chamados/stream")
+def api_chamados_stream():
+    def event_stream():
+        last_hash = None
+        while True:
+            try:
+                cards = cached_trello_get(
+                    f"/boards/{BOARD_ID}/cards",
+                    params={
+                        "fields": "idList,dateLastActivity,id",
+                        "attachments": "false",
+                        "members": "false",
+                    },
+                )
+            except Exception:
+                cards = []
+            # Calcula um hash simples das IDs + última atividade para detectar mudanças
+            try:
+                summary = [
+                    {
+                        "id": c.get("id"),
+                        "idList": c.get("idList"),
+                        "last": c.get("dateLastActivity"),
+                    }
+                    for c in cards
+                ]
+                new_hash = hashlib.md5(json.dumps(summary, sort_keys=True).encode()).hexdigest()
+            except Exception:
+                new_hash = None
+            if last_hash is None:
+                last_hash = new_hash
+            elif new_hash != last_hash:
+                last_hash = new_hash
+                yield f"data: {{\"update\": true}}\n\n"
+            time.sleep(10)
+    return Response(event_stream(), mimetype="text/event-stream")
+
+
+# ---------------------------------------------------------------------------
+# Endpoint para exportar os chamados filtrados em CSV ou XLSX. Utiliza as
+# mesmas regras de filtragem de /api/chamados. Por padrão retorna CSV.
+@app.route("/api/chamados/export")
+def api_chamados_export():
+    fmt = (request.args.get("format") or "csv").lower()
+    f_rep   = (request.args.get("representante") or "").strip()
+    f_stat  = (request.args.get("status") or "").strip()
+    f_de    = _iso_date_only(request.args.get("de") or "")
+    f_ate   = _iso_date_only(request.args.get("ate") or "")
+    f_q     = (request.args.get("q") or "").strip().lower()
+    # Força filtro do representante para usuários não admin
+    if session.get("user") and not session.get("admin"):
+        f_rep = session.get("representante", "").strip()
+    # Mapeia listas
+    lists = cached_trello_get(f"/boards/{BOARD_ID}/lists", params={})
+    id_to_list = {l["id"]: l.get("name", "") for l in lists}
+    # Busca cartas com id
+    cards = cached_trello_get(
+        f"/boards/{BOARD_ID}/cards",
+        params={
+            "fields": "name,desc,idList,dateLastActivity,shortUrl,id",
+            "attachments": "false",
+            "members": "false",
+        },
+    )
+    items: list[dict] = []
+    for c in cards:
+        titulo = (c.get("name") or "").strip()
+        desc   = c.get("desc") or ""
+        lista_id = c.get("idList") or ""
+        lista  = id_to_list.get(lista_id, "")
+        status = LIST_STATUS_MAP.get(lista, "Em aberto")
+        url    = c.get("shortUrl")
+        dt_raw = c.get("dateLastActivity")
+        ultima = dt_raw
+        representante = _parse_rep_from_desc(desc)
+        whats = _parse_whatsapp_from_desc(desc)
+        # Filtros
+        if f_rep and representante != f_rep:
+            continue
+        if f_stat and status != f_stat:
+            continue
+        if (f_de or f_ate) and dt_raw:
+            try:
+                d = datetime.fromisoformat(dt_raw.replace("Z", "+00:00")).date()
+                if f_de and d < f_de:
+                    continue
+                if f_ate and d > f_ate:
+                    continue
+            except Exception:
+                pass
+        if f_q:
+            base = (titulo + "\n" + desc).lower()
+            if f_q not in base:
+                continue
+        card_id = c.get("id")
+        created_at = _infer_created_from_trello_id(card_id)
+        items.append({
+            "id": card_id,
+            "titulo": titulo,
+            "descricao": desc,
+            "representante": representante,
+            "lista": lista,
+            "status": status,
+            "url": url,
+            "ultima_atividade": ultima,
+            "whatsapp": whats,
+            "created_at": created_at,
+        })
+    # Gera arquivo
+    now_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    if fmt == "csv":
+        # CSV
+        output = io.StringIO()
+        fieldnames = ["id","titulo","descricao","representante","lista","status","url","ultima_atividade","whatsapp","created_at"]
+        writer = csv.DictWriter(output, fieldnames=fieldnames)
+        writer.writeheader()
+        for it in items:
+            writer.writerow(it)
+        csv_data = output.getvalue()
+        output.close()
+        fname = f"chamados_{now_str}.csv"
+        return Response(
+            csv_data,
+            headers={
+                "Content-Disposition": f"attachment; filename={fname}",
+                "Content-Type": "text/csv; charset=utf-8",
+            },
+        )
+    elif fmt in ("xlsx", "xls"):
+        # Excel via pandas
+        df = pd.DataFrame(items)
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            df.to_excel(writer, index=False, sheet_name="Chamados")
+        excel_data = output.getvalue()
+        output.close()
+        fname = f"chamados_{now_str}.xlsx"
+        return Response(
+            excel_data,
+            headers={
+                "Content-Disposition": f"attachment; filename={fname}",
+                "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            },
+        )
+    else:
+        return jsonify(success=False, message="Formato inválido", allowed=["csv","xlsx"]), 400
+
+
 @app.route("/api/representantes")
 def api_representantes():
     """
@@ -464,6 +773,7 @@ def api_representantes():
     permite que o front-end preencha selects dinamicamente sem manter
     listas duplicadas no JavaScript.
     """
+    reps = Representative.query.order_by(Representative.name.asc()).all
     reps = Representative.query.order_by(Representative.name.asc()).all()
     return jsonify([r.name for r in reps])
 
