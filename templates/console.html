@@ -127,12 +127,12 @@
 }
 #painel [data-kind="whatsapp-link"]:hover{ filter: brightness(1.1); }
 
-/* Ícone dentro do botão WhatsApp */
 #painel [data-kind="whatsapp-link"] .icon {
-  width: 16px;
+  width: 16px;   /* ajusta proporcional ao texto */
   height: 16px;
   display: inline-block;
 }
+
 
 
 /* === Trello (isolado por atributo) === */
@@ -428,11 +428,13 @@
         if (it.whatsapp && String(it.whatsapp).replace(/\D/g,'').length >= 8) {
           const phoneEsc = String(it.whatsapp).replace(/'/g, "\\'");
           const onClick = `openWhatsApp('${phoneEsc}')`;
-          whatsappLink = `
+         whatsappLink = `
   <button data-kind="whatsapp-link" class="btn" type="button" onclick="${onClick}">
-    <img src="/static/whatsapp.svg" alt="WhatsApp" class="icon"> WhatsApp
+    <img src="/static/whatsapp.png" alt="WhatsApp" class="icon"> WhatsApp
   </button>
 `;
+
+
 
         }
         return (
