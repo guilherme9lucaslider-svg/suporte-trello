@@ -437,6 +437,13 @@
         // padrão: cor principal
         return 'var(--ink)';
       };
+	  
+	  function applyStatusSelectColors(rootEl){
+    (rootEl || document).querySelectorAll('select.status-select').forEach(sel=>{
+      sel.style.color = statusColor(sel.value);
+    });
+	}
+	  
       const parsePriority = (desc) => {
         const m = (desc||'').match(/\*\*Prioridade:\*\*\s*([^\n]+)/i);
         return m ? m[1].trim() : '-';
@@ -596,36 +603,53 @@
       });
 
       // Mudar status: envia requisição e atualiza a tabela
-      tbody.addEventListener('change', (e) => {
-        const sel = e.target.closest('select.status-select');
-        if (!sel) return;
-        const newStatus = sel.value;
-        const cardId = sel.getAttribute('data-id');
-        if (!cardId) return;
-        sel.disabled = true;
-        fetch('/api/chamados/'+encodeURIComponent(cardId)+'/status', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus }),
-          credentials: 'same-origin',
-        }).then(r => r.json()).then(resp => {
-          sel.disabled = false;
-          if (resp && resp.success) {
-            // Ajusta a cor da opção selecionada
-            sel.style.color = statusColor(newStatus);
-          } else {
-            alert((resp && resp.message) || 'Erro ao atualizar status.');
-          }
-        }).catch(err => {
-          sel.disabled = false;
-          alert('Erro ao atualizar status: '+err.message);
-        });
+      tbody.addEventListener('change', async (e) => {
+    const sel = e.target.closest('select.status-select');
+    if (!sel) return;
+
+    const prev = sel.getAttribute('data-prev') || sel.value; // guarda último valor conhecido
+    const newStatus = sel.value;
+    const cardId = sel.getAttribute('data-id');
+    if (!cardId) return;
+
+    // feedback visual imediato
+    sel.style.color = statusColor(newStatus);
+    sel.disabled = true;
+
+    try {
+      const r = await fetch('/api/chamados/' + encodeURIComponent(cardId) + '/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ status: newStatus })
+      });
+      const resp = await r.json().catch(()=>({}));
+
+      if (!r.ok || !resp || !resp.success) {
+        // rollback
+        sel.value = prev;
+        sel.style.color = statusColor(prev);
+        alert((resp && resp.message) || 'Erro ao atualizar status.');
+      } else {
+        // sucesso: fixa o novo valor como "último"
+        sel.setAttribute('data-prev', newStatus);
+      }
+    } catch (err) {
+      // rollback em erro de rede
+      sel.value = prev;
+      sel.style.color = statusColor(prev);
+      alert('Erro ao atualizar status: ' + err.message);
+    } finally {
+      sel.disabled = false;
+    }
+  });
       });
 
       function render(items,{silent=false}={}){
         const prev = lastKeys;
         tbody.innerHTML = items.length ? items.map(buildRowHTML).join('') :
           '<tr><td class="empty" colspan="8">📋 Nenhum chamado encontrado.<br><span style="font-size:14px;opacity:.7;">Ajuste os filtros ou verifique a busca.</span></td></tr>';
+		 applyStatusSelectColors(tbody);
         if (silent){
           [...tbody.querySelectorAll('tr[data-key]')].forEach(tr=>{
             const k=tr.getAttribute('data-key'); if(!prev.has(k)) tr.classList.add('row-new');
