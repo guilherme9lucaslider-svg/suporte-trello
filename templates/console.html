@@ -84,6 +84,11 @@
       box-sizing: border-box !important;
       text-decoration: none;
     }
+	
+	#painel table .actions {
+  text-align: center !important;
+  justify-content: center !important;
+}
 
     /* === Botões Ver/Detalhes ghost compactos === */
     #painel table .btn--ghost {
@@ -99,7 +104,7 @@
     /* Alinha o conteúdo verticalmente e mantém linhas mais finas */
     #painel table td {
       vertical-align: middle !important;
-      padding: 8px 16px !important;
+      padding: 6px 16px !important;
     }
 
     /* === Status cores === */
@@ -147,6 +152,11 @@
     }
     #painel [data-kind="whatsapp-link"] .icon { width: 16px; height: 16px; display: inline-block; }
     #painel [data-kind="whatsapp-link"]:hover{ filter: brightness(1.05); transform: translateY(-2px); box-shadow: var(--shadow); }
+	#painel .btn .icon {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+}
 
     /* === Trello === */
     #painel a[data-kind="trello-link"]{
@@ -206,8 +216,8 @@
       <div class="actions">
         <button class="btn btn--primary" id="btnAplicar">🔍 Aplicar Filtros</button>
         <button class="btn" id="btnLimpar">🧹 Limpar</button>
-        <button class="btn" id="btnExportCsv">⬇️ CSV</button>
-        <button class="btn" id="btnExportExcel">⬇️ Excel</button>
+        <button class="btn" id="btnExportCsv"><img src="/static/csv.png" alt="CSV" class="icon"> CSV</button>
+        <button class="btn" id="btnExportExcel"><img src="/static/xlsx.png" alt="Excel" class="icon"> Excel</button>
         <button class="btn btn--live push-right" id="btnRealtime"><span class="dot"></span> Monitoramento em Tempo Real</button>
       </div>
 
