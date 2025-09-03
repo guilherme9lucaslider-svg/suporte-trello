@@ -331,6 +331,24 @@ def painel_redirect():
 def _only_digits(s: str) -> str:
     return re.sub(r"\D+", "", s or "")
 
+
+
+def _parse_rep_from_desc(desc: str) -> str:
+    """Extrai o nome do Representante da descrição do card.
+    Aceita formatos com ou sem **, ex: '**Representante:** Fulano' ou 'Representante: Fulano'.
+    Retorna string vazia se não encontrar.
+    """
+    if not desc:
+        return ""
+    # tenta com **Representante:** (markdown)
+    m = re.search(r"\*\*\s*Representante\s*:\s*\*\*\s*(.+)", desc, flags=re.I)
+    if not m:
+        # fallback sem asteriscos
+        m = re.search(r"Representante\s*:\s*(.+)", desc, flags=re.I)
+    return (m.group(1).strip() if m else "").strip()
+
+
+
 def _normalize_phone_br(raw: str) -> str:
     """
     Normaliza para E.164 BR sem o '+', ex.: 5511987654321.
