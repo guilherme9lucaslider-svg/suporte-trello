@@ -417,6 +417,13 @@ def _parse_whatsapp_from_desc(desc: str) -> str:
 # ---------------------------------------------------------------------------
 # Nova implementação do endpoint /api/chamados com suporte a id, created_at,
 # paginação via offset/limit e filtragem.
+
+def _iso_date_only(s: str):
+    try:
+        return datetime.strptime(s, "%Y-%m-%d").date()
+    except Exception:
+        return None
+
 @app.route("/api/chamados")
 def api_chamados():
     f_rep   = (request.args.get("representante") or "").strip()
