@@ -88,7 +88,7 @@
     #painel .actions{display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap;align-items:center}
     #painel .actions .push-right{margin-left:auto}
     #painel .btn{border:1px solid var(--stroke);background:#fff;border-radius:16px;padding:12px 20px;color:var(--ink)}
-    #painel .btn--primary{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%);color:#fff;border-color:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%)}
+    #painel .btn--primary{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%);color:#fff;border:1px solid transparent0%,var(--primary-light) 100%)}
     /* Monitoramento */
     #painel .btn--live{background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:#fff;border-color:linear-gradient(135deg,#10b981 0%,#059669 100%)}
     #painel .btn--live .dot{width:12px;height:12px;border-radius:999px;background:#ef4444;display:inline-block}
@@ -434,9 +434,17 @@
     }
     function openWhatsApp(rawPhone, text){
       const phone = normalizeBRPhone(rawPhone);
-      const q = text ? ('&text=' + encodeURIComponent(text)) : '';
-      const url = 'whatsapp://send?phone=' + phone + q;
-      try { window.open(url, '_self'); } catch { window.location.href = url; }
+      const msg = text ? ('?text=' + encodeURIComponent(text)) : '';
+      const web = 'https://wa.me/' + phone + msg;
+      const app = 'whatsapp://send?phone=' + phone + (text ? '&text=' + encodeURIComponent(text) : '');
+      try { window.location.href = app; } catch(e) {}
+      // Fallback para web caso o app não abra (desktop/navegador)
+      setTimeout(() => {
+        if (document.visibilityState === 'visible') {
+          window.location.href = web;
+        }
+      }, 600);
+    } catch { window.location.href = url; }
     }
     window.openWhatsApp = openWhatsApp;
   </script>
@@ -613,7 +621,7 @@
         }).join('');
         // Cor do status para o select
         const statusCol = statusColor(it.status);
-        const statusSelect = `<select class="status-select" data-id="${esc(it.id||'')}" style="color:${statusCol}">${statusOptions}</select>`;
+        const statusSelect = `<select class="status-select" data-id="${esc(it.id||\'\')}" data-prev="${esc(it.status||\'\')}" style="color:${statusCol}">${statusOptions}</select>`;
         // Ações: apenas botão do Trello (aplica estilos via CSS .actions)
         const actionsHtml = `<div class="actions">${trelloLink}</div>`;
 
@@ -694,7 +702,13 @@
         credentials: 'same-origin',
         body: JSON.stringify({ status: newStatus })
       });
-      const resp = await r.json().catch(()=>({}));
+      
+      // Memoriza o valor anterior ao abrir o select (para rollback confiável)
+      tbody.addEventListener('focusin', (e) => {
+        const sel = e.target.closest('select.status-select');
+        if (sel) sel.setAttribute('data-prev', sel.value);
+      });
+const resp = await r.json().catch(()=>({}));
 
       if (!r.ok || !resp || !resp.success) {
         // rollback
@@ -809,19 +823,65 @@
         load({silent:false});
       });
       // Export CSV
-      btnExportCsv.addEventListener('click', () => {
+      
+      btnExportCsv.addEventListener('click', async () => {
         const query = qs();
         const sep = query ? '&' : '?';
         const url = '/api/chamados/export' + query + sep + 'format=csv';
-        window.open(url, '_blank');
+        try {
+          const res = await fetch(url, { credentials: 'same-origin' });
+          if (!res.ok) {
+            const txt = await res.text();
+            throw new Error(txt || ('HTTP ' + res.status));
+          }
+          const dispo = res.headers.get('Content-Disposition') || '';
+          let filename = 'chamados.csv';
+          const m = /filename="?([^"]+)"?/i.exec(dispo);
+          if (m) filename = m[1];
+          const blob = await res.blob();
+          const href = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = href; a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(href);
+        } catch (err) {
+          console.error('Falha ao exportar CSV:', err);
+          alert('Falha ao exportar CSV.');
+        }
       });
+
       // Export Excel
-      btnExportExcel.addEventListener('click', () => {
+      
+      btnExportExcel.addEventListener('click', async () => {
         const query = qs();
         const sep = query ? '&' : '?';
         const url = '/api/chamados/export' + query + sep + 'format=xlsx';
-        window.open(url, '_blank');
+        try {
+          const res = await fetch(url, { credentials: 'same-origin' });
+          if (!res.ok) {
+            const txt = await res.text();
+            throw new Error(txt || ('HTTP ' + res.status));
+          }
+          const dispo = res.headers.get('Content-Disposition') || '';
+          let filename = 'chamados.xlsx';
+          const m = /filename="?([^"]+)"?/i.exec(dispo);
+          if (m) filename = m[1];
+          const blob = await res.blob();
+          const href = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = href; a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(href);
+        } catch (err) {
+          console.error('Falha ao exportar Excel:', err);
+          alert('Falha ao exportar Excel.');
+        }
       });
+
       // Paginação: carregar mais
       btnMore.addEventListener('click', () => {
         page++;

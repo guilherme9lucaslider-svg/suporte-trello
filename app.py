@@ -716,7 +716,8 @@ def api_chamados_export():
         writer.writeheader()
         for it in items:
             writer.writerow(it)
-        csv_data = output.getvalue()
+        \ufeff_marker = '\ufeff'
+        csv_data = \ufeff_marker + output.getvalue()
         output.close()
         fname = f"chamados_{now_str}.csv"
         return Response(
