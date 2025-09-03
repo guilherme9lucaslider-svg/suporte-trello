@@ -10,20 +10,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 from functools import wraps
 
-from flask import (, redirect, url_for
-
-    Flask,
-    render_template,
-    request,
-    jsonify,
-    send_from_directory,
-    abort,
-    make_response,
-    session,
-    redirect,
-    url_for,
-    Response,
-)
+from flask import Flask, Response, abort, jsonify, make_response, render_template, request, send_from_directory, session, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -184,9 +171,7 @@ try:
         LABEL_IDS = {}
 except Exception:
     LABEL_IDS = {}
-MANIFEST = DOWNLOADS_DIR / "latest.json"
 HIDE_DOWNLOAD_BUTTON = (os.getenv("HIDE_DOWNLOAD_BUTTON", "0") == "1")
-IS_DESKTOP = bool(getattr(sys, "frozen", False)) or os.getenv("APP_DESKTOP") == "1"
 ALLOWED_EXT = {"png","jpg","jpeg","gif","webp","pdf","txt","csv","xlsx","xls","doc","docx","zip","rar","7z"}
 
 LIST_STATUS_MAP = {
@@ -301,7 +286,7 @@ def _auth_guard():
     # Público (sem sessão de user/admin)
     if (
         path.startswith("/static/") or
-        path in {"/static", "/sw.js", "/versao.json", "/favicon.ico"} or
+        path in {"/static", "/sw.js", "/favicon.ico"} or
         path.startswith("/api/chamados") or
         path.startswith("/api/representantes") or
         path == "/login" or
@@ -393,13 +378,6 @@ def _iso_date_only(s: str):
     except Exception:
         return None
 
-@app.route("/api/chamados")
-def api_chamados():
-    f_rep   = (request.args.get("representante") or "").strip()
-    f_stat  = (request.args.get("status") or "").strip()
-    f_de    = _iso_date_only(request.args.get("de") or "")
-    f_ate   = _iso_date_only(request.args.get("ate") or "")
-    f_q     = (request.args.get("q") or "").strip().lower()
 
     # Força o filtro do representante para usuário comum
     if session.get('user') and not session.get('admin'):
@@ -895,45 +873,6 @@ def salvar():
         err_msg = re.sub(r"[A-Za-z0-9]{32,}", "***", err_msg)
         return jsonify(success=False, message=f"Falha ao criar o chamado: {err_msg}"), 400
 
-# -----------------------------------------------------------------------------
-# Downloads / versão
-# -----------------------------------------------------------------------------
-def _compute_sha256(file_path: Path) -> str:
-    h = hashlib.sha256()
-    with file_path.open("rb") as f:
-        for chunk in iter(lambda: f.read(1024 * 1024), b""):
-            h.update(chunk)
-    return h.hexdigest()
-
-def _manifest_data():
-    if not MANIFEST.exists():
-        raise RuntimeError("downloads/latest.json não encontrado.")
-    data = json.loads(MANIFEST.read_text(encoding="utf-8"))
-    fname = data.get("filename")
-    if not fname:
-        raise RuntimeError("Campo 'filename' ausente no latest.json.")
-    file_path = DOWNLOADS_DIR / fname
-    if not file_path.exists():
-        raise RuntimeError(f"Arquivo da versão não encontrado: {fname}")
-    if not data.get("sha256"):
-        data["sha256"] = _compute_sha256(file_path)
-    if not data.get("size_bytes"):
-        data["size_bytes"] = file_path.stat().st_size
-    return data
-
-    resp = make_response(send_from_directory(
-        directory=str(DOWNLOADS_DIR),
-        path=filename,
-        as_attachment=True,
-        download_name=filename,
-        mimetype="application/octet-stream",
-        conditional=True
-    ))
-    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-    resp.headers["Pragma"] = "no-cache"
-    resp.headers["Expires"] = "0"
-    resp.headers["X-Content-Type-Options"] = "nosniff"
-    return resp
 
 # -----------------------------------------------------------------------------
 # Admin (rotas) – agora usando console.html como tela principal
