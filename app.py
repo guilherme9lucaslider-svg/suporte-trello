@@ -216,19 +216,22 @@ def _allowed(filename: str) -> bool:
 def trello_get(path: str, params: dict):
     p = {"key": API_KEY, "token": TOKEN}
     p.update(params or {})
-    r = requests.get(f"{TRELLO_BASE}{path}", params=p, timeout=15)
-    if app.debug:
-        print(f"[TRELLO][GET] {path} -> {r.status_code}")
-    if not r.ok:
-        raise RuntimeError(f"[TRELLO][GET {path}] {r.status_code}: {r.text[:300]}")
     try:
+        r = requests.get(f"{TRELLO_BASE}{path}", params=p, timeout=10)  # reduzir timeout
+        if app.debug:
+            print(f"[TRELLO][GET] {path} -> {r.status_code}")
+        if not r.ok:
+            raise RuntimeError(f"[TRELLO][GET {path}] {r.status_code}: {r.text[:300]}")
         return r.json()
-    except Exception:
-        raise RuntimeError(f"[TRELLO][GET {path}] Resposta não é JSON: {r.text[:300]}")
+    except requests.exceptions.Timeout:
+        raise RuntimeError(f"[TRELLO][GET {path}] Timeout na requisição")
+    except requests.exceptions.ConnectionError:
+        raise RuntimeError(f"[TRELLO][GET {path}] Erro de conexão")
+    except Exception as e:
+        raise RuntimeError(f"[TRELLO][GET {path}] Erro: {str(e)}")
 
 _trello_cache: dict = {}
-def cached_trello_get(path: str, params: dict, ttl: int = 20):
-    """Cache simples em memória (default 20s)."""
+def cached_trello_get(path: str, params: dict, ttl: int = 5):  # reduzir TTL para 5 segundos
     key = (path, tuple(sorted((params or {}).items())))
     now = time.monotonic()
     entry = _trello_cache.get(key)
@@ -238,11 +241,30 @@ def cached_trello_get(path: str, params: dict, ttl: int = 20):
             if app.debug:
                 print(f"[CACHE] HIT {path} age={age:.1f}s")
             return entry[0]
+    
+    # Limpar cache muito antigo
+    if len(_trello_cache) > 50:
+        cutoff = now - (ttl * 2)
+        old_keys = [k for k, v in _trello_cache.items() if v[1] < cutoff]
+        for k in old_keys:
+            _trello_cache.pop(k, None)
+    
     if app.debug:
         print(f"[CACHE] MISS {path}")
-    value = trello_get(path, params)
-    _trello_cache[key] = (value, now)
-    return value
+    
+    try:
+        value = trello_get(path, params)
+        _trello_cache[key] = (value, now)
+        return value
+    except Exception as e:
+        # Em caso de erro, retorna lista vazia para não travar
+        if app.debug:
+            print(f"[CACHE] Erro no Trello: {e}")
+        if 'lists' in path:
+            return []
+        elif 'cards' in path:
+            return []
+        raise e
 
 def trello_post(path: str, params: dict):
     p = {"key": API_KEY, "token": TOKEN}
@@ -466,13 +488,36 @@ def _iso_date_only(s: str):
 # Nova implementação do endpoint /api/chamados com suporte a id, created_at,
 # paginação via offset/limit e filtragem.
 @app.route("/api/chamados")
-def api_chamados_v2():
+def api_chamados():
     f_rep   = (request.args.get("representante") or "").strip()
     f_stat  = (request.args.get("status") or "").strip()
     f_de    = _iso_date_only(request.args.get("de") or "")
     f_ate   = _iso_date_only(request.args.get("ate") or "")
     f_q     = (request.args.get("q") or "").strip().lower()
     
+    try:
+        offset = int(request.args.get("offset", "0"))
+        if offset < 0: offset = 0
+    except: 
+        offset = 0
+    try:
+        limit = int(request.args.get("limit", "0"))
+        if limit < 0: limit = 0
+    except: 
+        limit = 0
+    
+    # Force representative filter for non-admin users
+    if session.get("user") and not session.get("admin"):
+        f_rep = session.get("representante", "").strip()
+    
+    # Verificação rápida de conectividade
+    if not API_KEY or not TOKEN or not BOARD_ID:
+        return jsonify({
+            "error": "Configuração do Trello incompleta",
+            "total": 0, 
+            "items": []
+        }), 500
+
     # Pagination params
     try:
         offset = int(request.args.get("offset", "0"))
@@ -817,7 +862,6 @@ def api_representantes():
     permite que o front-end preencha selects dinamicamente sem manter
     listas duplicadas no JavaScript.
     """
-    reps = Representative.query.order_by(Representative.name.asc()).all
     reps = Representative.query.order_by(Representative.name.asc()).all()
     return jsonify([r.name for r in reps])
 
