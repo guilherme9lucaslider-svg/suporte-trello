@@ -786,12 +786,7 @@ const resp = await r.json().catch(()=>({}));
           .then(j => {
             const items = (j.items || []);
             totalItems = j.total ?? items.length;
-            if (append && page > 0) {
-              const combined = cache.concat(items);
-              render(combined, {silent});
-              cache = combined;
-            } else {
-              render(items, {silent});
+            render(items,{silent:false}); cache = items; lastKeys = new Set(items.map(it => it.id || it.url || it.titulo)););
               cache = items;
             }
             // Atualiza contagem
