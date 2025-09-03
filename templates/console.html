@@ -9,19 +9,54 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --primary: #006056; --primary-light: #0a8a7a; --primary-dark: #004d44;
-      --surface: #ffffff; --surface-hover:#f5f9f8; --ink:#0f1f1c; --muted:#64748b;
-      --stroke:#e2e8f0; --stroke-light:#f1f5f9;
-      --radius:16px; --radius-lg:24px;
-      --shadow-sm:0 2px 8px rgba(0,96,86,.08); --shadow:0 8px 32px rgba(0,96,86,.12);
-      --gradient-primary:linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+   :root {
+      --primary: #13539b; 
+      --primary-light: #2563eb; 
+      --primary-dark: #0f172a;
+      --accent: #fa6827;
+      --accent-light: #fb7c47;
+      --accent-dark: #e85d24;
+      --surface: #ffffff; 
+      --surface-hover: #f1f5f9; 
+      --ink: #0f172a; 
+      --muted: #64748b;
+      --stroke: #e2e8f0; 
+      --stroke-light: #f1f5f9;
+      --radius: 16px; 
+      --radius-lg: 24px;
+      --shadow-sm: 0 2px 8px rgba(19,83,155,.08); 
+      --shadow: 0 8px 32px rgba(19,83,155,.12);
+      --shadow-accent: 0 4px 16px rgba(250,104,39,.15);
+      --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      --gradient-accent: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
     }
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:var(--ink);
-         background:linear-gradient(135deg,#f8fffe 0%,#f1f8f6 100%);min-height:100vh}
+         background:linear-gradient(135deg,#f8fcff 0%,#f1f2f8 100%);min-height:100vh}
+         
+         @font-face {
+  font-family: 'MinhaFonte';
+  src: url('/static/Nulshock.woff2') format('woff2');
+  font-weight: 900;
+  font-display: swap;
+}
     .header{background:var(--gradient-primary);color:#fff;padding:32px 40px}
-    .header h1{font-size:32px;font-weight:800;margin-bottom:8px}
+    .header h1{ font-family: 'MinhaFonte', 'Inter', sans-serif; font-size:36px; font-weight:900;
+  margin-bottom:12px;
+  color:#ffffff;
+  letter-spacing:-0.025em;
+}
+
+.header h1 .first-letter {
+  color:var(--accent);
+  font-size:42px; /* opcional */
+}
+.header .subtitle{
+  font-size:16px;
+  opacity:0.9;
+  font-weight:400;
+  letter-spacing:0.025em;
+}
     .tabs{display:flex;gap:4px;background:#fff;padding:8px;border-bottom:1px solid var(--stroke);box-shadow:var(--shadow-sm)}
     .tab{border:none;background:transparent;padding:16px 24px;border-radius:16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--muted);transition:.2s}
     .tab[aria-selected="true"]{background:var(--gradient-primary);color:#fff;box-shadow:var(--shadow)}
@@ -199,7 +234,7 @@
 </head>
 <body>
   <header class="header">
-    <h1>Console Administrativo</h1>
+    <h1><span class="first-letter">C</span>onsole Administrativo</h1>
     <div class="subtitle">Gerencie chamados e usuários em uma única interface</div>
   </header>
 
