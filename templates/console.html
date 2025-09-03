@@ -530,6 +530,18 @@
         // Alterna estado
         isRealTimeActive = !isRealTimeActive;
         if (isRealTimeActive) {
+          // Ao ativar o monitoramento ao vivo, aplica filtro "Em aberto"
+          try {
+            // força o filtro de status para "Em aberto"
+            statusSelect.value = 'Em aberto';
+            // atualiza cor do select se a função estiver disponível
+            if (typeof applyStatusSelectColors === 'function') {
+              applyStatusSelectColors();
+            }
+          } catch(e){}
+          // reinicia a paginação e carrega os chamados em aberto imediatamente
+          page = 0;
+          load({silent:false});
           // Ativa visualmente o botão
           btnRealtime.classList.add('is-on');
           btnRealtime.textContent = 'Parar Monitoramento';
@@ -754,7 +766,7 @@
           credentials: 'same-origin',
           headers: { 'Accept': 'application/json, text/plain;q=0.9, */*;q=0.8' }
         });
-        withTimeout(req, 45000)
+        withTimeout(req, 20000)
           .then(async r => {
             const ct = r.headers.get('content-type') || '';
             const text = await r.text();
