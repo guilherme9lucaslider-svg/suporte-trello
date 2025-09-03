@@ -802,6 +802,7 @@
       function withTimeout(p, ms){ return Promise.race([p, new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timeout após '+ms+'ms')), ms))]); }
 
       function load({silent=false, append=false}={}){
+	  if(!silent && isRealTimeActive && page > 0) return;
         const currentId = ++latestLoadId;
         // Exibe spinner quando necessário
         if(!silent){
