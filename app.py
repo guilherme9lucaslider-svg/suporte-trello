@@ -22,6 +22,12 @@ import csv
 import pandas as pd
 
 # -----------------------------------------------------------------------------
+# Add
+# -----------------------------------------------------------------------------
+
+IS_DESKTOP = os.getenv("APP_DESKTOP", "0") == "1"
+
+# -----------------------------------------------------------------------------
 # Paths / App
 # -----------------------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent
@@ -466,35 +472,53 @@ def api_chamados_v2():
     f_de    = _iso_date_only(request.args.get("de") or "")
     f_ate   = _iso_date_only(request.args.get("ate") or "")
     f_q     = (request.args.get("q") or "").strip().lower()
+    
     # Pagination params
     try:
         offset = int(request.args.get("offset", "0"))
-        if offset < 0:
-            offset = 0
-    except Exception:
-        offset = 0
+        if offset < 0: offset = 0
+    except: offset = 0
     try:
         limit = int(request.args.get("limit", "0"))
-        if limit < 0:
-            limit = 0
-    except Exception:
-        limit = 0
+        if limit < 0: limit = 0
+    except: limit = 0
+    
     # Force representative filter for non-admin users
     if session.get("user") and not session.get("admin"):
         f_rep = session.get("representante", "").strip()
-    # Build list mapping
-    lists = cached_trello_get(f"/boards/{BOARD_ID}/lists", params={})
-    id_to_list = {l["id"]: l.get("name", "") for l in lists}
-    # Fetch cards (include id)
-    cards = cached_trello_get(
-        f"/boards/{BOARD_ID}/cards",
-        params={
-            "fields": "name,desc,idList,dateLastActivity,shortUrl,id",
-            "attachments": "false",
-            "members": "false",
-        },
-    )
-    items: list[dict] = []
+    
+    # Verificar credenciais
+    if not API_KEY or not TOKEN or not BOARD_ID:
+        return jsonify({
+            "error": "Configuração do Trello incompleta",
+            "total": 0, 
+            "items": []
+        }), 500
+    
+    try:
+        # Build list mapping
+        lists = cached_trello_get(f"/boards/{BOARD_ID}/lists", params={})
+        id_to_list = {l["id"]: l.get("name", "") for l in lists}
+        
+        # Fetch cards
+        cards = cached_trello_get(
+            f"/boards/{BOARD_ID}/cards",
+            params={
+                "fields": "name,desc,idList,dateLastActivity,shortUrl,id",
+                "attachments": "false",
+                "members": "false",
+            },
+        )
+    except Exception as e:
+        if app.debug:
+            print(f"[API] Erro Trello: {e}")
+        return jsonify({
+            "error": "Erro ao conectar com Trello: " + str(e),
+            "total": 0,
+            "items": []
+        }), 500
+    
+    items = []
     for c in cards:
         titulo = (c.get("name") or "").strip()
         desc   = c.get("desc") or ""
@@ -506,11 +530,13 @@ def api_chamados_v2():
         ultima = dt_raw
         representante = _parse_rep_from_desc(desc)
         whats = _parse_whatsapp_from_desc(desc)
+        
         # Filters
         if f_rep and representante != f_rep:
             continue
         if f_stat and status != f_stat:
             continue
+            
         # Date range filter
         if (f_de or f_ate) and dt_raw:
             try:
@@ -521,11 +547,13 @@ def api_chamados_v2():
                     continue
             except Exception:
                 pass
+                
         # Text search
         if f_q:
             base = (titulo + "\n" + desc).lower()
             if f_q not in base:
                 continue
+        
         card_id = c.get("id")
         created_at = _infer_created_from_trello_id(card_id)
         items.append({
@@ -540,13 +568,43 @@ def api_chamados_v2():
             "whatsapp": whats,
             "created_at": created_at,
         })
+    
     total = len(items)
     paginated = items
     if limit:
         paginated = items[offset:offset + limit]
+    
     if app.debug:
         print(f"[API] /api/chamados -> {total} itens (retornando {len(paginated)})")
+    
     return jsonify({"total": total, "items": paginated})
+
+
+#---------------------------------------------
+# Diagnostico 
+#---------------------------------------------
+@app.route("/api/diagnostico")
+def api_diagnostico():
+    """Endpoint para testar conectividade com Trello"""
+    diagnostics = {
+        "api_key_configured": bool(API_KEY),
+        "token_configured": bool(TOKEN),
+        "board_id_configured": bool(BOARD_ID),
+        "trello_connection": False,
+    }
+    
+    if not API_KEY or not TOKEN or not BOARD_ID:
+        return jsonify(diagnostics)
+    
+    try:
+        lists = trello_get(f"/boards/{BOARD_ID}/lists", {})
+        diagnostics["trello_connection"] = True
+        diagnostics["lists_count"] = len(lists)
+        diagnostics["list_names"] = [l.get("name") for l in lists]
+    except Exception as e:
+        diagnostics["error"] = str(e)
+    
+    return jsonify(diagnostics)
 
 # ---------------------------------------------------------------------------
 # Endpoint para mudar o status (lista) de um card específico. Recebe JSON com
