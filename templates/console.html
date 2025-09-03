@@ -658,7 +658,7 @@
           html += `📊 Status: ${(item.status || '-') }<br><br>`;
           html += `🕐 Criado em: ${created ? created.toLocaleString('pt-BR') : '—'}<br>`;
           html += `⏰ Última atividade: ${lastAct ? lastAct.toLocaleString('pt-BR') : '—'}<br><br>`;
-          html += `⏱ Duração ${isLive?'(contando)':'(fechada)'}: <span id="durSpan">calculando…</span>`;
+          html += `⏱ Duração ${isLive?'(contando)':'(fechada)'}: <span id="durSpan">calculando...</span>`;
 
           openModal('Detalhes do chamado', html);
 
@@ -718,7 +718,7 @@
       function render(items,{silent=false}={}){
         const prev = lastKeys;
         tbody.innerHTML = items.length ? items.map(buildRowHTML).join('') :
-          '<tr><td class="empty" colspan="8">📋 Nenhum chamado encontrado<br><span style="opacity:.7;">Ajuste os filtros ou verifique a busca.</span></td></tr>';
+          '<tr><td class="empty" colspan="8">📋 Nenhum chamado encontrado.<br><span style="font-size:14px;opacity:.7;">Ajuste os filtros ou verifique a busca.</span></td></tr>';
 		 applyStatusSelectColors(tbody);
         if (silent){
           [...tbody.querySelectorAll('tr[data-key]')].forEach(tr=>{
@@ -744,12 +744,24 @@
 
       function load({silent=false, append=false}={}){
         if(!silent) {
-          tbody.innerHTML = '<tr><td class="empty" colspan="8"an="8"><div class="loading"></div> Carregando chamados...</td></tr>';
+          tbody.innerHTML = '<tr><td class="empty" colspan="8"><div class="loading"></div> Carregando chamados...</td></tr>';
+    .catch(err => {
+      const msg = String((err && err.message) || err);
+      try { countBox.innerHTML = '❌ Erro ao carregar dados'; } catch(_){}
+      const safe = (msg || '').replace(/[<>&]/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]));
+      try {
+        tbody.innerHTML = '<tr><td class="empty" colspan="8"><div class="warn" style="margin-bottom:8px">Erro ao carregar chamados.</div>' +
+          '<pre style="white-space:pre-wrap;word-break:break-word;background:#fee2e2;color:#991b1b;padding:10px;border-radius:8px;max-height:160px;overflow:auto">' +
+          safe +
+        '</pre></td></tr>';
+      } catch(_){}
+    })
+
         }
         const query = qs();
         const sep = query ? '&' : '?';
         const url = '/api/chamados' + query + sep + 'offset=' + (page * pageSize) + '&limit=' + pageSize;
-        const req = fetch(url, {
+        const req = withTimeout(fetch(url, {
           cache: 'no-store',
           credentials: 'same-origin',
           headers: { 'Accept': 'application/json, text/plain;q=0.9, */*;q=0.8' }
@@ -765,8 +777,8 @@
             return Array.isArray(data) ? { items: data, total: data.length } : data;
           })
           .then(j => {
-            const items = (j.items || []);
-totalItems = j.total ?? items.length;
+            const items = (j.items || []).map(x => { x.prioridade = x.prioridade || (x.descricao || '').match(/\*\*Prioridade:\*\*\s*([^\n]+)/i)?.[1] || '-'; return x; });
+            totalItems = j.total ?? items.length;
             if (append && page > 0) {
               const combined = cache.concat(items);
               render(combined, {silent});
@@ -785,14 +797,11 @@ totalItems = j.total ?? items.length;
             }
           })
           .catch(err => {
-            const msg = String((err && err.message) || err);
+            const msg = String(err && err.message || err);
             countBox.innerHTML = '❌ Erro ao carregar dados';
-            const safe = (msg || '').replace(/[<>&]/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]));
-            tbody.innerHTML = '<tr><td class="empty" colspan="8"an="8"><div class="warn" style="margin-bottom:8px">Erro ao carregar chamados.</div>' +
-              '<pre style="white-space:pre-wrap;word-break:break-word;background:#fee2e2;color:#991b1b;padding:10px;border-radius:8px;max-height:160px;overflow:auto">' +
-              safe +
+            tbody.innerHTML = '<tr><td class="empty" colspan="8">⚠️ Erro ao carregar chamados.<br><pre style="white-space:pre-wrap;margin-top:8px;color:#7f1d1d;background:#fff3f3;border:1px solid #fecaca;padding:10px;border-radius:8px;max-height:160px;overflow:auto">' +
+              (msg.replace(/[<>&]/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]))) +
             '</pre></td></tr>';
-          });
           });
       }
 
@@ -812,15 +821,55 @@ totalItems = j.total ?? items.length;
         load({silent:false});
       });
       // Export CSV
-      btnExportCsv.addEventListener('click', () => {
-        const query = qs();
+      btnExportCsv.addEventListener('click', async () => {
+        const query = qs ? qs() : '';
+        const sep = query ? '&' : '?';
+        const url = '/api/chamados/export' + query + sep + 'format=csv';
+        try {
+          const res = await withTimeout(fetch(url, { credentials: 'same-origin' });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const dispo = res.headers.get('Content-Disposition') || '';
+          let filename = 'chamados.csv';
+          const m = /filename="?([^"]+)"?/i.exec(dispo);
+          if (m) filename = m[1];
+          const blob = await res.blob();
+          const href = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = href; a.download = filename;
+          document.body.appendChild(a); a.click(); a.remove();
+          URL.revokeObjectURL(href);
+        } catch (err) {
+          console.error('Falha ao exportar CSV:', err);
+          alert('Falha ao exportar CSV.');
+        }
+      });
         const sep = query ? '&' : '?';
         const url = '/api/chamados/export' + query + sep + 'format=csv';
         window.open(url, '_blank');
       });
       // Export Excel
-      btnExportExcel.addEventListener('click', () => {
-        const query = qs();
+      btnExportExcel.addEventListener('click', async () => {
+        const query = qs ? qs() : '';
+        const sep = query ? '&' : '?';
+        const url = '/api/chamados/export' + query + sep + 'format=xlsx';
+        try {
+          const res = await withTimeout(fetch(url, { credentials: 'same-origin' });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const dispo = res.headers.get('Content-Disposition') || '';
+          let filename = 'chamados.xlsx';
+          const m = /filename="?([^"]+)"?/i.exec(dispo);
+          if (m) filename = m[1];
+          const blob = await res.blob();
+          const href = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = href; a.download = filename;
+          document.body.appendChild(a); a.click(); a.remove();
+          URL.revokeObjectURL(href);
+        } catch (err) {
+          console.error('Falha ao exportar Excel:', err);
+          alert('Falha ao exportar Excel.');
+        }
+      });
         const sep = query ? '&' : '?';
         const url = '/api/chamados/export' + query + sep + 'format=xlsx';
         window.open(url, '_blank');
