@@ -744,17 +744,22 @@ const resp = await r.json().catch(()=>({}));
       }
 
       function qs(){
-        const p=[]; const rep=repSelect.value.trim(), st=statusSelect.value.trim(), de=deInput.value, ate=ateInput.value, q=qInput.value.trim();
+        const p=[];
+        const rep = repSelect.value.trim();
+        const st  = statusSelect.value.trim();
+        const de  = deInput.value;
+        const ate = ateInput.value;
+        const q   = qInput.value.trim();
         if(rep) p.push('representante='+encodeURIComponent(rep));
         if(st)  p.push('status='+encodeURIComponent(st));
         if(de)  p.push('de='+encodeURIComponent(de));
         if(ate) p.push('ate='+encodeURIComponent(ate));
         if(q)   p.push('q='+encodeURIComponent(q));
-        return p.length ? '?'+p.join('&') : '';
+        return p.length ? '?' + p.join('&') : '';
       }
 
       // Fetch com timeout e tratamento de retorno não-JSON
-      function withTimeout(p, ms){ return Promise.race([p, new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timeout após '+ms+'ms')), ms))]); }
+      function withTimeout(p, ms){ return Promise.race([p, new Promise((_, rej)=>setTimeout(()=>rej(new Error('Timeout após '+ms+'ms')), ms))]); }
 
       function load({silent=false, append=false}={}){
         if(!silent) {
@@ -779,7 +784,7 @@ const resp = await r.json().catch(()=>({}));
             return Array.isArray(data) ? { items: data, total: data.length } : data;
           })
           .then(j => {
-            const items = (j.items || []).map(x => { x.prioridade = x.prioridade || (x.descricao || '').match(/\*\*Prioridade:\*\*\s*([^\n]+)/i)?.[1] || '-'; return x; });
+            const items = (j.items || []);
             totalItems = j.total ?? items.length;
             if (append && page > 0) {
               const combined = cache.concat(items);
