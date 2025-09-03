@@ -327,11 +327,6 @@ def index():
 @app.route("/painel")
 def painel_redirect():
     return redirect(url_for("admin_home"), code=308)
-    if not desc:
-        return ""
-    m = re.search(r"\*\*Representante:\*\*\s*(.+)", desc)
-    return (m.group(1).strip() if m else "").strip()
-
 # ==== Helpers de WhatsApp ====
 def _only_digits(s: str) -> str:
     return re.sub(r"\D+", "", s or "")
