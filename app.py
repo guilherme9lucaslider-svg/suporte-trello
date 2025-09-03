@@ -231,7 +231,7 @@ def trello_get(path: str, params: dict):
         raise RuntimeError(f"[TRELLO][GET {path}] Erro: {str(e)}")
 
 _trello_cache: dict = {}
-def cached_trello_get(path: str, params: dict, ttl: int = 5):  # reduzir TTL para 5 segundos
+def cached_trello_get(path: str, params: dict, ttl: int = 30):  # reduzir TTL para 30 segundos
     key = (path, tuple(sorted((params or {}).items())))
     now = time.monotonic()
     entry = _trello_cache.get(key)
@@ -413,76 +413,6 @@ def _parse_whatsapp_from_desc(desc: str) -> str:
 
     return ""
 
-def _iso_date_only(s: str):
-    try:
-        return datetime.strptime(s, "%Y-%m-%d").date()
-    except Exception:
-        return None
-
-
-    # Força o filtro do representante para usuário comum
-    if session.get('user') and not session.get('admin'):
-        f_rep = session.get('representante', '').strip()
-
-    lists = cached_trello_get(f"/boards/{BOARD_ID}/lists", params={})
-    id_to_list = {l["id"]: l.get("name", "") for l in lists}
-
-    cards = cached_trello_get(
-        f"/boards/{BOARD_ID}/cards",
-        params={
-            "fields": "name,desc,idList,dateLastActivity,shortUrl",
-            "attachments": "false",
-            "members": "false"
-        }
-    )
-
-    items = []
-    for c in cards:
-        titulo = c.get("name","").strip()
-        desc   = c.get("desc","") or ""
-        lista  = id_to_list.get(c.get("idList",""), "")
-        status = LIST_STATUS_MAP.get(lista, "Em aberto")
-        url    = c.get("shortUrl")
-        dt_raw = c.get("dateLastActivity")
-        ultima = dt_raw
-
-        representante = _parse_rep_from_desc(desc)
-        whats = _parse_whatsapp_from_desc(desc)  # << inclui WhatsApp
-
-        if f_rep and representante != f_rep:
-            continue
-        if f_stat and status != f_stat:
-            continue
-
-        if (f_de or f_ate) and dt_raw:
-            try:
-                d = datetime.fromisoformat(dt_raw.replace("Z","+00:00")).date()
-                if f_de and d < f_de:
-                    continue
-                if f_ate and d > f_ate:
-                    continue
-            except Exception:
-                pass
-
-        if f_q:
-            base = (titulo + "\n" + desc).lower()
-            if f_q not in base:
-                continue
-
-        items.append({
-            "titulo": titulo,
-            "descricao": desc,
-            "representante": representante,
-            "lista": lista,
-            "status": status,
-            "url": url,
-            "ultima_atividade": ultima,
-            "whatsapp": whats,  # << novo campo para o front exibir o botão
-        })
-
-    if app.debug:
-        print(f"[API] /api/chamados -> {len(items)} itens")
-    return jsonify({"total": len(items), "items": items})
 
 # ---------------------------------------------------------------------------
 # Nova implementação do endpoint /api/chamados com suporte a id, created_at,
@@ -706,6 +636,7 @@ def api_chamados_change_status(card_id: str):
 def api_chamados_stream():
     def event_stream():
         last_hash = None
+        consecutive_errors = 0
         while True:
             try:
                 cards = cached_trello_get(
@@ -716,7 +647,12 @@ def api_chamados_stream():
                         "members": "false",
                     },
                 )
-            except Exception:
+                consecutive_errors = 0  # reset contador de erros
+            except Exception as e:
+                consecutive_errors += 1
+                if consecutive_errors > 3:
+                    yield f"data: {{\"error\": \"Muitos erros consecutivos\"}}\n\n"
+                    break
                 cards = []
             # Calcula um hash simples das IDs + última atividade para detectar mudanças
             try:
@@ -736,8 +672,14 @@ def api_chamados_stream():
             elif new_hash != last_hash:
                 last_hash = new_hash
                 yield f"data: {{\"update\": true}}\n\n"
-            time.sleep(10)
-    return Response(event_stream(), mimetype="text/event-stream")
+            time.sleep(15)  # aumentar de 10 para 15 segundos
+    
+    return Response(event_stream(), 
+                   mimetype="text/event-stream",
+                   headers={
+                       'Cache-Control': 'no-cache',
+                       'Connection': 'keep-alive',
+                   })
 
 # ---------------------------------------------------------------------------
 # Endpoint para exportar os chamados filtrados em CSV ou XLSX. Utiliza as
