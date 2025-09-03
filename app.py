@@ -558,6 +558,12 @@ def api_chamados():
     
     if app.debug:
         print(f"[API] /api/chamados -> {total} itens (retornando {len(paginated)})")
+
+    response = jsonify({"total": total, "items": paginated})
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
     
     return jsonify({"total": total, "items": paginated})
 
@@ -639,12 +645,16 @@ def api_chamados_change_status(card_id: str):
 # atividade). O cliente deve abrir uma EventSource neste endpoint. A verificação
 # é feita em intervalos de 10 segundos usando o cache da API do Trello para
 # minimizar requisições.
-@app.route("/api/chamados/stream")
 def api_chamados_stream():
     def event_stream():
         last_hash = None
         consecutive_errors = 0
-        while True:
+        try:
+            while True:
+            try:
+                    yield "data: {\"ping\": true}\n\n"  # heartbeat
+                except GeneratorExit:
+                    break
             try:
                 cards = cached_trello_get(
                     f"/boards/{BOARD_ID}/cards",
@@ -679,14 +689,22 @@ def api_chamados_stream():
             elif new_hash != last_hash:
                 last_hash = new_hash
                 yield f"data: {{\"update\": true}}\n\n"
-            time.sleep(15)  # aumentar de 10 para 15 segundos
+            time.sleep(15)
+        except GeneratorExit:
+            # Cliente desconectou
+            pass
+        finally:
+            # Cleanup final
+            pass
     
-    return Response(event_stream(), 
-                   mimetype="text/event-stream",
-                   headers={
-                       'Cache-Control': 'no-cache',
-                       'Connection': 'keep-alive',
-                   })
+    response = Response(event_stream(), 
+                       mimetype="text/event-stream",
+                       headers={
+                           'Cache-Control': 'no-cache, no-store, must-revalidate',
+                           'Connection': 'keep-alive',
+                           'X-Accel-Buffering': 'no'  # Para nginx/proxy
+                       })
+    return response
 
 # ---------------------------------------------------------------------------
 # Endpoint para exportar os chamados filtrados em CSV ou XLSX. Utiliza as

@@ -1,960 +1,1047 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Console — Painel & Cadastro</title>
-  <link rel="icon" href="/static/favicon.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-   :root {
-      --primary: #13539b; 
-      --primary-light: #2563eb; 
-      --primary-dark: #0f172a;
-      --accent: #fa6827;
-      --accent-light: #fb7c47;
-      --accent-dark: #e85d24;
-      --surface: #ffffff; 
-      --surface-hover: #f1f5f9; 
-      --ink: #0f172a; 
-      --muted: #64748b;
-      --stroke: #e2e8f0; 
-      --stroke-light: #f1f5f9;
-      --radius: 16px; 
-      --radius-lg: 24px;
-      --shadow-sm: 0 2px 8px rgba(19,83,155,.08); 
-      --shadow: 0 8px 32px rgba(19,83,155,.12);
-      --shadow-accent: 0 4px 16px rgba(250,104,39,.15);
-      --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-      --gradient-accent: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
-    }
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:var(--ink);
+   <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <title>Console — Painel & Cadastro</title>
+      <link rel="icon" href="/static/favicon.png">
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+      <style>
+         :root {
+         --primary: #13539b; 
+         --primary-light: #2563eb; 
+         --primary-dark: #0f172a;
+         --accent: #fa6827;
+         --accent-light: #fb7c47;
+         --accent-dark: #e85d24;
+         --surface: #ffffff; 
+         --surface-hover: #f1f5f9; 
+         --ink: #0f172a; 
+         --muted: #64748b;
+         --stroke: #e2e8f0; 
+         --stroke-light: #f1f5f9;
+         --radius: 16px; 
+         --radius-lg: 24px;
+         --shadow-sm: 0 2px 8px rgba(19,83,155,.08); 
+         --shadow: 0 8px 32px rgba(19,83,155,.12);
+         --shadow-accent: 0 4px 16px rgba(250,104,39,.15);
+         --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+         --gradient-accent: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+         }
+         *{box-sizing:border-box;margin:0;padding:0}
+         body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:var(--ink);
          background:linear-gradient(135deg,#f8fcff 0%,#f1f2f8 100%);min-height:100vh}
-         
          @font-face {
-  font-family: 'MinhaFonte';
-  src: url('/static/Nulshock.woff2') format('woff2');
-  font-weight: 900;
-  font-display: swap;
-}
-    .header{background:var(--gradient-primary);color:#fff;padding:32px 40px}
-    .header h1{ font-family: 'MinhaFonte', 'Inter', sans-serif; font-size:36px; font-weight:900;
-  margin-bottom:12px;
-  color:#ffffff;
-  letter-spacing:0.025em;
-}
-
-.header h1 .first-letter {
-  color:var(--accent);
-  font-size:50px;
-}
-
-.header h1 .first-letter-admin {
-  color:var(--accent);
-  font-size:50px;
-}
-.header .subtitle{
-  font-size:16px;
-  opacity:0.9;
-  font-weight:400;
-  letter-spacing:0.025em;
-}
-    .tabs{display:flex;gap:4px;background:#fff;padding:8px;border-bottom:1px solid var(--stroke);box-shadow:var(--shadow-sm)}
-    .tab{border:none;background:transparent;padding:16px 24px;border-radius:16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--muted);transition:.2s}
-    .tab[aria-selected="true"]{background:var(--gradient-primary);color:#fff;box-shadow:var(--shadow)}
-    .tab:hover:not([aria-selected="true"]){background:var(--surface-hover);color:var(--ink)}
-    main{padding:32px 40px;max-width:1400px;margin:0 auto}
-    .view{display:none}.view.active{display:block}
-    .card{background:#fff;border:1px solid var(--stroke);border-radius:24px;padding:32px;margin-bottom:32px;box-shadow:var(--shadow);position:relative}
-    .card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:var(--gradient-primary)}
-    .table-container{background:#fff;border:1px solid var(--stroke);border-radius:24px;overflow:hidden;box-shadow:var(--shadow)}
-    table{width:100%;border-collapse:separate;border-spacing:0}
-    th,td{padding:16px 20px;text-align:left;border-bottom:1px solid var(--stroke);font-size:14px}
-    th{background:linear-gradient(135deg,var(--stroke-light) 0%,#f8fafc 100%);font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.025em;position:sticky;top:0;z-index:1}
-    tbody tr{transition:.2s} tbody tr:hover{background:linear-gradient(135deg,rgba(0,96,86,.03) 0%, rgba(16,185,129,.02) 100%)}
-    .pill{display:inline-flex;align-items:center;padding:6px 12px;border-radius:20px;background:var(--stroke-light);font-weight:600;font-size:12px;color:var(--ink)}
-    .row{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
-    input,select{padding:12px 16px;border:2px solid var(--stroke);border-radius:16px;background:#fff;font-size:14px;font-weight:500;color:var(--ink);transition:.2s;min-width:180px}
-    input:focus,select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,96,86,.1)}
-    .btn{border:none;background:var(--gradient-primary);color:#fff;padding:12px 20px;border-radius:16px;cursor:pointer;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:10px;transition:.2s;box-shadow:var(--shadow-sm)}
-    .btn:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
-    .btn--ghost{background:#fff;color:var(--primary);border:1px solid var(--stroke);box-shadow:none}
-    .actions{display:flex;gap:8px;align-items:center}
-    /* Painel */
-    #painel .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;background:#fff;padding:24px;border:1px solid var(--stroke);border-radius:24px;box-shadow:var(--shadow);margin-bottom:24px}
-    #painel .actions{display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap;align-items:center}
-    #painel .actions .push-right{margin-left:auto}
-    #painel .btn{border:1px solid var(--stroke);background:#fff;border-radius:16px;padding:12px 20px;color:var(--ink)}
-    #painel .btn--primary{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%);color:#fff;border-color:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%)}
-    /* Monitoramento */
-    #painel .btn--live{background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:#fff;border-color:linear-gradient(135deg,#10b981 0%,#059669 100%)}
-    #painel .btn--live .dot{width:12px;height:12px;border-radius:999px;background:#ef4444;display:inline-block}
-    #painel .btn--live.is-on{background:linear-gradient(135deg,#fecaca 0%, #fca5a5 100%);color:#7f1d1d;border-color:#f87171;box-shadow:0 0 0 4px rgba(248,113,113,.25)}
-    #painel .btn--live.is-on .dot{display:none}
-    /* Status somente texto */
-    #painel .status{background:transparent!important;border:0!important;padding:0!important;min-width:unset;font-weight:600;font-size:14px;color:var(--ink)}
-    #painel .count{font-size:14px;color:var(--muted);font-weight:500;margin-bottom:16px;padding:12px 16px;background:#fff;border-radius:16px;border:1px solid var(--stroke)}
-    #painel .table-wrap{overflow-x:auto}
-    #painel table{min-width:1000px}
-    #painel .title{max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;color:var(--ink)}
-    #painel .modal{position:fixed;inset:0;background:rgba(15,23,42,.7);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:9999}
-    #painel .modal__box{width:min(800px,95vw);max-height:85vh;overflow:auto;background:#fff;border:1px solid var(--stroke);border-radius:16px;padding:32px;box-shadow:var(--shadow)}
-    #painel .modal__title{font-weight:800;font-size:24px;margin-bottom:20px}
-    #painel .modal__body{white-space:pre-wrap;border:1px solid var(--stroke);background:linear-gradient(135deg,#f8fafc 0%,#f1f5f9 100%);border-radius:12px;padding:20px;font-family:ui-monospace,Consolas,Menlo,monospace;font-size:14px;line-height:1.6;color:var(--ink);max-height:400px;overflow-y:auto}
-    #painel .loading{display:inline-block;width:16px;height:16px;border:2px solid var(--stroke);border-radius:50%;border-top-color:var(--primary);animation:spin 1s ease-in-out infinite}
-    @keyframes spin{to{transform:rotate(360deg)}}
-
-    /* === BOTÕES COMPACTOS NA TABELA === */
-    #painel table .btn,
-    #painel table [data-kind="whatsapp-link"],
-    #painel table [data-kind="trello-link"] {
-      padding: 6px 10px !important;
-      line-height: 1 !important;
-      border-radius: 10px !important;
-      font-size: 12px !important;
-      display: inline-flex !important;
-      align-items: center !important;
-      font-weight: 700 !important;
-      gap: 6px !important;
-      min-width: unset !important;
-      height: 28px !important;
-      box-sizing: border-box !important;
-      text-decoration: none;
-      vertical-align: middle !important;  /* ADICIONE ESTA LINHA */
-    }
-	
-	#painel table .actions {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  height: 28px !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-    /* === Botões Ver/Detalhes ghost compactos === */
-    #painel table .btn--ghost {
-      background: #fff !important;
-      color: var(--primary) !important;
-      border: 1px solid var(--stroke) !important;
-      box-shadow: none !important;
-    }
-    #painel table .btn--ghost:hover { background: var(--surface-hover) !important; transform: none !important; }
-
-    /* === Linhas compactas === */
-    #painel table td { padding: 12px 16px !important; }
-    /* Alinha o conteúdo verticalmente e mantém linhas mais finas */
-    #painel table td {
-      vertical-align: middle !important;
-      padding: 8px 16px !important;
-	  height: 40px !important;
-    }
-
-    /* === Status cores === */
-    #painel .status.s-open{color:#22c55e}
-    #painel .status.s-analise{color:#eab308}
-    #painel .status.s-versao{color:#f97316}
-    #painel .status.s-req{color:#3b82f6}
-    #painel .status.s-ok{color:#166534}
-    #painel .status.s-drop{color:#ef4444}
-
-    /* === Select de status dentro da coluna === */
-    #painel select.status-select {
-      border: 0;
-      background: transparent;
-      font-weight: 600;
-      font-size: 14px;
-      padding: 0;
-      margin: 0;
-      cursor: pointer;
-      color: var(--ink);
-      appearance: none;
-      -moz-appearance: none;
-      -webkit-appearance: none;
-      outline: none;
-      height: 28px;
-      line-height: 28px;
-    }
-    #painel select.status-select option {
-      color: var(--ink);
-    }
-
-    /* === WhatsApp === */
-    #painel [data-kind="whatsapp-link"]{
-      background: linear-gradient(135deg,#25d366 0%, #128c7e 100%) !important;
-      border: 1px solid transparent !important;
-      color: #ffffff !important;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      border-radius: 10px;
-      font-weight: 700;
-      font-size: 12px;
-      padding: 6px 10px;
-      line-height: 1;
-    }
-    #painel [data-kind="whatsapp-link"] .icon { width: 16px; height: 16px; display: inline-block; }
-    #painel [data-kind="whatsapp-link"]:hover{ filter: brightness(1.05); transform: translateY(-2px); box-shadow: var(--shadow); }
-	#painel .btn .icon {
-  width: 16px;
-  height: 16px;
-  display: inline-block;
-}
-
-/* Ícones dos botões CSV e Excel */
-#painel .actions #btnExportCsv .icon,
-#painel .actions #btnExportExcel .icon {
-  width: 26px !important;
-  height: 26px !important;
-}
-
-/* Mantém o tamanho dos botões fixo */
-#painel .actions #btnExportCsv,
-#painel .actions #btnExportExcel {
-  height: 45px !important;
-  padding: 8px 16px !important;
-  overflow: hidden !important;
-}
-
-    /* === Trello === */
-    #painel a[data-kind="trello-link"]{
-      background: linear-gradient(135deg,#93c5fd 0%, #60a5fa 100%) !important;
-      border: 1px solid transparent !important;
-      color: #ffffff !important;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      border-radius: 10px;
-      font-weight: 700;
-      font-size: 12px;
-      padding: 6px 10px;
-      line-height: 1;
-    }
-    #painel a[data-kind="trello-link"] .icon { width: 16px; height: 16px; display: inline-block; }
-    #painel a[data-kind="trello-link"]:hover{ filter: brightness(.98); transform: translateY(-2px); box-shadow: var(--shadow); }
-  </style>
-</head>
-<body>
-  <header class="header">
-    <h1><span class="first-letter">C</span>onsole <span class="first-letter-admin">A</span>dministrativo</h1>
-    <div class="subtitle">Gerencie chamados e usuários em uma única interface</div>
-  </header>
-
-  <nav class="tabs" role="tablist">
-    <button class="tab" role="tab" aria-selected="true" data-target="#painel">Painel de Chamados</button>
-    <button class="tab" role="tab" aria-selected="false" data-target="#cadastro">Cadastro de Usuários</button>
-  </nav>
-
-  <main>
-    <section id="painel" class="view active" role="tabpanel" aria-label="Painel de Chamados">
-      <div class="filters">
-        <div class="filter-group">
-          <label>Representante</label>
-          <select id="fRep" class="select">
-            <option value="">Todos os representantes</option>
-          </select>
-        </div>
-        <div class="filter-group">
-          <label>Status</label>
-          <select id="fStatus" class="select">
-            <option value="">Todos os status</option>
-            <option>Em aberto</option>
-            <option>Em análise</option>
-            <option>Aguardando versão</option>
-            <option>Aguardando Requisição</option>
-            <option>Finalizado</option>
-            <option>Descartado</option>
-          </select>
-        </div>
-        <div class="filter-group"><label>Data inicial</label><input id="fDe" type="date" class="input"></div>
-        <div class="filter-group"><label>Data final</label><input id="fAte" type="date" class="input"></div>
-        <div class="filter-group"><label>Buscar por</label><input id="fQ" class="input" placeholder="Título ou descrição..."></div>
-      </div>
-
-      <div class="actions">
-        <button class="btn btn--primary" id="btnAplicar">🔍 Aplicar Filtros</button>
-        <button class="btn" id="btnLimpar">🧹 Limpar</button>
-        <button class="btn" id="btnExportCsv"><img src="/static/csv.svg" alt="CSV" class="icon"> CSV</button>
-        <button class="btn" id="btnExportExcel"><img src="/static/xlsx.svg" alt="Excel" class="icon"> Excel</button>
-        <button class="btn btn--live push-right" id="btnRealtime"><span class="dot"></span> Monitoramento em Tempo Real</button>
-      </div>
-
-      <div class="count" id="countBox"></div>
-
-      <div class="table-container">
-        <div class="table-wrap">
-          <table id="tbl">
-            <thead>
-              <tr>
-                <th>Título</th>
-                <th>Representante</th>
-                <th>Status</th>
-                <th>Detalhes</th>
-                <th>Prioridade</th>
-                <th>Descrição</th>
-                <th>WhatsApp</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="tbody">
-              <tr><td class="empty" colspan="8"><div class="loading"></div> Carregando chamados...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Paginação -->
-      <div id="pagination" style="text-align:center;margin:16px 0; display:none;">
-        <button class="btn" id="btnMore">Carregar mais</button>
-      </div>
-
-      <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-        <div class="modal__box">
-          <h3 class="modal__title" id="modalTitle">Modal</h3>
-          <div class="modal__body" id="modalBody"></div>
-          <div class="modal__actions"><button class="btn" id="btnFecharModal">Fechar</button></div>
-        </div>
-      </div>
-      <audio id="notifSound" src="/static/notify.mp3" preload="auto"></audio>
-    </section>
-
-    <section id="cadastro" class="view" role="tabpanel" aria-label="Cadastro de Usuários">
-      <div class="card">
-        <h3>Representantes</h3>
-        <form id="form-rep" class="row" onsubmit="return criarRep(event)" style="margin-bottom: 24px;">
-          <input name="name" required placeholder="Nome do novo representante">
-          <button class="btn" type="submit">Adicionar Representante</button>
-        </form>
-        <div class="table-container">
-          <table id="t-reps">
-            <thead><tr><th>Nome</th><th style="width:140px;">Ações</th></tr></thead>
-            <tbody>
-              {% for r in reps %}
-              <tr data-id="{{ r.id }}">
-                <td><strong>{{ r.name }}</strong></td>
-                <td class="actions">
-                  <form method="post" action="/admin/rep/{{ r.id }}/delete" onsubmit="return confirm('Remover representante? (somente se não houver usuários)')">
-                    <button class="btn btn--ghost" type="submit">Remover</button>
-                  </form>
-                </td>
-              </tr>
-              {% else %}
-              <tr><td colspan="2" class="empty-state">Nenhum representante cadastrado</td></tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3>Usuários</h3>
-        <form id="form-user" class="row" onsubmit="return criarUser(event)" style="margin-bottom: 24px;">
-          <select name="representative_id" required>
-            <option value="">Selecione o representante</option>
-            {% for r in reps %}
-            <option value="{{ r.id }}">{{ r.name }}</option>
-            {% endfor %}
-          </select>
-          <input name="username" required placeholder="Nome de usuário">
-          <input name="password" type="password" required placeholder="Senha">
-          <button class="btn" type="submit">Adicionar Usuário</button>
-        </form>
-        <div class="table-container">
-          <table id="t-users">
-            <thead><tr><th>Usuário</th><th>Representante</th><th style="width:140px;">Ações</th></tr></thead>
-            <tbody>
-              {% for u in users %}
-              <tr data-id="{{ u.id }}">
-                <td><strong>{{ u.username }}</strong></td>
-                <td><span class="pill">{{ u.representative.name }}</span></td>
-                <td class="actions">
-                  <form method="post" action="/admin/user/{{ u.id }}/delete" onsubmit="return confirm('Remover usuário?')">
-                    <button class="btn btn--ghost" type="submit">Remover</button>
-                  </form>
-                </td>
-              </tr>
-              {% else %}
-              <tr><td colspan="3" class="empty-state">Nenhum usuário cadastrado</td></tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <!-- ===== Helpers separados (fora de qualquer <script> aninhado) ===== -->
-  <script>
-    // Modal helpers
-    let __timerId = null;
-    function openModal(title, html) {
-      const modal = document.getElementById('modal');
-      const modalTitle = document.getElementById('modalTitle');
-      const modalBody = document.getElementById('modalBody');
-      if (__timerId) { clearInterval(__timerId); __timerId = null; }
-      modalTitle.textContent = title;
-      modalBody.innerHTML = html;
-      modal.style.display = 'flex';
-    }
-    function closeModal(){
-      const modal = document.getElementById('modal');
-      if (__timerId) { clearInterval(__timerId); __timerId = null; }
-      modal.style.display = 'none';
-    }
-    document.getElementById('btnFecharModal')?.addEventListener('click', closeModal);
-    document.getElementById('modal')?.addEventListener('click', (e)=>{ if (e.target.id==='modal') closeModal(); });
-
-    // Durations
-    function fmtDur(ms){
-      ms = Math.max(0, ms|0);
-      const s = Math.floor(ms/1000);
-      const hh = String(Math.floor(s/3600)).padStart(2,'0');
-      const mm = String(Math.floor((s%3600)/60)).padStart(2,'0');
-      const ss = String(s%60).padStart(2,'0');
-      return `${hh}:${mm}:${ss}`;
-    }
-    function inferCreatedAt(item){
-      if (item && item.id && /^[0-9a-f]{24}$/i.test(item.id)) {
-        const secs = parseInt(item.id.substring(0,8), 16);
-        if (!Number.isNaN(secs)) return new Date(secs * 1000);
-      }
-      if (item && item.created_at) return new Date(item.created_at);
-      if (item && item.ultima_atividade) { try { return new Date(item.ultima_atividade); } catch(e){} }
-      return null;
-    }
-
-    // WhatsApp helpers (app desktop)
-    function normalizeBRPhone(raw){
-      let n = String(raw || '').replace(/\D/g, '');
-      n = n.replace(/^55+/, '');
-      return '55' + n;
-    }
-    function openWhatsApp(rawPhone, text){
-      const phone = normalizeBRPhone(rawPhone);
-      const q = text ? ('&text=' + encodeURIComponent(text)) : '';
-      const url = 'whatsapp://send?phone=' + phone + q;
-      try { window.open(url, '_self'); } catch { window.location.href = url; }
-    }
-    window.openWhatsApp = openWhatsApp;
-  </script>
-
-  <!-- ===== App principal ===== -->
-  <script>
-    // Tabs
-    const tabs = document.querySelectorAll('.tab');
-    tabs.forEach(btn => btn.addEventListener('click', () => {
-      tabs.forEach(b => b.setAttribute('aria-selected','false'));
-      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-      btn.setAttribute('aria-selected','true');
-      document.querySelector(btn.dataset.target).classList.add('active');
-    }));
-
-    (function initPainel(){
-      const painel = document.getElementById('painel');
-      if(!painel) return;
-
-      const tbody = painel.querySelector('#tbody');
-      const countBox = painel.querySelector('#countBox');
-      const repSelect = painel.querySelector('#fRep');
-      const statusSelect = painel.querySelector('#fStatus');
-      const deInput = painel.querySelector('#fDe');
-      const ateInput = painel.querySelector('#fAte');
-      const qInput = painel.querySelector('#fQ');
-      const btnRealtime = painel.querySelector('#btnRealtime');
-      const btnAplicar = painel.querySelector('#btnAplicar');
-      const btnLimpar = painel.querySelector('#btnLimpar');
-      const btnExportCsv = painel.querySelector('#btnExportCsv');
-      const btnExportExcel = painel.querySelector('#btnExportExcel');
-      const btnMore = document.getElementById('btnMore');
-      const pagination = document.getElementById('pagination');
-
-      // Paginação e status
-      let page = 0;
-      const pageSize = 50;
-      let totalItems = 0;
-      // Opções de status para alteração
-      const STATUS_OPTIONS = ['Em aberto','Em análise','Aguardando versão','Aguardando Requisição','Finalizado','Descartado'];
-
-      const LIVE_SET = new Set(['em aberto','em análise']);
-
-      const esc = s => String(s||"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-      const statusClass = (s) => {
-        const m = (s||'').toLowerCase();
-        if (m.includes('em aberto')) return 'status s-open';
-        if (m.includes('análise') || m.includes('analise')) return 'status s-analise';
-        if (m.includes('versão') || m.includes('versao')) return 'status s-versao';
-        if (m.includes('abrir requisição') || m.includes('abrir requisicao') ||
-            m.includes('aguardando requisição') || m.includes('aguardando requisicao') ||
-            m.includes('requisição') || m.includes('requisicao')) return 'status s-req';
-        if (m.includes('finalizado') || m.includes('resolvido') || m.includes('resolvidos')) return 'status s-ok';
-        if (m.includes('descart')) return 'status s-drop';
-        return 'status';
-      };
-
-      // Cor (hex) de cada status. Utilizado para colorir o <select> na coluna de status.
-      const statusColor = (s) => {
-        const m = (s || '').toLowerCase();
-        if (m.includes('em aberto')) return '#22c55e';
-        if (m.includes('análise') || m.includes('analise')) return '#eab308';
-        if (m.includes('versão') || m.includes('versao')) return '#f97316';
-        if (m.includes('abrir requisição') || m.includes('abrir requisicao') ||
-            m.includes('aguardando requisição') || m.includes('aguardando requisicao') ||
-            m.includes('requisição') || m.includes('requisicao')) return '#3b82f6';
-        if (m.includes('finalizado') || m.includes('resolvido') || m.includes('resolvidos')) return '#166534';
-        if (m.includes('descart')) return '#ef4444';
-        // padrão: cor principal
-        return 'var(--ink)';
-      };
-	  
-	  function applyStatusSelectColors(rootEl){
-    (rootEl || document).querySelectorAll('select.status-select').forEach(sel=>{
-      sel.style.color = statusColor(sel.value);
-    });
-	}
-	  
-      const parsePriority = (desc) => {
-        const m = (desc||'').match(/\*\*Prioridade:\*\*\s*([^\n]+)/i);
-        return m ? m[1].trim() : '-';
-      };
-
-      // Controle de cache e estado
-      let cache = []; let lastKeys = new Set();
-      let isRealTimeActive = false;
-      let realTimeInterval = null;
-
-      // Cancelamento de chamadas pendentes
-      let abortController = null;
-      let latestLoadId = 0;
-
-      // Fonte para conexões SSE
-      let realtimeSource = null;
-
-      /**
-       * Encerra qualquer monitoramento em tempo real (SSE ou poll) e aborta requisições pendentes.
-       */
-      function cleanupRealTime(){
-  // Fecha SSE se aberto
-  if(realtimeSource){
-    try { 
-      realtimeSource.close(); 
-      console.log('SSE fechado');
-    } catch(e){
-      console.warn('Erro ao fechar SSE:', e);
-    }
-    realtimeSource = null;
-  }
-  // Cancela intervalo de fallback
-  if(realTimeInterval){
-    clearInterval(realTimeInterval);
-    realTimeInterval = null;
-    console.log('Polling interrompido');
-  }
-  // Aborta fetch pendente
-  if(abortController){
-    try { abortController.abort(); } catch(e){}
-    abortController = null;
-  }
-}
-
-      /**
-       * Alterna o monitoramento em tempo real.
-       * Ao ativar, força o filtro "Em aberto", reinicia a paginação e inicia SSE (ou fallback).
-       * Ao desativar, finaliza SSE/poll e recarrega a lista com filtros atuais.
-       */
-      function toggleRealTime(){
-  isRealTimeActive = !isRealTimeActive;
-  if(isRealTimeActive){
-    // Força filtro "Em aberto"
-    try {
-      statusSelect.value = 'Em aberto';
-      if(typeof applyStatusSelectColors === 'function') applyStatusSelectColors();
-    } catch(e){}
-    // Reinicia paginação
-    page = 0;
-    // Ativa visual do botão
-    btnRealtime.classList.add('is-on');
-    btnRealtime.textContent = 'Parar Monitoramento';
-    // Limpa conexões anteriores
-    cleanupRealTime();
-    
-    // Função para lidar com mensagens SSE
-    const handleSSEMessage = function(ev){
-      try {
-        const data = JSON.parse(ev.data || '{}');
-        if(data && data.update){
-          load({silent:true});
-        }
-      } catch(err){}
-    };
-    
-    // Função para reconectar SSE
-    const reconnectSSE = function(){
-      if(!isRealTimeActive) return;
-      
-      try {
-        if(realtimeSource) {
-          realtimeSource.close();
-          realtimeSource = null;
-        }
-        
-        realtimeSource = new EventSource('/api/chamados/stream');
-        
-        realtimeSource.onopen = function(){
-          console.log('SSE conectado com sucesso');
-        };
-        
-        realtimeSource.onmessage = handleSSEMessage;
-        
-        realtimeSource.onerror = function(err){
-          console.warn('Erro no SSE:', err);
-          if(realtimeSource) {
-            realtimeSource.close();
-            realtimeSource = null;
-          }
-          // Reagenda reconexão em 10 segundos
-          setTimeout(reconnectSSE, 10000);
-        };
-        
-      } catch(e) {
-        console.warn('Falha ao criar SSE:', e);
-        // Se SSE falhar completamente, usa polling como fallback
-        if(!realTimeInterval) {
-          realTimeInterval = setInterval(() => {
-            if(isRealTimeActive) load({silent:true});
-          }, 30000);
-        }
-      }
-    };
-    
-    // Inicia conexão SSE
-    reconnectSSE();
-    
-    // Carrega chamados em aberto inicialmente
-    load({silent:false});
-    
-  } else {
-    // Desativa visualmente
-    btnRealtime.classList.remove('is-on');
-    btnRealtime.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
-    // Limpa SSE/poll e aborta chamadas
-    cleanupRealTime();
-    // Reinicia paginação e recarrega usando filtros atuais
-    page = 0;
-    load({silent:false});
-  }
-}
-      // Conecta evento do botão
-      btnRealtime.addEventListener('click', toggleRealTime);
-
-      function buildRowHTML(it,i){
-        const prio = it.prioridade || parsePriority(it.descricao);
-        const trelloLink = it.url ? (`
-          <a data-kind="trello-link" class="btn" href="${esc(it.url)}" target="_blank" rel="noopener">
-            <img src="/static/trello.png" alt="Trello" class="icon"> Trello
-          </a>`) : '-';
-
-        let whatsappLink = '-';
-        if (it.whatsapp && String(it.whatsapp).replace(/\D/g,'').length >= 8) {
-          const phoneEsc = String(it.whatsapp).replace(/'/g, "\\'");
-          const onClick = `openWhatsApp('${phoneEsc}')`;
-          whatsappLink = `<button data-kind="whatsapp-link" class="btn" type="button" onclick="${onClick}">
-            <img src="/static/whatsapp.png" alt="WhatsApp" class="icon"> WhatsApp
-          </button>`;
-        }
-
-        // Select para mudar status (agora dentro da própria coluna de status)
-        const statusOptions = STATUS_OPTIONS.map(opt => {
-          const selected = opt === it.status ? ' selected' : '';
-          return `<option value="${esc(opt)}"${selected}>${esc(opt)}</option>`;
-        }).join('');
-        // Cor do status para o select
-        const statusCol = statusColor(it.status);
-        const statusSelect = `<select class="status-select" data-id="${esc(it.id||'')}" style="color:${statusCol}">${statusOptions}</select>`;
-        // Ações: apenas botão do Trello (aplica estilos via CSS .actions)
-        const actionsHtml = `<div class="actions">${trelloLink}</div>`;
-
-        return (
-          '<tr data-key="'+esc(it.id || it.url || it.titulo || String(i))+'">'+
-            '<td class="title" title="'+esc(it.titulo)+'">'+esc(it.titulo)+'</td>'+ 
-            '<td>'+esc(it.representante||"-")+'</td>'+
-            // Coluna de status contém o <select>
-            '<td>'+statusSelect+'</td>'+ 
-            '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="detalhes">📋 Detalhes</button></td>'+ 
-            '<td class="prio">'+esc(prio||"-")+'</td>'+ 
-            '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="ver">👁 Ver</button></td>'+ 
-            '<td>'+whatsappLink+'</td>'+ 
-            '<td>'+actionsHtml+'</td>'+ 
-          '</tr>'
-        );
-      }
-
-      tbody.addEventListener('click', (e) => {
-        const btn = e.target.closest('button[data-action]');
-        if (!btn) return;
-
-        const i = Number(btn.getAttribute('data-i'));
-        const item = cache[i] || {};
-        const action = btn.getAttribute('data-action');
-
-        if (action === 'ver') {
-          openModal('📄 Descrição do chamado', (item.descricao || 'Nenhuma descrição disponível.').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'));
-          return;
-        }
-        if (action === 'detalhes') {
-          const created = inferCreatedAt(item);
-          const lastAct = item.ultima_atividade ? new Date(item.ultima_atividade) : null;
-          const isLive  = /^(em aberto|em análise)$/i.test(item.status||'');
-
-          const startTs = (created ? created.getTime() : (lastAct ? lastAct.getTime() : Date.now()));
-          const stopTs  = isLive ? Date.now() : (lastAct ? lastAct.getTime() : startTs);
-
-          let html = '';
-          html += `📋 Título: ${(item.titulo || '-').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}<br>`;
-          html += `👤 Representante: ${(item.representante || '-') }<br>`;
-          html += `📊 Status: ${(item.status || '-') }<br><br>`;
-          html += `🕐 Criado em: ${created ? created.toLocaleString('pt-BR') : '—'}<br>`;
-          html += `⏰ Última atividade: ${lastAct ? lastAct.toLocaleString('pt-BR') : '—'}<br><br>`;
-          html += `⏱ Duração ${isLive?'(contando)':'(fechada)'}: <span id="durSpan">calculando…</span>`;
-
-          openModal('Detalhes do chamado', html);
-
-          function tick(){
-            const now = isLive ? Date.now() : stopTs;
-            const ms  = now - startTs;
-            const el  = document.getElementById('durSpan');
-            if (el) el.textContent = fmtDur(ms);
-          }
-          tick();
-          if (isLive) { if (window.__timerId) clearInterval(window.__timerId); window.__timerId = setInterval(tick, 1000); }
-        }
-      });
-
-      // Mudar status: envia requisição e atualiza a tabela
-      tbody.addEventListener('change', async (e) => {
-    const sel = e.target.closest('select.status-select');
-    if (!sel) return;
-
-    const prev = sel.getAttribute('data-prev') || sel.value; // guarda último valor conhecido
-    const newStatus = sel.value;
-    const cardId = sel.getAttribute('data-id');
-    if (!cardId) return;
-
-    // feedback visual imediato
-    sel.style.color = statusColor(newStatus);
-    sel.disabled = true;
-
-    try {
-      const r = await fetch('/api/chamados/' + encodeURIComponent(cardId) + '/status', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ status: newStatus })
-      });
-      const resp = await r.json().catch(()=>({}));
-
-      if (!r.ok || !resp || !resp.success) {
-        // rollback
-        sel.value = prev;
-        sel.style.color = statusColor(prev);
-        alert((resp && resp.message) || 'Erro ao atualizar status.');
-      } else {
-        // sucesso: fixa o novo valor como "último"
-        sel.setAttribute('data-prev', newStatus);
-      }
-    } catch (err) {
-      // rollback em erro de rede
-      sel.value = prev;
-      sel.style.color = statusColor(prev);
-      alert('Erro ao atualizar status: ' + err.message);
-    } finally {
-      sel.disabled = false;
-    }
-      });
-
-      function render(items,{silent=false}={}){
-        const prev = lastKeys;
-        tbody.innerHTML = items.length ? items.map(buildRowHTML).join('') :
-          '<tr><td class="empty" colspan="8">📋 Nenhum chamado encontrado.<br><span style="font-size:14px;opacity:.7;">Ajuste os filtros ou verifique a busca.</span></td></tr>';
-		 applyStatusSelectColors(tbody);
-        if (silent){
-          [...tbody.querySelectorAll('tr[data-key]')].forEach(tr=>{
-            const k=tr.getAttribute('data-key'); if(!prev.has(k)) tr.classList.add('row-new');
-          });
-        }
-        lastKeys = new Set(items.map(it => it.id || it.url || it.titulo));
-        cache = items;
-      }
-
-      function qs(){
-        const p=[]; const rep=repSelect.value.trim(), st=statusSelect.value.trim(), de=deInput.value, ate=ateInput.value, q=qInput.value.trim();
-        if(rep) p.push('representante='+encodeURIComponent(rep));
-        if(st)  p.push('status='+encodeURIComponent(st));
-        if(de)  p.push('de='+encodeURIComponent(de));
-        if(ate) p.push('ate='+encodeURIComponent(ate));
-        if(q)   p.push('q='+encodeURIComponent(q));
-        return p.length ? '?'+p.join('&') : '';
-      }
-
-      // Fetch com timeout e tratamento de retorno não-JSON
-      function withTimeout(p, ms){ return Promise.race([p, new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timeout após '+ms+'ms')), ms))]); }
-
-      function load({silent=false, append=false}={}){
-	  if(!silent && isRealTimeActive && page > 0) return;
-        const currentId = ++latestLoadId;
-        // Exibe spinner quando necessário
-        if(!silent){
-          tbody.innerHTML = '<tr><td class="empty" colspan="8"><div class="loading"></div> Carregando chamados...</td></tr>';
-        }
-        // Cancela chamada anterior se existir
-        if(abortController){
-          abortController.abort();
-        }
-        abortController = new AbortController();
-        const { signal } = abortController;
-        const query = qs();
-        const sep = query ? '&' : '?';
-        const url = '/api/chamados' + query + sep + 'offset=' + (page * pageSize) + '&limit=' + pageSize;
-        const req = fetch(url, {
-          cache: 'no-store',
-          credentials: 'same-origin',
-          headers: { 'Accept': 'application/json, text/plain;q=0.9, */*;q=0.8' },
-          signal
-        });
-        withTimeout(req, 45000)
-          .then(async r => {
-            // Se não for a chamada mais recente, ignore
-            if(currentId !== latestLoadId) throw new Error('Stale');
-            const ct = r.headers.get('content-type') || '';
-            const text = await r.text();
-            if(!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText + '\n' + text.slice(0,800));
-            let data;
-            try {
-              data = ct.includes('application/json') ? JSON.parse(text) : JSON.parse(text);
-            } catch(e){
-              throw new Error('Conteúdo não-JSON da API:\n' + text.slice(0,800));
-            }
-            return Array.isArray(data) ? { items: data, total: data.length } : data;
-          })
-          .then(j => {
-            // Ignora se não for a resposta mais recente
-            if(currentId !== latestLoadId) return;
-            const items = (j.items || []).map(x => {
-              x.prioridade = x.prioridade || (x.descricao || '').match(/\*\*Prioridade:\*\*\s*([^\n]+)/i)?.[1] || '-';
-              return x;
-            });
-            totalItems = j.total ?? items.length;
-            if(append && page > 0){
-              const combined = cache.concat(items);
-              render(combined, {silent});
-              cache = combined;
-            } else {
-              render(items, {silent});
-              cache = items;
-            }
-            // Atualiza contagem
-            countBox.innerHTML = `📊 <strong>${totalItems}</strong> chamado${totalItems!==1?'s':''} no total`;
-            // Mostra/oculta botao "Carregar mais"
-            if(cache.length < totalItems){
-              pagination.style.display = 'block';
-            } else {
-              pagination.style.display = 'none';
-            }
-          })
-          .catch(err => {
-            // AbortError ou respostas atrasadas não apresentam erro ao usuário
-            if(err.name === 'AbortError' || err.message === 'Stale') return;
-            const msg = String((err && err.message) || err);
-            countBox.innerHTML = '❌ Erro ao carregar dados';
-            tbody.innerHTML = '<tr><td class="empty" colspan="8">⚠️ Erro ao carregar chamados.<br><pre style="white-space:pre-wrap;margin-top:8px;color:#7f1d1d;background:#fff3f3;border:1px solid #fecaca;padding:10px;border-radius:8px;max-height:160px;overflow:auto">' +
-              (msg.replace(/[<>&]/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]))) +
-            '</pre></td></tr>';
-          });
-      }
-
-      // Aplica filtros: reseta a página e recarrega
-      btnAplicar.addEventListener('click', () => {
-        page = 0;
-        load({silent:false});
-      });
-      // Limpa filtros: reseta campos, página e recarrega
-      btnLimpar.addEventListener('click', () => {
-        repSelect.value = '';
-        statusSelect.value = '';
-        deInput.value = '';
-        ateInput.value = '';
-        qInput.value = '';
-        page = 0;
-        load({silent:false});
-      });
-      // Export CSV via fetch + blob (não abre nova aba)
-      btnExportCsv.addEventListener('click', async () => {
-        const query = qs();
-        const sep = query ? '&' : '?';
-        const url = '/api/chamados/export' + query + sep + 'format=csv';
-        try {
-          const res = await fetch(url, { credentials:'same-origin', cache:'no-store' });
-          if(!res.ok) throw new Error('HTTP ' + res.status);
-          const dispo = res.headers.get('Content-Disposition') || '';
-          let filename = 'chamados.csv';
-          const m = /filename="?([^";]+)"?/i.exec(dispo);
-          if(m) filename = m[1];
-          const blob = await res.blob();
-          const href = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = href; a.download = filename;
-          document.body.appendChild(a); a.click(); a.remove();
-          URL.revokeObjectURL(href);
-        } catch(err) {
-          alert('Falha ao exportar CSV');
-        }
-      });
-      // Export Excel via fetch + blob (não abre nova aba)
-      btnExportExcel.addEventListener('click', async () => {
-        const query = qs();
-        const sep = query ? '&' : '?';
-        const url = '/api/chamados/export' + query + sep + 'format=xlsx';
-        try {
-          const res = await fetch(url, { credentials:'same-origin', cache:'no-store' });
-          if(!res.ok) throw new Error('HTTP ' + res.status);
-          const dispo = res.headers.get('Content-Disposition') || '';
-          let filename = 'chamados.xlsx';
-          const m = /filename="?([^";]+)"?/i.exec(dispo);
-          if(m) filename = m[1];
-          const blob = await res.blob();
-          const href = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = href; a.download = filename;
-          document.body.appendChild(a); a.click(); a.remove();
-          URL.revokeObjectURL(href);
-        } catch(err) {
-          alert('Falha ao exportar Excel');
-        }
-      });
-      // Paginação: carregar mais
-      btnMore.addEventListener('click', () => {
-        page++;
-        load({silent:false, append:true});
-      });
-      // Busca incremental no campo de texto (debounce)
-      let searchTimer = null;
-      qInput.addEventListener('input', () => {
-        if (searchTimer) clearTimeout(searchTimer);
-        searchTimer = setTimeout(() => {
-          page = 0;
-          load({silent:false});
-        }, 400);
-      });
-      // Carga inicial
-      load({silent:false});
-
-      // Garante que qualquer conexão SSE ou pesquisa em curso seja encerrada ao sair ou atualizar a página.
-      window.addEventListener('beforeunload', () => {
-        try { cleanupRealTime(); } catch(e){}
-      });
-    })();
-  </script>
-</body>
+         font-family: 'MinhaFonte';
+         src: url('/static/Nulshock.woff2') format('woff2');
+         font-weight: 900;
+         font-display: swap;
+         }
+         .header{background:var(--gradient-primary);color:#fff;padding:32px 40px}
+         .header h1{ font-family: 'MinhaFonte', 'Inter', sans-serif; font-size:36px; font-weight:900;
+         margin-bottom:12px;
+         color:#ffffff;
+         letter-spacing:0.025em;
+         }
+         .header h1 .first-letter {
+         color:var(--accent);
+         font-size:50px;
+         }
+         .header h1 .first-letter-admin {
+         color:var(--accent);
+         font-size:50px;
+         }
+         .header .subtitle{
+         font-size:16px;
+         opacity:0.9;
+         font-weight:400;
+         letter-spacing:0.025em;
+         }
+         .tabs{display:flex;gap:4px;background:#fff;padding:8px;border-bottom:1px solid var(--stroke);box-shadow:var(--shadow-sm)}
+         .tab{border:none;background:transparent;padding:16px 24px;border-radius:16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--muted);transition:.2s}
+         .tab[aria-selected="true"]{background:var(--gradient-primary);color:#fff;box-shadow:var(--shadow)}
+         .tab:hover:not([aria-selected="true"]){background:var(--surface-hover);color:var(--ink)}
+         main{padding:32px 40px;max-width:1400px;margin:0 auto}
+         .view{display:none}.view.active{display:block}
+         .card{background:#fff;border:1px solid var(--stroke);border-radius:24px;padding:32px;margin-bottom:32px;box-shadow:var(--shadow);position:relative}
+         .card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:var(--gradient-primary)}
+         .table-container{background:#fff;border:1px solid var(--stroke);border-radius:24px;overflow:hidden;box-shadow:var(--shadow)}
+         table{width:100%;border-collapse:separate;border-spacing:0}
+         th,td{padding:16px 20px;text-align:left;border-bottom:1px solid var(--stroke);font-size:14px}
+         th{background:linear-gradient(135deg,var(--stroke-light) 0%,#f8fafc 100%);font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.025em;position:sticky;top:0;z-index:1}
+         tbody tr{transition:.2s} tbody tr:hover{background:linear-gradient(135deg,rgba(0,96,86,.03) 0%, rgba(16,185,129,.02) 100%)}
+         .pill{display:inline-flex;align-items:center;padding:6px 12px;border-radius:20px;background:var(--stroke-light);font-weight:600;font-size:12px;color:var(--ink)}
+         .row{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+         input,select{padding:12px 16px;border:2px solid var(--stroke);border-radius:16px;background:#fff;font-size:14px;font-weight:500;color:var(--ink);transition:.2s;min-width:180px}
+         input:focus,select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,96,86,.1)}
+         .btn{border:none;background:var(--gradient-primary);color:#fff;padding:12px 20px;border-radius:16px;cursor:pointer;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:10px;transition:.2s;box-shadow:var(--shadow-sm)}
+         .btn:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+         .btn--ghost{background:#fff;color:var(--primary);border:1px solid var(--stroke);box-shadow:none}
+         .actions{display:flex;gap:8px;align-items:center}
+         /* Painel */
+         #painel .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;background:#fff;padding:24px;border:1px solid var(--stroke);border-radius:24px;box-shadow:var(--shadow);margin-bottom:24px}
+         #painel .actions{display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap;align-items:center}
+         #painel .actions .push-right{margin-left:auto}
+         #painel .btn{border:1px solid var(--stroke);background:#fff;border-radius:16px;padding:12px 20px;color:var(--ink)}
+         #painel .btn--primary{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%);color:#fff;border-color:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%)}
+         /* Monitoramento */
+         #painel .btn--live{background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:#fff;border-color:linear-gradient(135deg,#10b981 0%,#059669 100%)}
+         #painel .btn--live .dot{width:12px;height:12px;border-radius:999px;background:#ef4444;display:inline-block}
+         #painel .btn--live.is-on{background:linear-gradient(135deg,#fecaca 0%, #fca5a5 100%);color:#7f1d1d;border-color:#f87171;box-shadow:0 0 0 4px rgba(248,113,113,.25)}
+         #painel .btn--live.is-on .dot{display:none}
+         /* Status somente texto */
+         #painel .status{background:transparent!important;border:0!important;padding:0!important;min-width:unset;font-weight:600;font-size:14px;color:var(--ink)}
+         #painel .count{font-size:14px;color:var(--muted);font-weight:500;margin-bottom:16px;padding:12px 16px;background:#fff;border-radius:16px;border:1px solid var(--stroke)}
+         #painel .table-wrap{overflow-x:auto}
+         #painel table{min-width:1000px}
+         #painel .title{max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;color:var(--ink)}
+         #painel .modal{position:fixed;inset:0;background:rgba(15,23,42,.7);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:9999}
+         #painel .modal__box{width:min(800px,95vw);max-height:85vh;overflow:auto;background:#fff;border:1px solid var(--stroke);border-radius:16px;padding:32px;box-shadow:var(--shadow)}
+         #painel .modal__title{font-weight:800;font-size:24px;margin-bottom:20px}
+         #painel .modal__body{white-space:pre-wrap;border:1px solid var(--stroke);background:linear-gradient(135deg,#f8fafc 0%,#f1f5f9 100%);border-radius:12px;padding:20px;font-family:ui-monospace,Consolas,Menlo,monospace;font-size:14px;line-height:1.6;color:var(--ink);max-height:400px;overflow-y:auto}
+         #painel .loading{display:inline-block;width:16px;height:16px;border:2px solid var(--stroke);border-radius:50%;border-top-color:var(--primary);animation:spin 1s ease-in-out infinite}
+         @keyframes spin{to{transform:rotate(360deg)}}
+         /* === BOTÕES COMPACTOS NA TABELA === */
+         #painel table .btn,
+         #painel table [data-kind="whatsapp-link"],
+         #painel table [data-kind="trello-link"] {
+         padding: 6px 10px !important;
+         line-height: 1 !important;
+         border-radius: 10px !important;
+         font-size: 12px !important;
+         display: inline-flex !important;
+         align-items: center !important;
+         font-weight: 700 !important;
+         gap: 6px !important;
+         min-width: unset !important;
+         height: 28px !important;
+         box-sizing: border-box !important;
+         text-decoration: none;
+         vertical-align: middle !important;  /* ADICIONE ESTA LINHA */
+         }
+         #painel table .actions {
+         display: flex !important;
+         justify-content: center !important;
+         align-items: center !important;
+         height: 28px !important;
+         margin: 0 !important;
+         padding: 0 !important;
+         }
+         /* === Botões Ver/Detalhes ghost compactos === */
+         #painel table .btn--ghost {
+         background: #fff !important;
+         color: var(--primary) !important;
+         border: 1px solid var(--stroke) !important;
+         box-shadow: none !important;
+         }
+         #painel table .btn--ghost:hover { background: var(--surface-hover) !important; transform: none !important; }
+         /* === Linhas compactas === */
+         #painel table td { padding: 12px 16px !important; }
+         /* Alinha o conteúdo verticalmente e mantém linhas mais finas */
+         #painel table td {
+         vertical-align: middle !important;
+         padding: 8px 16px !important;
+         height: 40px !important;
+         }
+         /* === Status cores === */
+         #painel .status.s-open{color:#22c55e}
+         #painel .status.s-analise{color:#eab308}
+         #painel .status.s-versao{color:#f97316}
+         #painel .status.s-req{color:#3b82f6}
+         #painel .status.s-ok{color:#166534}
+         #painel .status.s-drop{color:#ef4444}
+         /* === Select de status dentro da coluna === */
+         #painel select.status-select {
+         border: 0;
+         background: transparent;
+         font-weight: 600;
+         font-size: 14px;
+         padding: 0;
+         margin: 0;
+         cursor: pointer;
+         color: var(--ink);
+         appearance: none;
+         -moz-appearance: none;
+         -webkit-appearance: none;
+         outline: none;
+         height: 28px;
+         line-height: 28px;
+         }
+         #painel select.status-select option {
+         color: var(--ink);
+         }
+         /* === WhatsApp === */
+         #painel [data-kind="whatsapp-link"]{
+         background: linear-gradient(135deg,#25d366 0%, #128c7e 100%) !important;
+         border: 1px solid transparent !important;
+         color: #ffffff !important;
+         display: inline-flex;
+         align-items: center;
+         gap: 6px;
+         border-radius: 10px;
+         font-weight: 700;
+         font-size: 12px;
+         padding: 6px 10px;
+         line-height: 1;
+         }
+         #painel [data-kind="whatsapp-link"] .icon { width: 16px; height: 16px; display: inline-block; }
+         #painel [data-kind="whatsapp-link"]:hover{ filter: brightness(1.05); transform: translateY(-2px); box-shadow: var(--shadow); }
+         #painel .btn .icon {
+         width: 16px;
+         height: 16px;
+         display: inline-block;
+         }
+         /* Ícones dos botões CSV e Excel */
+         #painel .actions #btnExportCsv .icon,
+         #painel .actions #btnExportExcel .icon {
+         width: 26px !important;
+         height: 26px !important;
+         }
+         /* Mantém o tamanho dos botões fixo */
+         #painel .actions #btnExportCsv,
+         #painel .actions #btnExportExcel {
+         height: 45px !important;
+         padding: 8px 16px !important;
+         overflow: hidden !important;
+         }
+         /* === Trello === */
+         #painel a[data-kind="trello-link"]{
+         background: linear-gradient(135deg,#93c5fd 0%, #60a5fa 100%) !important;
+         border: 1px solid transparent !important;
+         color: #ffffff !important;
+         display: inline-flex;
+         align-items: center;
+         gap: 6px;
+         border-radius: 10px;
+         font-weight: 700;
+         font-size: 12px;
+         padding: 6px 10px;
+         line-height: 1;
+         }
+         #painel a[data-kind="trello-link"] .icon { width: 16px; height: 16px; display: inline-block; }
+         #painel a[data-kind="trello-link"]:hover{ filter: brightness(.98); transform: translateY(-2px); box-shadow: var(--shadow); }
+      </style>
+   </head>
+   <body>
+      <header class="header">
+         <h1><span class="first-letter">C</span>onsole <span class="first-letter-admin">A</span>dministrativo</h1>
+         <div class="subtitle">Gerencie chamados e usuários em uma única interface</div>
+      </header>
+      <nav class="tabs" role="tablist">
+         <button class="tab" role="tab" aria-selected="true" data-target="#painel">Painel de Chamados</button>
+         <button class="tab" role="tab" aria-selected="false" data-target="#cadastro">Cadastro de Usuários</button>
+      </nav>
+      <main>
+         <section id="painel" class="view active" role="tabpanel" aria-label="Painel de Chamados">
+            <div class="filters">
+               <div class="filter-group">
+                  <label>Representante</label>
+                  <select id="fRep" class="select">
+                     <option value="">Todos os representantes</option>
+                  </select>
+               </div>
+               <div class="filter-group">
+                  <label>Status</label>
+                  <select id="fStatus" class="select">
+                     <option value="">Todos os status</option>
+                     <option>Em aberto</option>
+                     <option>Em análise</option>
+                     <option>Aguardando versão</option>
+                     <option>Aguardando Requisição</option>
+                     <option>Finalizado</option>
+                     <option>Descartado</option>
+                  </select>
+               </div>
+               <div class="filter-group"><label>Data inicial</label><input id="fDe" type="date" class="input"></div>
+               <div class="filter-group"><label>Data final</label><input id="fAte" type="date" class="input"></div>
+               <div class="filter-group"><label>Buscar por</label><input id="fQ" class="input" placeholder="Título ou descrição..."></div>
+            </div>
+            <div class="actions">
+               <button class="btn btn--primary" id="btnAplicar">🔍 Aplicar Filtros</button>
+               <button class="btn" id="btnLimpar">🧹 Limpar</button>
+               <button class="btn" id="btnExportCsv"><img src="/static/csv.svg" alt="CSV" class="icon"> CSV</button>
+               <button class="btn" id="btnExportExcel"><img src="/static/xlsx.svg" alt="Excel" class="icon"> Excel</button>
+               <button class="btn btn--live push-right" id="btnRealtime"><span class="dot"></span> Monitoramento em Tempo Real</button>
+            </div>
+            <div class="count" id="countBox"></div>
+            <div class="table-container">
+               <div class="table-wrap">
+                  <table id="tbl">
+                     <thead>
+                        <tr>
+                           <th>Título</th>
+                           <th>Representante</th>
+                           <th>Status</th>
+                           <th>Detalhes</th>
+                           <th>Prioridade</th>
+                           <th>Descrição</th>
+                           <th>WhatsApp</th>
+                           <th>Ações</th>
+                        </tr>
+                     </thead>
+                     <tbody id="tbody">
+                        <tr>
+                           <td class="empty" colspan="8">
+                              <div class="loading"></div>
+                              Carregando chamados...
+                           </td>
+                        </tr>
+                     </tbody>
+                  </table>
+               </div>
+            </div>
+            <!-- Paginação -->
+            <div id="pagination" style="text-align:center;margin:16px 0; display:none;">
+               <button class="btn" id="btnMore">Carregar mais</button>
+            </div>
+            <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+               <div class="modal__box">
+                  <h3 class="modal__title" id="modalTitle">Modal</h3>
+                  <div class="modal__body" id="modalBody"></div>
+                  <div class="modal__actions"><button class="btn" id="btnFecharModal">Fechar</button></div>
+               </div>
+            </div>
+            <audio id="notifSound" src="/static/notify.mp3" preload="auto"></audio>
+         </section>
+         <section id="cadastro" class="view" role="tabpanel" aria-label="Cadastro de Usuários">
+            <div class="card">
+               <h3>Representantes</h3>
+               <form id="form-rep" class="row" onsubmit="return criarRep(event)" style="margin-bottom: 24px;">
+                  <input name="name" required placeholder="Nome do novo representante">
+                  <button class="btn" type="submit">Adicionar Representante</button>
+               </form>
+               <div class="table-container">
+                  <table id="t-reps">
+                     <thead>
+                        <tr>
+                           <th>Nome</th>
+                           <th style="width:140px;">Ações</th>
+                        </tr>
+                     </thead>
+                     <tbody>
+                        {% for r in reps %}
+                        <tr data-id="{{ r.id }}">
+                           <td><strong>{{ r.name }}</strong></td>
+                           <td class="actions">
+                              <form method="post" action="/admin/rep/{{ r.id }}/delete" onsubmit="return confirm('Remover representante? (somente se não houver usuários)')">
+                                 <button class="btn btn--ghost" type="submit">Remover</button>
+                              </form>
+                           </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                           <td colspan="2" class="empty-state">Nenhum representante cadastrado</td>
+                        </tr>
+                        {% endfor %}
+                     </tbody>
+                  </table>
+               </div>
+            </div>
+            <div class="card">
+               <h3>Usuários</h3>
+               <form id="form-user" class="row" onsubmit="return criarUser(event)" style="margin-bottom: 24px;">
+                  <select name="representative_id" required>
+                     <option value="">Selecione o representante</option>
+                     {% for r in reps %}
+                     <option value="{{ r.id }}">{{ r.name }}</option>
+                     {% endfor %}
+                  </select>
+                  <input name="username" required placeholder="Nome de usuário">
+                  <input name="password" type="password" required placeholder="Senha">
+                  <button class="btn" type="submit">Adicionar Usuário</button>
+               </form>
+               <div class="table-container">
+                  <table id="t-users">
+                     <thead>
+                        <tr>
+                           <th>Usuário</th>
+                           <th>Representante</th>
+                           <th style="width:140px;">Ações</th>
+                        </tr>
+                     </thead>
+                     <tbody>
+                        {% for u in users %}
+                        <tr data-id="{{ u.id }}">
+                           <td><strong>{{ u.username }}</strong></td>
+                           <td><span class="pill">{{ u.representative.name }}</span></td>
+                           <td class="actions">
+                              <form method="post" action="/admin/user/{{ u.id }}/delete" onsubmit="return confirm('Remover usuário?')">
+                                 <button class="btn btn--ghost" type="submit">Remover</button>
+                              </form>
+                           </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                           <td colspan="3" class="empty-state">Nenhum usuário cadastrado</td>
+                        </tr>
+                        {% endfor %}
+                     </tbody>
+                  </table>
+               </div>
+            </div>
+         </section>
+      </main>
+      <!-- ===== Helpers separados (fora de qualquer <script> aninhado) ===== -->
+      <script>
+         // Modal helpers
+         let __timerId = null;
+         function openModal(title, html) {
+           const modal = document.getElementById('modal');
+           const modalTitle = document.getElementById('modalTitle');
+           const modalBody = document.getElementById('modalBody');
+           if (__timerId) { clearInterval(__timerId); __timerId = null; }
+           modalTitle.textContent = title;
+           modalBody.innerHTML = html;
+           modal.style.display = 'flex';
+         }
+         function closeModal(){
+           const modal = document.getElementById('modal');
+           if (__timerId) { clearInterval(__timerId); __timerId = null; }
+           modal.style.display = 'none';
+         }
+         document.getElementById('btnFecharModal')?.addEventListener('click', closeModal);
+         document.getElementById('modal')?.addEventListener('click', (e)=>{ if (e.target.id==='modal') closeModal(); });
+         
+         // Durations
+         function fmtDur(ms){
+           ms = Math.max(0, ms|0);
+           const s = Math.floor(ms/1000);
+           const hh = String(Math.floor(s/3600)).padStart(2,'0');
+           const mm = String(Math.floor((s%3600)/60)).padStart(2,'0');
+           const ss = String(s%60).padStart(2,'0');
+           return `${hh}:${mm}:${ss}`;
+         }
+         function inferCreatedAt(item){
+           if (item && item.id && /^[0-9a-f]{24}$/i.test(item.id)) {
+             const secs = parseInt(item.id.substring(0,8), 16);
+             if (!Number.isNaN(secs)) return new Date(secs * 1000);
+           }
+           if (item && item.created_at) return new Date(item.created_at);
+           if (item && item.ultima_atividade) { try { return new Date(item.ultima_atividade); } catch(e){} }
+           return null;
+         }
+         
+         // WhatsApp helpers (app desktop)
+         function normalizeBRPhone(raw){
+           let n = String(raw || '').replace(/\D/g, '');
+           n = n.replace(/^55+/, '');
+           return '55' + n;
+         }
+         function openWhatsApp(rawPhone, text){
+           const phone = normalizeBRPhone(rawPhone);
+           const q = text ? ('&text=' + encodeURIComponent(text)) : '';
+           const url = 'whatsapp://send?phone=' + phone + q;
+           try { window.open(url, '_self'); } catch { window.location.href = url; }
+         }
+         window.openWhatsApp = openWhatsApp;
+      </script>
+      <!-- ===== App principal ===== -->
+      <script>
+         (function checkServiceWorker(){
+         const params = new URLSearchParams(location.search);
+         if(params.get('nosw') === '1' && 'serviceWorker' in navigator){
+           navigator.serviceWorker.getRegistrations().then(function(registrations) {
+             for(let registration of registrations) {
+               registration.unregister().then(() => {
+                 console.log('🧹 Service Worker removido');
+                 location.replace(location.pathname + location.search.replace(/[?&]nosw=1/, ''));
+               });
+             }
+           });
+         }
+         })();
+           // Tabs
+           const tabs = document.querySelectorAll('.tab');
+           tabs.forEach(btn => btn.addEventListener('click', () => {
+             tabs.forEach(b => b.setAttribute('aria-selected','false'));
+             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+             btn.setAttribute('aria-selected','true');
+             document.querySelector(btn.dataset.target).classList.add('active');
+           }));
+         
+           (function initPainel(){
+             const painel = document.getElementById('painel');
+             if(!painel) return;
+         
+             const tbody = painel.querySelector('#tbody');
+             const countBox = painel.querySelector('#countBox');
+             const repSelect = painel.querySelector('#fRep');
+             const statusSelect = painel.querySelector('#fStatus');
+             const deInput = painel.querySelector('#fDe');
+             const ateInput = painel.querySelector('#fAte');
+             const qInput = painel.querySelector('#fQ');
+             const btnRealtime = painel.querySelector('#btnRealtime');
+             const btnAplicar = painel.querySelector('#btnAplicar');
+             const btnLimpar = painel.querySelector('#btnLimpar');
+             const btnExportCsv = painel.querySelector('#btnExportCsv');
+             const btnExportExcel = painel.querySelector('#btnExportExcel');
+             const btnMore = document.getElementById('btnMore');
+             const pagination = document.getElementById('pagination');
+         
+             // Paginação e status
+             let page = 0;
+             const pageSize = 50;
+             let totalItems = 0;
+             // Opções de status para alteração
+             const STATUS_OPTIONS = ['Em aberto','Em análise','Aguardando versão','Aguardando Requisição','Finalizado','Descartado'];
+         
+             const LIVE_SET = new Set(['em aberto','em análise']);
+         
+             const esc = s => String(s||"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+             const statusClass = (s) => {
+               const m = (s||'').toLowerCase();
+               if (m.includes('em aberto')) return 'status s-open';
+               if (m.includes('análise') || m.includes('analise')) return 'status s-analise';
+               if (m.includes('versão') || m.includes('versao')) return 'status s-versao';
+               if (m.includes('abrir requisição') || m.includes('abrir requisicao') ||
+                   m.includes('aguardando requisição') || m.includes('aguardando requisicao') ||
+                   m.includes('requisição') || m.includes('requisicao')) return 'status s-req';
+               if (m.includes('finalizado') || m.includes('resolvido') || m.includes('resolvidos')) return 'status s-ok';
+               if (m.includes('descart')) return 'status s-drop';
+               return 'status';
+             };
+         
+             // Cor (hex) de cada status. Utilizado para colorir o <select> na coluna de status.
+             const statusColor = (s) => {
+               const m = (s || '').toLowerCase();
+               if (m.includes('em aberto')) return '#22c55e';
+               if (m.includes('análise') || m.includes('analise')) return '#eab308';
+               if (m.includes('versão') || m.includes('versao')) return '#f97316';
+               if (m.includes('abrir requisição') || m.includes('abrir requisicao') ||
+                   m.includes('aguardando requisição') || m.includes('aguardando requisicao') ||
+                   m.includes('requisição') || m.includes('requisicao')) return '#3b82f6';
+               if (m.includes('finalizado') || m.includes('resolvido') || m.includes('resolvidos')) return '#166534';
+               if (m.includes('descart')) return '#ef4444';
+               // padrão: cor principal
+               return 'var(--ink)';
+             };
+          
+          function applyStatusSelectColors(rootEl){
+           (rootEl || document).querySelectorAll('select.status-select').forEach(sel=>{
+             sel.style.color = statusColor(sel.value);
+           });
+         }
+          
+             const parsePriority = (desc) => {
+               const m = (desc||'').match(/\*\*Prioridade:\*\*\s*([^\n]+)/i);
+               return m ? m[1].trim() : '-';
+             };
+         
+             // Controle de cache e estado
+             let cache = []; let lastKeys = new Set();
+             let isRealTimeActive = false;
+             let realTimeInterval = null;
+         
+             // Cancelamento de chamadas pendentes
+             let abortController = null;
+             let latestLoadId = 0;
+         
+             // Fonte para conexões SSE
+             let realtimeSource = null;
+         
+             /**
+              * Encerra qualquer monitoramento em tempo real (SSE ou poll) e aborta requisições pendentes.
+              */
+             function cleanupRealTime(){
+         console.log('🧹 Iniciando cleanup...');
+         
+         // Fecha SSE se aberto
+         if(realtimeSource){
+           try { 
+             realtimeSource.close(); 
+             console.log('✅ SSE fechado');
+           } catch(e){
+             console.warn('⚠️ Erro ao fechar SSE:', e);
+           }
+           realtimeSource = null;
+         }
+         
+         // Cancela intervalo de fallback
+         if(realTimeInterval){
+           clearInterval(realTimeInterval);
+           realTimeInterval = null;
+           console.log('✅ Polling interrompido');
+         }
+         
+         // Aborta fetch pendente
+         if(abortController){
+           try { 
+             abortController.abort(); 
+             console.log('✅ Fetch anterior abortado');
+           } catch(e){}
+           abortController = null;
+         }
+         }
+         
+             /**
+              * Alterna o monitoramento em tempo real.
+              * Ao ativar, força o filtro "Em aberto", reinicia a paginação e inicia SSE (ou fallback).
+              * Ao desativar, finaliza SSE/poll e recarrega a lista com filtros atuais.
+              */
+             function toggleRealTime(){
+         console.log('🔄 Toggle realtime:', !isRealTimeActive);
+         
+         if(!isRealTimeActive){
+           // ATIVANDO monitoramento
+           isRealTimeActive = true;
+           
+           // Força filtro "Em aberto"
+           try {
+             statusSelect.value = 'Em aberto';
+             if(typeof applyStatusSelectColors === 'function') applyStatusSelectColors();
+           } catch(e){}
+           
+           // Visual do botão
+           btnRealtime.classList.add('is-on');
+           btnRealtime.textContent = 'Parar Monitoramento';
+           
+           // Limpa conexões anteriores
+           cleanupRealTime();
+           
+           // Reinicia paginação e carrega
+           page = 0;
+           
+           // Carrega dados primeiro, DEPOIS inicia SSE
+           load({silent:false}).then(() => {
+             if(!isRealTimeActive) return; // Se foi desativado enquanto carregava
+             
+             startSSEConnection();
+           }).catch(err => {
+             console.error('Erro ao carregar para monitoramento:', err);
+           });
+           
+         } else {
+           // DESATIVANDO monitoramento
+           isRealTimeActive = false;
+           
+           // Visual do botão
+           btnRealtime.classList.remove('is-on');
+           btnRealtime.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
+           
+           // Limpa SSE/poll
+           cleanupRealTime();
+           
+           // Reinicia paginação
+           page = 0;
+           
+           // Recarrega com filtros atuais (aguarda finalização)
+           load({silent:false}).then(() => {
+             console.log('✅ Monitoramento desativado e dados recarregados');
+           }).catch(err => {
+             console.error('Erro ao recarregar após desativar:', err);
+           });
+         }
+         }
+         
+         function startSSEConnection(){
+         if(!isRealTimeActive) return;
+         
+         const handleSSEMessage = function(ev){
+           try {
+             const data = JSON.parse(ev.data || '{}');
+             if(data && data.update){
+               load({silent:true});
+             }
+           } catch(err){}
+         };
+         
+         const reconnectSSE = function(){
+           if(!isRealTimeActive) return;
+           
+           try {
+             if(realtimeSource) {
+               realtimeSource.close();
+               realtimeSource = null;
+             }
+             
+             realtimeSource = new EventSource('/api/chamados/stream');
+             
+             realtimeSource.onopen = function(){
+               console.log('✅ SSE conectado');
+             };
+             
+             realtimeSource.onmessage = handleSSEMessage;
+             
+             realtimeSource.onerror = function(err){
+               console.warn('⚠️ Erro no SSE:', err);
+               if(realtimeSource) {
+                 realtimeSource.close();
+                 realtimeSource = null;
+               }
+               // Reagenda reconexão em 10 segundos
+               if(isRealTimeActive) {
+                 setTimeout(reconnectSSE, 10000);
+               }
+             };
+             
+           } catch(e) {
+             console.warn('Falha ao criar SSE:', e);
+             // Fallback para polling
+             if(!realTimeInterval && isRealTimeActive) {
+               realTimeInterval = setInterval(() => {
+                 if(isRealTimeActive) load({silent:true});
+               }, 30000);
+             }
+           }
+         };
+         
+         reconnectSSE();
+         }
+             // Conecta evento do botão
+             btnRealtime.addEventListener('click', toggleRealTime);
+         
+             function buildRowHTML(it,i){
+               const prio = it.prioridade || parsePriority(it.descricao);
+               const trelloLink = it.url ? (`
+                 <a data-kind="trello-link" class="btn" href="${esc(it.url)}" target="_blank" rel="noopener">
+                   <img src="/static/trello.png" alt="Trello" class="icon"> Trello
+                 </a>`) : '-';
+         
+               let whatsappLink = '-';
+               if (it.whatsapp && String(it.whatsapp).replace(/\D/g,'').length >= 8) {
+                 const phoneEsc = String(it.whatsapp).replace(/'/g, "\\'");
+                 const onClick = `openWhatsApp('${phoneEsc}')`;
+                 whatsappLink = `<button data-kind="whatsapp-link" class="btn" type="button" onclick="${onClick}">
+                   <img src="/static/whatsapp.png" alt="WhatsApp" class="icon"> WhatsApp
+                 </button>`;
+               }
+         
+               // Select para mudar status (agora dentro da própria coluna de status)
+               const statusOptions = STATUS_OPTIONS.map(opt => {
+                 const selected = opt === it.status ? ' selected' : '';
+                 return `<option value="${esc(opt)}"${selected}>${esc(opt)}</option>`;
+               }).join('');
+               // Cor do status para o select
+               const statusCol = statusColor(it.status);
+               const statusSelect = `<select class="status-select" data-id="${esc(it.id||'')}" style="color:${statusCol}">${statusOptions}</select>`;
+               // Ações: apenas botão do Trello (aplica estilos via CSS .actions)
+               const actionsHtml = `<div class="actions">${trelloLink}</div>`;
+         
+               return (
+                 '<tr data-key="'+esc(it.id || it.url || it.titulo || String(i))+'">'+
+                   '<td class="title" title="'+esc(it.titulo)+'">'+esc(it.titulo)+'</td>'+ 
+                   '<td>'+esc(it.representante||"-")+'</td>'+
+                   // Coluna de status contém o <select>
+                   '<td>'+statusSelect+'</td>'+ 
+                   '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="detalhes">📋 Detalhes</button></td>'+ 
+                   '<td class="prio">'+esc(prio||"-")+'</td>'+ 
+                   '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="ver">👁 Ver</button></td>'+ 
+                   '<td>'+whatsappLink+'</td>'+ 
+                   '<td>'+actionsHtml+'</td>'+ 
+                 '</tr>'
+               );
+             }
+         
+             tbody.addEventListener('click', (e) => {
+               const btn = e.target.closest('button[data-action]');
+               if (!btn) return;
+         
+               const i = Number(btn.getAttribute('data-i'));
+               const item = cache[i] || {};
+               const action = btn.getAttribute('data-action');
+         
+               if (action === 'ver') {
+                 openModal('📄 Descrição do chamado', (item.descricao || 'Nenhuma descrição disponível.').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'));
+                 return;
+               }
+               if (action === 'detalhes') {
+                 const created = inferCreatedAt(item);
+                 const lastAct = item.ultima_atividade ? new Date(item.ultima_atividade) : null;
+                 const isLive  = /^(em aberto|em análise)$/i.test(item.status||'');
+         
+                 const startTs = (created ? created.getTime() : (lastAct ? lastAct.getTime() : Date.now()));
+                 const stopTs  = isLive ? Date.now() : (lastAct ? lastAct.getTime() : startTs);
+         
+                 let html = '';
+                 html += `📋 Título: ${(item.titulo || '-').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}<br>`;
+                 html += `👤 Representante: ${(item.representante || '-') }<br>`;
+                 html += `📊 Status: ${(item.status || '-') }<br><br>`;
+                 html += `🕐 Criado em: ${created ? created.toLocaleString('pt-BR') : '—'}<br>`;
+                 html += `⏰ Última atividade: ${lastAct ? lastAct.toLocaleString('pt-BR') : '—'}<br><br>`;
+                 html += `⏱ Duração ${isLive?'(contando)':'(fechada)'}: <span id="durSpan">calculando…</span>`;
+         
+                 openModal('Detalhes do chamado', html);
+         
+                 function tick(){
+                   const now = isLive ? Date.now() : stopTs;
+                   const ms  = now - startTs;
+                   const el  = document.getElementById('durSpan');
+                   if (el) el.textContent = fmtDur(ms);
+                 }
+                 tick();
+                 if (isLive) { if (window.__timerId) clearInterval(window.__timerId); window.__timerId = setInterval(tick, 1000); }
+               }
+             });
+         
+             // Mudar status: envia requisição e atualiza a tabela
+             tbody.addEventListener('change', async (e) => {
+           const sel = e.target.closest('select.status-select');
+           if (!sel) return;
+         
+           const prev = sel.getAttribute('data-prev') || sel.value; // guarda último valor conhecido
+           const newStatus = sel.value;
+           const cardId = sel.getAttribute('data-id');
+           if (!cardId) return;
+         
+           // feedback visual imediato
+           sel.style.color = statusColor(newStatus);
+           sel.disabled = true;
+         
+           try {
+             const r = await fetch('/api/chamados/' + encodeURIComponent(cardId) + '/status', {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               credentials: 'same-origin',
+               body: JSON.stringify({ status: newStatus })
+             });
+             const resp = await r.json().catch(()=>({}));
+         
+             if (!r.ok || !resp || !resp.success) {
+               // rollback
+               sel.value = prev;
+               sel.style.color = statusColor(prev);
+               alert((resp && resp.message) || 'Erro ao atualizar status.');
+             } else {
+               // sucesso: fixa o novo valor como "último"
+               sel.setAttribute('data-prev', newStatus);
+             }
+           } catch (err) {
+             // rollback em erro de rede
+             sel.value = prev;
+             sel.style.color = statusColor(prev);
+             alert('Erro ao atualizar status: ' + err.message);
+           } finally {
+             sel.disabled = false;
+           }
+             });
+         
+             function render(items,{silent=false}={}){
+               const prev = lastKeys;
+               tbody.innerHTML = items.length ? items.map(buildRowHTML).join('') :
+                 '<tr><td class="empty" colspan="8">📋 Nenhum chamado encontrado.<br><span style="font-size:14px;opacity:.7;">Ajuste os filtros ou verifique a busca.</span></td></tr>';
+          applyStatusSelectColors(tbody);
+               if (silent){
+                 [...tbody.querySelectorAll('tr[data-key]')].forEach(tr=>{
+                   const k=tr.getAttribute('data-key'); if(!prev.has(k)) tr.classList.add('row-new');
+                 });
+               }
+               lastKeys = new Set(items.map(it => it.id || it.url || it.titulo));
+               cache = items;
+             }
+         
+             function qs(){
+               const p=[]; const rep=repSelect.value.trim(), st=statusSelect.value.trim(), de=deInput.value, ate=ateInput.value, q=qInput.value.trim();
+               if(rep) p.push('representante='+encodeURIComponent(rep));
+               if(st)  p.push('status='+encodeURIComponent(st));
+               if(de)  p.push('de='+encodeURIComponent(de));
+               if(ate) p.push('ate='+encodeURIComponent(ate));
+               if(q)   p.push('q='+encodeURIComponent(q));
+               return p.length ? '?'+p.join('&') : '';
+             }
+         
+             // Fetch com timeout e tratamento de retorno não-JSON
+             function withTimeout(p, ms){ return Promise.race([p, new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timeout após '+ms+'ms')), ms))]); }
+         
+             function load({silent=false, append=false}={}){
+         console.log('📥 Load chamado:', {silent, append, page, isRealTimeActive});
+         
+         const currentId = ++latestLoadId;
+         console.log('🆔 Load ID:', currentId);
+         
+         // Cancela chamada anterior
+         if(abortController){
+           try {
+             abortController.abort();
+             console.log('🚫 Fetch anterior abortado');
+           } catch(e){}
+         }
+         abortController = new AbortController();
+         const { signal } = abortController;
+         
+         // Exibe spinner se necessário
+         if(!silent){
+           tbody.innerHTML = '<tr><td class="empty" colspan="8"><div class="loading"></div> Carregando chamados...</td></tr>';
+         }
+         
+         const query = qs();
+         const sep = query ? '&' : '?';
+         const cacheBuster = Date.now();
+         const url = '/api/chamados' + query + sep + 'offset=' + (page * pageSize) + '&limit=' + pageSize + '&_=' + cacheBuster;
+         
+         const fetchPromise = fetch(url, {
+           cache: 'no-store',
+           credentials: 'same-origin',
+           headers: { 
+             'Accept': 'application/json, text/plain;q=0.9, */*;q=0.8',
+             'Cache-Control': 'no-cache'
+           },
+           signal
+         });
+         
+         return withTimeout(fetchPromise, 45000)
+           .then(async r => {
+             // Se não for a chamada mais recente, ignore
+             if(currentId !== latestLoadId) {
+               console.log('🗑️ Resposta descartada (stale):', currentId, 'vs', latestLoadId);
+               throw new Error('Stale');
+             }
+             
+             const ct = r.headers.get('content-type') || '';
+             const text = await r.text();
+             
+             if(!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText + '\n' + text.slice(0,800));
+             
+             let data;
+             try {
+               data = ct.includes('application/json') ? JSON.parse(text) : JSON.parse(text);
+             } catch(e){
+               throw new Error('Conteúdo não-JSON da API:\n' + text.slice(0,800));
+             }
+             
+             return Array.isArray(data) ? { items: data, total: data.length } : data;
+           })
+           .then(j => {
+             // Ignora se não for a resposta mais recente
+             if(currentId !== latestLoadId) {
+               console.log('🗑️ Dados descartados (stale):', currentId);
+               return;
+             }
+             
+             console.log('✅ Load concluído ID:', currentId);
+             
+             const items = (j.items || []).map(x => {
+               x.prioridade = x.prioridade || (x.descricao || '').match(/\*\*Prioridade:\*\*\s*([^\n]+)/i)?.[1] || '-';
+               return x;
+             });
+             
+             totalItems = j.total ?? items.length;
+             
+             if(append && page > 0){
+               const combined = cache.concat(items);
+               render(combined, {silent});
+               cache = combined;
+             } else {
+               render(items, {silent});
+               cache = items;
+             }
+             
+             // Atualiza contagem
+             countBox.innerHTML = `📊 <strong>${totalItems}</strong> chamado${totalItems!==1?'s':''} no total`;
+             
+             // Mostra/oculta paginação
+             if(cache.length < totalItems){
+               pagination.style.display = 'block';
+             } else {
+               pagination.style.display = 'none';
+             }
+           })
+           .catch(err => {
+             // Se foi abortado ou é stale, não mostra erro
+             if(err.name === 'AbortError' || err.message === 'Stale') {
+               console.log('ℹ️ Requisição ignorada:', err.message);
+               return;
+             }
+             
+             console.error('❌ Erro no load:', err);
+             
+             const msg = String((err && err.message) || err);
+             countBox.innerHTML = '⚠️ Erro ao carregar dados';
+             
+             // Botão "Tentar novamente"
+             const retryBtn = '<button onclick="window.location.reload()" style="margin-top:8px;padding:8px 16px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;">🔄 Tentar Novamente</button>';
+             
+             tbody.innerHTML = '<tr><td class="empty" colspan="8">⚠️ Erro ao carregar chamados.<br><pre style="white-space:pre-wrap;margin-top:8px;color:#7f1d1d;background:#fff3f3;border:1px solid #fecaca;padding:10px;border-radius:8px;max-height:160px;overflow:auto">' +
+               msg.replace(/[<>&]/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[m])) +
+             '</pre>' + retryBtn + '</td></tr>';
+             
+             // Re-throw para que os chamadores saibam que houve erro
+             throw err;
+           });
+         }
+         
+             // Aplica filtros: reseta a página e recarrega
+             btnAplicar.addEventListener('click', () => {
+               page = 0;
+               load({silent:false});
+             });
+             // Limpa filtros: reseta campos, página e recarrega
+             btnLimpar.addEventListener('click', () => {
+               repSelect.value = '';
+               statusSelect.value = '';
+               deInput.value = '';
+               ateInput.value = '';
+               qInput.value = '';
+               page = 0;
+               load({silent:false});
+             });
+             // Export CSV via fetch + blob (não abre nova aba)
+             btnExportCsv.addEventListener('click', async () => {
+               const query = qs();
+         const sep = query ? '&' : '?';
+         const url = '/api/chamados/export' + query + sep + 'format=csv&_=' + Date.now();
+               try {
+                 const res = await fetch(url, { credentials:'same-origin', cache:'no-store' });
+                 if(!res.ok) throw new Error('HTTP ' + res.status);
+                 const dispo = res.headers.get('Content-Disposition') || '';
+                 let filename = 'chamados.csv';
+                 const m = /filename="?([^";]+)"?/i.exec(dispo);
+                 if(m) filename = m[1];
+                 const blob = await res.blob();
+                 const href = URL.createObjectURL(blob);
+                 const a = document.createElement('a');
+                 a.href = href; a.download = filename;
+                 document.body.appendChild(a); a.click(); a.remove();
+                 URL.revokeObjectURL(href);
+               } catch(err) {
+                 alert('Falha ao exportar CSV');
+               }
+             });
+             // Export Excel via fetch + blob (não abre nova aba)
+             btnExportExcel.addEventListener('click', async () => {
+               const query = qs();
+         const sep = query ? '&' : '?';
+         const url = '/api/chamados/export' + query + sep + 'format=xlsx&_=' + Date.now();
+               try {
+                 const res = await fetch(url, { credentials:'same-origin', cache:'no-store' });
+                 if(!res.ok) throw new Error('HTTP ' + res.status);
+                 const dispo = res.headers.get('Content-Disposition') || '';
+                 let filename = 'chamados.xlsx';
+                 const m = /filename="?([^";]+)"?/i.exec(dispo);
+                 if(m) filename = m[1];
+                 const blob = await res.blob();
+                 const href = URL.createObjectURL(blob);
+                 const a = document.createElement('a');
+                 a.href = href; a.download = filename;
+                 document.body.appendChild(a); a.click(); a.remove();
+                 URL.revokeObjectURL(href);
+               } catch(err) {
+                 alert('Falha ao exportar Excel');
+               }
+             });
+             // Paginação: carregar mais
+             btnMore.addEventListener('click', () => {
+               page++;
+               load({silent:false, append:true});
+             });
+             // Busca incremental no campo de texto (debounce)
+             let searchTimer = null;
+             qInput.addEventListener('input', () => {
+               if (searchTimer) clearTimeout(searchTimer);
+               searchTimer = setTimeout(() => {
+                 page = 0;
+                 load({silent:false});
+               }, 400);
+             });
+             // Carga inicial
+             load({silent:false});
+         
+             // Garante que qualquer conexão SSE ou pesquisa em curso seja encerrada ao sair ou atualizar a página.
+             window.addEventListener('beforeunload', () => {
+               try { cleanupRealTime(); } catch(e){}
+             });
+           })();
+      </script>
+   </body>
 </html>
