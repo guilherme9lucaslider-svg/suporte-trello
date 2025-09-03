@@ -740,9 +740,14 @@
       }
 
       // Fetch com timeout e tratamento de retorno não-JSON
-      function withTimeout(p, ms){ return Promise.race([p, new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timeout após '+ms+'ms')), ms))]); }
+function withTimeout(p, ms){ 
+  return Promise.race([
+    p, 
+    new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timeout após '+ms+'ms')), ms))
+  ]); 
+}
 
-      function load({silent=false, append=false}={}){
+function load({silent=false, append=false}={}){
   if(!silent) {
     tbody.innerHTML = '<tr><td class="empty" colspan="8"><div class="loading"></div> Carregando chamados...</td></tr>';
   }
@@ -806,22 +811,24 @@
     });
 }
 
-      // Aplica filtros: reseta a página e recarrega
-      btnAplicar.addEventListener('click', () => {
-        page = 0;
-        load({silent:false});
-      });
-      // Limpa filtros: reseta campos, página e recarrega
-      btnLimpar.addEventListener('click', () => {
-        repSelect.value = '';
-        statusSelect.value = '';
-        deInput.value = '';
-        ateInput.value = '';
-        qInput.value = '';
-        page = 0;
-        load({silent:false});
-      });
-      // Export CSV (substitua o event listener existente)
+// Aplica filtros: reseta a página e recarrega
+btnAplicar.addEventListener('click', () => {
+  page = 0;
+  load({silent:false});
+});
+
+// Limpa filtros: reseta campos, página e recarrega
+btnLimpar.addEventListener('click', () => {
+  repSelect.value = '';
+  statusSelect.value = '';
+  deInput.value = '';
+  ateInput.value = '';
+  qInput.value = '';
+  page = 0;
+  load({silent:false});
+});
+
+// Export CSV
 btnExportCsv.addEventListener('click', async () => {
   const query = qs();
   const sep = query ? '&' : '?';
@@ -848,7 +855,7 @@ btnExportCsv.addEventListener('click', async () => {
   }
 });
 
-// Export Excel (substitua o event listener existente)
+// Export Excel
 btnExportExcel.addEventListener('click', async () => {
   const query = qs();
   const sep = query ? '&' : '?';
@@ -874,26 +881,25 @@ btnExportExcel.addEventListener('click', async () => {
     alert('Falha ao exportar Excel.');
   }
 });
-        const sep = query ? '&' : '?';
-        const url = '/api/chamados/export' + query + sep + 'format=xlsx';
-        window.open(url, '_blank');
-      });
-      // Paginação: carregar mais
-      btnMore.addEventListener('click', () => {
-        page++;
-        load({silent:false, append:true});
-      });
-      // Busca incremental no campo de texto (debounce)
-      let searchTimer = null;
-      qInput.addEventListener('input', () => {
-        if (searchTimer) clearTimeout(searchTimer);
-        searchTimer = setTimeout(() => {
-          page = 0;
-          load({silent:false});
-        }, 400);
-      });
-      // Carga inicial
-      load({silent:false});
+
+// Paginação: carregar mais
+btnMore.addEventListener('click', () => {
+  page++;
+  load({silent:false, append:true});
+});
+
+// Busca incremental no campo de texto (debounce)
+let searchTimer = null;
+qInput.addEventListener('input', () => {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    page = 0;
+    load({silent:false});
+  }, 400);
+});
+
+// Carga inicial
+load({silent:false});
     })();
   </script>
 </body>
