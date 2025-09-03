@@ -452,6 +452,16 @@
       document.querySelector(btn.dataset.target).classList.add('active');
     }));
 
+    // Desativa Service Worker se acessar com ?nosw=1 (útil caso SW antigo esteja cacheando)
+    if (location.search.includes('nosw=1') && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
+      if (!sessionStorage.getItem('reloadedNOSW')) {
+        sessionStorage.setItem('reloadedNOSW', '1');
+        location.replace(location.pathname); // recarrega sem o parâmetro
+      }
+    }
+
+
     (function initPainel(){
       const painel = document.getElementById('painel');
       if(!painel) return;
@@ -473,6 +483,10 @@
 
       // Paginação e status
       let page = 0;
+      // Controle de requisições para evitar "loops de carregamento"
+      let __reqId = 0;
+      let __ctrl = null; // AbortController ativo
+      let __pending = 0;
       const pageSize = 50;
       let totalItems = 0;
       // Opções de status para alteração
@@ -750,39 +764,50 @@ function withTimeout(p, ms){
 }
 
 function load({silent=false, append=false}={}){
-  if(!silent) {
+  // Aborta requisição anterior, se houver
+  try { __ctrl && __ctrl.abort(); } catch(e){}
+  __ctrl = new AbortController();
+  const myId = ++__reqId;
+
+  if(!silent){
+    // estado de carregando
     tbody.innerHTML = '<tr><td class="empty" colspan="8"><div class="loading"></div> Carregando chamados...</td></tr>';
+    countBox.textContent = 'Carregando...';
   }
-  
+
   const query = qs();
   const sep = query ? '&' : '?';
-  const url = '/api/chamados' + query + sep + 'offset=' + (page * pageSize) + '&limit=' + pageSize;
-  
+  const cacheBust = '_=' + Date.now();
+  const url = '/api/chamados' + query + sep + 'offset=' + (page * pageSize) + '&limit=' + pageSize + '&' + cacheBust;
+
+  __pending++;
+
   const req = withTimeout(fetch(url, {
     cache: 'no-store',
     credentials: 'same-origin',
-    headers: { 'Accept': 'application/json, text/plain;q=0.9, */*;q=0.8' }
+    headers: { 'Accept': 'application/json, text/plain;q=0.9, */*;q=0.8' },
+    signal: __ctrl.signal
   }), 20000);
 
-  req.then(async r => {
+  return req
+    .then(async r => {
+      if (myId !== __reqId) throw new Error('Cancelado por nova busca');
       const ct = r.headers.get('content-type') || '';
       const text = await r.text();
-      if(!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText + '\n' + text.slice(0,800));
+      if(!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText + '\\n' + text.slice(0,800));
       let data;
-      try { 
-        data = ct.includes('application/json') ? JSON.parse(text) : JSON.parse(text); 
-      } catch(e) { 
-        throw new Error('Conteúdo não-JSON da API:\n' + text.slice(0,800)); 
-      }
+      try { data = ct.includes('application/json') ? JSON.parse(text) : JSON.parse(text); }
+      catch(e) { throw new Error('Conteúdo não-JSON da API:\\n' + text.slice(0,800)); }
       return Array.isArray(data) ? { items: data, total: data.length } : data;
     })
     .then(j => {
-      const items = (j.items || []).map(x => { 
-        x.prioridade = x.prioridade || (x.descricao || '').match(/\*\*Prioridade:\*\*\s*([^\n]+)/i)?.[1] || '-'; 
-        return x; 
+      if (myId !== __reqId) return; // resposta velha
+      const items = (j.items || []).map(x => {
+        x.prioridade = x.prioridade || (x.descricao || '').match(/\*\*Prioridade:\*\*\s*([^\n]+)/i)?.[1] || '-';
+        return x;
       });
       totalItems = j.total ?? items.length;
-      
+
       if (append && page > 0) {
         const combined = cache.concat(items);
         render(combined, {silent});
@@ -791,29 +816,27 @@ function load({silent=false, append=false}={}){
         render(items, {silent});
         cache = items;
       }
-      
-      // Atualiza contagem
+
       countBox.innerHTML = `📊 <strong>${totalItems}</strong> chamado${totalItems!==1?'s':''} no total`;
-      
-      // Mostra ou oculta botão 'Carregar mais'
-      if (cache.length < totalItems) {
-        pagination.style.display = 'block';
-      } else {
-        pagination.style.display = 'none';
-      }
+      pagination.style.display = cache.length < totalItems ? 'block' : 'none';
     })
     .catch(err => {
-      const msg = String(err && err.message || err);
+      if (myId !== __reqId) return; // resposta velha
+      const msg = String((err && err.message) || err);
       countBox.innerHTML = '❌ Erro ao carregar dados';
       const safe = (msg || '').replace(/[<>&]/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]));
       tbody.innerHTML = '<tr><td class="empty" colspan="8"><div class="warn" style="margin-bottom:8px">⚠️ Erro ao carregar chamados.</div>' +
-        '<pre style="white-space:pre-wrap;word-break:break-word;background:#fee2e2;color:#991b1b;padding:10px;border-radius:8px;max-height:160px;overflow:auto">' +
+        '<pre style="white-space:pre-wrap;word-break:break-word;background:#fee2e2;color:#991b1b;padding:10px;border-radius:8px;max-height:180px;overflow:auto">' +
         safe +
-        '</pre></td></tr>';
-    });
+        '</pre>' +
+        '<div style="margin-top:10px;"><button class="btn" id="btnRetry">Tentar novamente</button></div>' +
+      '</td></tr>';
+      const retry = document.getElementById('btnRetry');
+      retry && retry.addEventListener('click', () => load({silent:false}));
+    })
+    .finally?.(() => { __pending = Math.max(0, __pending-1); });
 }
 
-// Aplica filtros: reseta a página e recarrega
 btnAplicar.addEventListener('click', () => {
   page = 0;
   load({silent:false});
@@ -834,7 +857,7 @@ btnLimpar.addEventListener('click', () => {
 btnExportCsv.addEventListener('click', async () => {
   const query = qs();
   const sep = query ? '&' : '?';
-  const url = '/api/chamados/export' + query + sep + 'format=csv';
+  const url = '/api/chamados/export' + query + sep + 'format=csv&_=' + Date.now();
   try {
     const res = await withTimeout(fetch(url, { credentials: 'same-origin' }), 30000);
     if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -861,7 +884,7 @@ btnExportCsv.addEventListener('click', async () => {
 btnExportExcel.addEventListener('click', async () => {
   const query = qs();
   const sep = query ? '&' : '?';
-  const url = '/api/chamados/export' + query + sep + 'format=xlsx';
+  const url = '/api/chamados/export' + query + sep + 'format=xlsx&_=' + Date.now();
   try {
     const res = await withTimeout(fetch(url, { credentials: 'same-origin' }), 30000);
     if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -901,6 +924,10 @@ qInput.addEventListener('input', () => {
 });
 
 // Carga inicial
+
+    // Evita pendências em reload/navegação
+    window.addEventListener('beforeunload', () => { try { __ctrl && __ctrl.abort(); } catch(e){} });
+
 load({silent:false});
     })();
   </script>
