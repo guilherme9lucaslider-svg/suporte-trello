@@ -533,6 +533,8 @@
           // Ativa visualmente o botão
           btnRealtime.classList.add('is-on');
           btnRealtime.textContent = 'Parar Monitoramento';
+		  statusSelect.value='Em aberto'; deInput.value=''; ateInput.value=''; qInput.value='';
+		  //load({silent:false}).then(()=>{ realtimeTimer=setInterval(()=>load({silent:true}),6000);
           // Fecha qualquer conexão anterior
           if (realtimeSource) {
             try { realtimeSource.close(); } catch(e){}
