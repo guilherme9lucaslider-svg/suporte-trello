@@ -598,6 +598,9 @@
             realTimeInterval = null;
           }
           // Mantém o filtro selecionado; não altera statusSelect
+          // Recarrega a lista com o filtro atual
+          page = 0;
+          load({ silent: false });
         }
       }
       btnRealtime.addEventListener('click', toggleRealTime);
