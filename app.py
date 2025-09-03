@@ -10,7 +10,8 @@ from pathlib import Path
 from datetime import datetime, timezone
 from functools import wraps
 
-from flask import (
+from flask import (, redirect, url_for
+
     Flask,
     render_template,
     request,
@@ -32,7 +33,6 @@ import requests
 import io
 import csv
 import pandas as pd
-
 
 # -----------------------------------------------------------------------------
 # Paths / App
@@ -184,8 +184,6 @@ try:
         LABEL_IDS = {}
 except Exception:
     LABEL_IDS = {}
-
-DOWNLOADS_DIR = BASE_DIR / "downloads"
 MANIFEST = DOWNLOADS_DIR / "latest.json"
 HIDE_DOWNLOAD_BUTTON = (os.getenv("HIDE_DOWNLOAD_BUTTON", "0") == "1")
 IS_DESKTOP = bool(getattr(sys, "frozen", False)) or os.getenv("APP_DESKTOP") == "1"
@@ -304,8 +302,6 @@ def _auth_guard():
     if (
         path.startswith("/static/") or
         path in {"/static", "/sw.js", "/versao.json", "/favicon.ico"} or
-        path.startswith("/baixar") or
-        path.startswith("/downloads") or
         path.startswith("/api/chamados") or
         path.startswith("/api/representantes") or
         path == "/login" or
@@ -344,10 +340,8 @@ def index():
     return render_template("index.html", show_download=show_download, representante_logado=rep, reps=reps)
 
 @app.route("/painel")
-def painel():
-    return render_template("painel.html")
-
-def _parse_rep_from_desc(desc: str) -> str:
+def painel_redirect():
+    return redirect(url_for("admin_home"), code=308)
     if not desc:
         return ""
     m = re.search(r"\*\*Representante:\*\*\s*(.+)", desc)
@@ -471,7 +465,6 @@ def api_chamados():
         print(f"[API] /api/chamados -> {len(items)} itens")
     return jsonify({"total": len(items), "items": items})
 
-
 # ---------------------------------------------------------------------------
 # Nova implementação do endpoint /api/chamados com suporte a id, created_at,
 # paginação via offset/limit e filtragem.
@@ -564,7 +557,6 @@ def api_chamados_v2():
         print(f"[API] /api/chamados -> {total} itens (retornando {len(paginated)})")
     return jsonify({"total": total, "items": paginated})
 
-
 # ---------------------------------------------------------------------------
 # Endpoint para mudar o status (lista) de um card específico. Recebe JSON com
 # {"status": "Novo Status"} e move o card para a lista correspondente no
@@ -610,7 +602,6 @@ def api_chamados_change_status(card_id: str):
         return jsonify(success=False, message="Erro ao mover card", detail=str(e)), 500
     return jsonify(success=True)
 
-
 # ---------------------------------------------------------------------------
 # Endpoint de streaming (Server-Sent Events) para monitoramento em tempo real.
 # Envia um evento sempre que houver mudança na lista de cards (id ou última
@@ -653,7 +644,6 @@ def api_chamados_stream():
                 yield f"data: {{\"update\": true}}\n\n"
             time.sleep(10)
     return Response(event_stream(), mimetype="text/event-stream")
-
 
 # ---------------------------------------------------------------------------
 # Endpoint para exportar os chamados filtrados em CSV ou XLSX. Utiliza as
@@ -768,7 +758,6 @@ def api_chamados_export():
         )
     else:
         return jsonify(success=False, message="Formato inválido", allowed=["csv","xlsx"]), 400
-
 
 @app.route("/api/representantes")
 def api_representantes():
@@ -932,14 +921,6 @@ def _manifest_data():
         data["size_bytes"] = file_path.stat().st_size
     return data
 
-@app.route("/baixar")
-def baixar():
-    try:
-        data = _manifest_data()
-        filename = data["filename"]
-    except Exception as e:
-        return jsonify(success=False, message=str(e)), 500
-
     resp = make_response(send_from_directory(
         directory=str(DOWNLOADS_DIR),
         path=filename,
@@ -953,37 +934,6 @@ def baixar():
     resp.headers["Expires"] = "0"
     resp.headers["X-Content-Type-Options"] = "nosniff"
     return resp
-
-@app.route("/downloads/<path:filename>")
-def baixar_versionado(filename):
-    file_path = DOWNLOADS_DIR / filename
-    if not file_path.exists():
-        abort(404)
-    resp = make_response(send_from_directory(
-        directory=str(DOWNLOADS_DIR),
-        path=filename,
-        as_attachment=True,
-        download_name=filename,
-        mimetype="application/octet-stream",
-        conditional=True
-    ))
-    resp.headers["Cache-Control"] = "public, max-age=604800, immutable"
-    resp.headers["X-Content-Type-Options"] = "nosniff"
-    return resp
-
-@app.route("/versao.json")
-def versao_json():
-    try:
-        data = _manifest_data()
-        return jsonify({
-            "version": data.get("version"),
-            "filename": data.get("filename"),
-            "sha256": data.get("sha256"),
-            "size_bytes": data.get("size_bytes"),
-            "notes": data.get("notes", "")
-        })
-    except Exception as e:
-        return jsonify(error=str(e)), 500
 
 # -----------------------------------------------------------------------------
 # Admin (rotas) – agora usando console.html como tela principal

@@ -17,20 +17,20 @@
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     
     :root {
-      --primary: #006056;
-      --primary-light: #0a8a7a;
-      --primary-dark: #004944;
-      --secondary: #FF7E00;
-      --secondary-light: #FF9533;
-      --secondary-dark: #CC6400;
-      --bg: linear-gradient(135deg, #f8fffe 0%, #f1f8f6 100%);
+      --primary: #13539b;
+      --primary-light: #2563eb;
+      --primary-dark: #0f172a;
+      --accent: #fa6827;
+      --accent-light: #fb7c47;
+      --accent-dark: #e85d24;
+      --bg: linear-gradient(135deg,#f8fcff 0%,#f1f2f8 100%);
       --surface: #ffffff;
-      --surface-alt: #fafcfb;
-      --ink: #1a2e2a;
-      --ink-light: #3a4f4b;
-      --muted: #6b7a7a;
-      --stroke: #e1ebe8;
-      --stroke-light: #f0f6f4;
+      --surface-alt: #f1f5f9;
+      --ink: #0f172a;
+      --ink-light: #0f172a;
+      --muted: #64748b;
+      --stroke: #e2e8f0;
+      --stroke-light: #f1f5f9;
       --radius: 16px;
       --radius-lg: 20px;
       --shadow-sm: 0 2px 8px rgba(0, 96, 86, 0.08);
@@ -266,6 +266,31 @@
     /* Acessibilidade */
     @media (prefers-reduced-motion:reduce){ *{ animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important; } }
     .btn:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline:2px solid var(--primary); outline-offset:2px; }
+    
+    /* Título do index com a mesma “pegada” do console */
+.hero-title {
+  font-family: 'Nulshock','Inter',sans-serif; /* mesma família do console */
+  font-weight: 900;
+  letter-spacing: .025em;
+  /* sem font-size aqui → mantém o tamanho atual do seu index */
+  /* se o fundo do index for escuro, use cor branca como no console: */
+  color: #fff; 
+  /* se o fundo do index for claro, troque para: color: var(--ink); */
+}
+
+/* Inicial destacada (cor sólida) */
+.hero-title .accent {
+  color: var(--accent); /* mesma paleta do console */
+  font-size:50px;
+}
+
+
+@font-face {
+  font-family: 'Nulshock';
+  src: url('/static/Nulshock.woff2') format('woff2');
+  font-weight: 900;
+  font-display: swap;
+}
   </style>
 </head>
 <body>
@@ -275,7 +300,11 @@
         <div class="brand">
           <img src="/static/logo.png" alt="Logo WebChamados" />
           <div>
-            <div class="brand__title" id="titulo">Cadastro de Chamado</div>
+            <h1 class="hero-title">
+  <span class="accent gradient">C</span>adastro de 
+  <span class="accent gradient">C</span>hamados
+</h1>
+
             <div class="brand__subtitle">Suporte a Representantes</div>
           </div>
         </div>
@@ -404,11 +433,6 @@
       </div>
 
       <div class="actions">
-        {% if show_download %}
-<div class="mr-auto" id="downloadWrap">
-          <a class="btn btn--link" href="/baixar" title="Baixar aplicativo para Windows">Baixar aplicativo ⬇</a>
-{% endif %}
-        </div>
         <button class="btn btn--ghost" id="btnLimpar">🗑️ Limpar</button>
         <button class="btn btn--primary" id="btnSalvar">Salvar Chamado</button>
       </div>
@@ -786,34 +810,6 @@
   });
   </script>
 
-  <!-- Esconde o botão de download se rodar local/rede privada -->
-  <script>
-  (function(){
-    var wrap = document.getElementById('downloadWrap');
-    if (!wrap) return;
 
-    var rawHost = (location.hostname || (location.host || '').split(':')[0] || '').trim().toLowerCase();
-    var isLoopback = (h) => (h === 'localhost' || h === '127.0.0.1' || h === '0.0.0.0' || h === '::1');
-    var parseIPv4 = (h) => {
-      var m = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-      if (!m) return null;
-      var nums = m.slice(1).map(function(n){ return parseInt(n,10); });
-      return nums.every(function(n){ return n>=0 && n<=255; }) ? nums : null;
-    };
-    var isPrivateIPv4 = (h) => {
-      var ip = parseIPv4(h);
-      if (!ip) return false;
-      var a=ip[0], b=ip[1];
-      if (a === 10) return true;
-      if (a === 172 && b >= 16 && b <= 31) return true;
-      if (a === 192 && b === 168) return true;
-      return false;
-    };
-
-    var runningLocally = isLoopback(rawHost) || isPrivateIPv4(rawHost);
-    if (runningLocally) wrap.style.display = 'none';
-  })();
-  </script>
 
 </body>
-</html>
