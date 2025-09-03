@@ -536,22 +536,28 @@
        * Encerra qualquer monitoramento em tempo real (SSE ou poll) e aborta requisições pendentes.
        */
       function cleanupRealTime(){
-        // Fecha SSE se aberto
-        if(realtimeSource){
-          try { realtimeSource.close(); } catch(e){}
-          realtimeSource = null;
-        }
-        // Cancela intervalo de fallback
-        if(realTimeInterval){
-          clearInterval(realTimeInterval);
-          realTimeInterval = null;
-        }
-        // Aborta fetch pendente
-        if(abortController){
-          try { abortController.abort(); } catch(e){}
-          abortController = null;
-        }
-      }
+  // Fecha SSE se aberto
+  if(realtimeSource){
+    try { 
+      realtimeSource.close(); 
+      console.log('SSE fechado');
+    } catch(e){
+      console.warn('Erro ao fechar SSE:', e);
+    }
+    realtimeSource = null;
+  }
+  // Cancela intervalo de fallback
+  if(realTimeInterval){
+    clearInterval(realTimeInterval);
+    realTimeInterval = null;
+    console.log('Polling interrompido');
+  }
+  // Aborta fetch pendente
+  if(abortController){
+    try { abortController.abort(); } catch(e){}
+    abortController = null;
+  }
+}
 
       /**
        * Alterna o monitoramento em tempo real.
@@ -559,69 +565,87 @@
        * Ao desativar, finaliza SSE/poll e recarrega a lista com filtros atuais.
        */
       function toggleRealTime(){
-        isRealTimeActive = !isRealTimeActive;
-        if(isRealTimeActive){
-          // Força filtro "Em aberto"
-          try {
-            statusSelect.value = 'Em aberto';
-            if(typeof applyStatusSelectColors === 'function') applyStatusSelectColors();
-          } catch(e){}
-          // Reinicia paginação
-          page = 0;
-          // Ativa visual do botão
-          btnRealtime.classList.add('is-on');
-          btnRealtime.textContent = 'Parar Monitoramento';
-          // Limpa conexões anteriores
-          cleanupRealTime();
-          // Tenta abrir SSE
-          let opened = false;
-          try {
-            realtimeSource = new EventSource('/api/chamados/stream');
-            realtimeSource.onmessage = function(ev){
-              try {
-                const data = JSON.parse(ev.data || '{}');
-                if(data && data.update){
-                  // recarrega silenciosamente quando houver atualização
-                  load({silent:true});
-                }
-              } catch(err){}
-            };
-            realtimeSource.onerror = function(){
-              // em erro, fecha a origem e agenda reconexão
-              try { realtimeSource.close(); } catch(e){}
-              realtimeSource = null;
-              setTimeout(() => {
-                if(isRealTimeActive){
-                  try {
-                    realtimeSource = new EventSource('/api/chamados/stream');
-                    realtimeSource.onmessage = this.onmessage;
-                  } catch(e){}
-                }
-              }, 30000);
-            };
-            opened = true;
-          } catch(e) {
-            opened = false;
+  isRealTimeActive = !isRealTimeActive;
+  if(isRealTimeActive){
+    // Força filtro "Em aberto"
+    try {
+      statusSelect.value = 'Em aberto';
+      if(typeof applyStatusSelectColors === 'function') applyStatusSelectColors();
+    } catch(e){}
+    // Reinicia paginação
+    page = 0;
+    // Ativa visual do botão
+    btnRealtime.classList.add('is-on');
+    btnRealtime.textContent = 'Parar Monitoramento';
+    // Limpa conexões anteriores
+    cleanupRealTime();
+    
+    // Função para lidar com mensagens SSE
+    const handleSSEMessage = function(ev){
+      try {
+        const data = JSON.parse(ev.data || '{}');
+        if(data && data.update){
+          load({silent:true});
+        }
+      } catch(err){}
+    };
+    
+    // Função para reconectar SSE
+    const reconnectSSE = function(){
+      if(!isRealTimeActive) return;
+      
+      try {
+        if(realtimeSource) {
+          realtimeSource.close();
+          realtimeSource = null;
+        }
+        
+        realtimeSource = new EventSource('/api/chamados/stream');
+        
+        realtimeSource.onopen = function(){
+          console.log('SSE conectado com sucesso');
+        };
+        
+        realtimeSource.onmessage = handleSSEMessage;
+        
+        realtimeSource.onerror = function(err){
+          console.warn('Erro no SSE:', err);
+          if(realtimeSource) {
+            realtimeSource.close();
+            realtimeSource = null;
           }
-          // Se não conseguiu SSE, utiliza poll a cada 30s
-          if(!opened){
-            realTimeInterval = setInterval(() => {
-              if(isRealTimeActive) load({silent:true});
-            }, 30000);
-          }
-          // Carrega chamados em aberto inicialmente
-          load({silent:false});
-        } else {
-          // Desativa visualmente
-          btnRealtime.classList.remove('is-on');
-          btnRealtime.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
-          // Limpa SSE/poll e aborta chamadas
-          cleanupRealTime();
-          // Reinicia paginação e recarrega usando filtros atuais
-          page = 0;
-          load({silent:false});
+          // Reagenda reconexão em 10 segundos
+          setTimeout(reconnectSSE, 10000);
+        };
+        
+      } catch(e) {
+        console.warn('Falha ao criar SSE:', e);
+        // Se SSE falhar completamente, usa polling como fallback
+        if(!realTimeInterval) {
+          realTimeInterval = setInterval(() => {
+            if(isRealTimeActive) load({silent:true});
+          }, 30000);
         }
       }
+    };
+    
+    // Inicia conexão SSE
+    reconnectSSE();
+    
+    // Carrega chamados em aberto inicialmente
+    load({silent:false});
+    
+  } else {
+    // Desativa visualmente
+    btnRealtime.classList.remove('is-on');
+    btnRealtime.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
+    // Limpa SSE/poll e aborta chamadas
+    cleanupRealTime();
+    // Reinicia paginação e recarrega usando filtros atuais
+    page = 0;
+    load({silent:false});
+  }
+}
       // Conecta evento do botão
       btnRealtime.addEventListener('click', toggleRealTime);
 
@@ -798,7 +822,7 @@
           headers: { 'Accept': 'application/json, text/plain;q=0.9, */*;q=0.8' },
           signal
         });
-        withTimeout(req, 20000)
+        withTimeout(req, 45000)
           .then(async r => {
             // Se não for a chamada mais recente, ignore
             if(currentId !== latestLoadId) throw new Error('Stale');
