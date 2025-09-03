@@ -524,24 +524,23 @@
       let isRealTimeActive = false;
       let realTimeInterval = null;
 
+      // Variáveis de controle para carregar chamados (cancelamento e rastreio de requisições)
+      let abortController = null;
+      let latestLoadId = 0;
+
       // Source for real-time Server Sent Events
       let realtimeSource = null;
       function toggleRealTime() {
         // Alterna estado
         isRealTimeActive = !isRealTimeActive;
         if (isRealTimeActive) {
-          // Ao ativar o monitoramento ao vivo, aplica filtro "Em aberto"
+          // Ao ativar o monitoramento, aplica filtro "Em aberto" e recarrega
           try {
-            // força o filtro de status para "Em aberto"
             statusSelect.value = 'Em aberto';
-            // atualiza cor do select se a função estiver disponível
-            if (typeof applyStatusSelectColors === 'function') {
-              applyStatusSelectColors();
-            }
-          } catch(e){}
-          // reinicia a paginação e carrega os chamados em aberto imediatamente
+            if (typeof applyStatusSelectColors === 'function') applyStatusSelectColors();
+          } catch(e) {}
           page = 0;
-          load({silent:false});
+          load({ silent: false });
           // Ativa visualmente o botão
           btnRealtime.classList.add('is-on');
           btnRealtime.textContent = 'Parar Monitoramento';
@@ -598,6 +597,7 @@
             clearInterval(realTimeInterval);
             realTimeInterval = null;
           }
+          // Mantém o filtro selecionado; não altera statusSelect
         }
       }
       btnRealtime.addEventListener('click', toggleRealTime);
@@ -755,31 +755,50 @@
       function withTimeout(p, ms){ return Promise.race([p, new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timeout após '+ms+'ms')), ms))]); }
 
       function load({silent=false, append=false}={}){
-        if(!silent) {
+        const currentId = ++latestLoadId;
+        // Exibe spinner quando necessário
+        if(!silent){
           tbody.innerHTML = '<tr><td class="empty" colspan="8"><div class="loading"></div> Carregando chamados...</td></tr>';
         }
+        // Cancela chamada anterior se existir
+        if(abortController){
+          abortController.abort();
+        }
+        abortController = new AbortController();
+        const { signal } = abortController;
         const query = qs();
         const sep = query ? '&' : '?';
         const url = '/api/chamados' + query + sep + 'offset=' + (page * pageSize) + '&limit=' + pageSize;
         const req = fetch(url, {
           cache: 'no-store',
           credentials: 'same-origin',
-          headers: { 'Accept': 'application/json, text/plain;q=0.9, */*;q=0.8' }
+          headers: { 'Accept': 'application/json, text/plain;q=0.9, */*;q=0.8' },
+          signal
         });
         withTimeout(req, 20000)
           .then(async r => {
+            // Se não for a chamada mais recente, ignore
+            if(currentId !== latestLoadId) throw new Error('Stale');
             const ct = r.headers.get('content-type') || '';
             const text = await r.text();
             if(!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText + '\n' + text.slice(0,800));
             let data;
-            try { data = ct.includes('application/json') ? JSON.parse(text) : JSON.parse(text); }
-            catch(e) { throw new Error('Conteúdo não-JSON da API:\n' + text.slice(0,800)); }
+            try {
+              data = ct.includes('application/json') ? JSON.parse(text) : JSON.parse(text);
+            } catch(e){
+              throw new Error('Conteúdo não-JSON da API:\n' + text.slice(0,800));
+            }
             return Array.isArray(data) ? { items: data, total: data.length } : data;
           })
           .then(j => {
-            const items = (j.items || []).map(x => { x.prioridade = x.prioridade || (x.descricao || '').match(/\*\*Prioridade:\*\*\s*([^\n]+)/i)?.[1] || '-'; return x; });
+            // Ignora se não for a resposta mais recente
+            if(currentId !== latestLoadId) return;
+            const items = (j.items || []).map(x => {
+              x.prioridade = x.prioridade || (x.descricao || '').match(/\*\*Prioridade:\*\*\s*([^\n]+)/i)?.[1] || '-';
+              return x;
+            });
             totalItems = j.total ?? items.length;
-            if (append && page > 0) {
+            if(append && page > 0){
               const combined = cache.concat(items);
               render(combined, {silent});
               cache = combined;
@@ -789,15 +808,17 @@
             }
             // Atualiza contagem
             countBox.innerHTML = `📊 <strong>${totalItems}</strong> chamado${totalItems!==1?'s':''} no total`;
-            // Mostra ou oculta botão 'Carregar mais'
-            if (cache.length < totalItems) {
+            // Mostra/oculta botao "Carregar mais"
+            if(cache.length < totalItems){
               pagination.style.display = 'block';
             } else {
               pagination.style.display = 'none';
             }
           })
           .catch(err => {
-            const msg = String(err && err.message || err);
+            // AbortError ou respostas atrasadas não apresentam erro ao usuário
+            if(err.name === 'AbortError' || err.message === 'Stale') return;
+            const msg = String((err && err.message) || err);
             countBox.innerHTML = '❌ Erro ao carregar dados';
             tbody.innerHTML = '<tr><td class="empty" colspan="8">⚠️ Erro ao carregar chamados.<br><pre style="white-space:pre-wrap;margin-top:8px;color:#7f1d1d;background:#fff3f3;border:1px solid #fecaca;padding:10px;border-radius:8px;max-height:160px;overflow:auto">' +
               (msg.replace(/[<>&]/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]))) +
@@ -820,19 +841,49 @@
         page = 0;
         load({silent:false});
       });
-      // Export CSV
-      btnExportCsv.addEventListener('click', () => {
+      // Export CSV via fetch + blob (não abre nova aba)
+      btnExportCsv.addEventListener('click', async () => {
         const query = qs();
         const sep = query ? '&' : '?';
         const url = '/api/chamados/export' + query + sep + 'format=csv';
-        window.open(url, '_blank');
+        try {
+          const res = await fetch(url, { credentials:'same-origin', cache:'no-store' });
+          if(!res.ok) throw new Error('HTTP ' + res.status);
+          const dispo = res.headers.get('Content-Disposition') || '';
+          let filename = 'chamados.csv';
+          const m = /filename="?([^";]+)"?/i.exec(dispo);
+          if(m) filename = m[1];
+          const blob = await res.blob();
+          const href = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = href; a.download = filename;
+          document.body.appendChild(a); a.click(); a.remove();
+          URL.revokeObjectURL(href);
+        } catch(err) {
+          alert('Falha ao exportar CSV');
+        }
       });
-      // Export Excel
-      btnExportExcel.addEventListener('click', () => {
+      // Export Excel via fetch + blob (não abre nova aba)
+      btnExportExcel.addEventListener('click', async () => {
         const query = qs();
         const sep = query ? '&' : '?';
         const url = '/api/chamados/export' + query + sep + 'format=xlsx';
-        window.open(url, '_blank');
+        try {
+          const res = await fetch(url, { credentials:'same-origin', cache:'no-store' });
+          if(!res.ok) throw new Error('HTTP ' + res.status);
+          const dispo = res.headers.get('Content-Disposition') || '';
+          let filename = 'chamados.xlsx';
+          const m = /filename="?([^";]+)"?/i.exec(dispo);
+          if(m) filename = m[1];
+          const blob = await res.blob();
+          const href = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = href; a.download = filename;
+          document.body.appendChild(a); a.click(); a.remove();
+          URL.revokeObjectURL(href);
+        } catch(err) {
+          alert('Falha ao exportar Excel');
+        }
       });
       // Paginação: carregar mais
       btnMore.addEventListener('click', () => {
