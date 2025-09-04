@@ -873,9 +873,19 @@ setTimeout(() => {
              }
          
              // Fetch com timeout e tratamento de retorno não-JSON
-             function withTimeout(p, ms){ return Promise.race([p, new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timeout após '+ms+'ms')), ms))]); }
-         
-             function load({silent=false, append=false}={}){
+             function withTimeout(promise, ms, controller){
+  let to;
+  const timeout = new Promise((_, rej) => {
+    to = setTimeout(() => {
+      try { controller?.abort(); } catch(e){}
+      rej(new Error('Timeout após ' + ms + 'ms'));
+    }, ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(to));
+}
+function load({silent=false, append=false}={}){
+  abortController = new AbortController();
+
          console.log('📥 Load chamado:', {silent, append, page, isRealTimeActive});
          
          const currentId = ++latestLoadId;
@@ -901,7 +911,7 @@ setTimeout(() => {
          const cacheBuster = Date.now();
          const url = '/api/chamados' + query + sep + 'offset=' + (page * pageSize) + '&limit=' + pageSize + '&_=' + cacheBuster;
          
-         const fetchPromise = fetch(url, {
+         const fetchPromise = fetch(url, { signal: abortController.signal,
            cache: 'no-store',
            credentials: 'same-origin',
            headers: { 
@@ -911,7 +921,7 @@ setTimeout(() => {
            signal
          });
          
-         return withTimeout(fetchPromise, 15000)
+         return withTimeout(fetchPromise, (isRealTimeActive ? 15000 : 45000), abortController)
            .then(async r => {
              // Se não for a chamada mais recente, ignore
              if(currentId !== latestLoadId) {
@@ -1020,7 +1030,7 @@ setTimeout(() => {
          const sep = query ? '&' : '?';
          const url = '/api/chamados/export' + query + sep + 'format=csv&_=' + Date.now();
                try {
-                 const res = await fetch(url, { credentials:'same-origin', cache:'no-store' });
+                 const res = await fetch(url, { signal: abortController.signal, credentials:'same-origin', cache:'no-store' });
                  if(!res.ok) throw new Error('HTTP ' + res.status);
                  const dispo = res.headers.get('Content-Disposition') || '';
                  let filename = 'chamados.csv';
@@ -1042,7 +1052,7 @@ setTimeout(() => {
          const sep = query ? '&' : '?';
          const url = '/api/chamados/export' + query + sep + 'format=xlsx&_=' + Date.now();
                try {
-                 const res = await fetch(url, { credentials:'same-origin', cache:'no-store' });
+                 const res = await fetch(url, { signal: abortController.signal, credentials:'same-origin', cache:'no-store' });
                  if(!res.ok) throw new Error('HTTP ' + res.status);
                  const dispo = res.headers.get('Content-Disposition') || '';
                  let filename = 'chamados.xlsx';
