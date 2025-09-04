@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-   <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width,initial-scale=1">
-      <title>Console — Painel & Cadastro</title>
-      <link rel="icon" href="/static/favicon.png">
-      <link rel="preconnect" href="https://fonts.googleapis.com">
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-      <style>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Console — Painel & Cadastro</title>
+  <link rel="icon" href="/static/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <style>
          :root {
          --primary: #13539b; 
          --primary-light: #2563eb; 
@@ -222,169 +222,178 @@
          }
          #painel a[data-kind="trello-link"] .icon { width: 16px; height: 16px; display: inline-block; }
          #painel a[data-kind="trello-link"]:hover{ filter: brightness(.98); transform: translateY(-2px); box-shadow: var(--shadow); }
-      </style>
-   </head>
-   <body>
-      <header class="header">
-         <h1><span class="first-letter">C</span>onsole <span class="first-letter-admin">A</span>dministrativo</h1>
-         <div class="subtitle">Gerencie chamados e usuários em uma única interface</div>
-      </header>
-      <nav class="tabs" role="tablist">
-         <button class="tab" role="tab" aria-selected="true" data-target="#painel">Painel de Chamados</button>
-         <button class="tab" role="tab" aria-selected="false" data-target="#cadastro">Cadastro de Usuários</button>
-      </nav>
-      <main>
-         <section id="painel" class="view active" role="tabpanel" aria-label="Painel de Chamados">
-            <div class="filters">
-               <div class="filter-group">
-                  <label>Representante</label>
-                  <select id="fRep" class="select">
-                     <option value="">Todos os representantes</option>
-                  </select>
-               </div>
-               <div class="filter-group">
-                  <label>Status</label>
-                  <select id="fStatus" class="select">
-                     <option value="">Todos os status</option>
-                     <option>Em aberto</option>
-                     <option>Em análise</option>
-                     <option>Aguardando versão</option>
-                     <option>Aguardando Requisição</option>
-                     <option>Finalizado</option>
-                     <option>Descartado</option>
-                  </select>
-               </div>
-               <div class="filter-group"><label>Data inicial</label><input id="fDe" type="date" class="input"></div>
-               <div class="filter-group"><label>Data final</label><input id="fAte" type="date" class="input"></div>
-               <div class="filter-group"><label>Buscar por</label><input id="fQ" class="input" placeholder="Título ou descrição..."></div>
-            </div>
-            <div class="actions">
-               <button class="btn btn--primary" id="btnAplicar">🔍 Aplicar Filtros</button>
-               <button class="btn" id="btnLimpar">🧹 Limpar</button>
-               <button class="btn" id="btnExportCsv"><img src="/static/csv.svg" alt="CSV" class="icon"> CSV</button>
-               <button class="btn" id="btnExportExcel"><img src="/static/xlsx.svg" alt="Excel" class="icon"> Excel</button>
-               <button class="btn btn--live push-right" id="btnRealtime"><span class="dot"></span> Monitoramento em Tempo Real</button>
-            </div>
-            <div class="count" id="countBox"></div>
-            <div class="table-container">
-               <div class="table-wrap">
-                  <table id="tbl">
-                     <thead>
-                        <tr>
-                           <th>Título</th>
-                           <th>Representante</th>
-                           <th>Status</th>
-                           <th>Detalhes</th>
-                           <th>Prioridade</th>
-                           <th>Descrição</th>
-                           <th>WhatsApp</th>
-                           <th>Ações</th>
-                        </tr>
-                     </thead>
-                     <tbody id="tbody">
-                        <tr>
-                           <td class="empty" colspan="8">
-                              <div class="loading"></div>
-                              Carregando chamados...
-                           </td>
-                        </tr>
-                     </tbody>
-                  </table>
-               </div>
-            </div>
-            <!-- Paginação -->
-            <div id="pagination" style="text-align:center;margin:16px 0; display:none;">
-               <button class="btn" id="btnMore">Carregar mais</button>
-            </div>
-            <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-               <div class="modal__box">
-                  <h3 class="modal__title" id="modalTitle">Modal</h3>
-                  <div class="modal__body" id="modalBody"></div>
-                  <div class="modal__actions"><button class="btn" id="btnFecharModal">Fechar</button></div>
-               </div>
-            </div>
-            <audio id="notifSound" src="/static/notify.mp3" preload="auto"></audio>
-         </section>
-         <section id="cadastro" class="view" role="tabpanel" aria-label="Cadastro de Usuários">
-            <div class="card">
-               <h3>Representantes</h3>
-               <form id="form-rep" class="row" onsubmit="return criarRep(event)" style="margin-bottom: 24px;">
-                  <input name="name" required placeholder="Nome do novo representante">
-                  <button class="btn" type="submit">Adicionar Representante</button>
-               </form>
-               <div class="table-container">
-                  <table id="t-reps">
-                     <thead>
-                        <tr>
-                           <th>Nome</th>
-                           <th style="width:140px;">Ações</th>
-                        </tr>
-                     </thead>
-                     <tbody>
-                        {% for r in reps %}
-                        <tr data-id="{{ r.id }}">
-                           <td><strong>{{ r.name }}</strong></td>
-                           <td class="actions">
-                              <form method="post" action="/admin/rep/{{ r.id }}/delete" onsubmit="return confirm('Remover representante? (somente se não houver usuários)')">
-                                 <button class="btn btn--ghost" type="submit">Remover</button>
-                              </form>
-                           </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                           <td colspan="2" class="empty-state">Nenhum representante cadastrado</td>
-                        </tr>
-                        {% endfor %}
-                     </tbody>
-                  </table>
-               </div>
-            </div>
-            <div class="card">
-               <h3>Usuários</h3>
-               <form id="form-user" class="row" onsubmit="return criarUser(event)" style="margin-bottom: 24px;">
-                  <select name="representative_id" required>
-                     <option value="">Selecione o representante</option>
-                     {% for r in reps %}
-                     <option value="{{ r.id }}">{{ r.name }}</option>
-                     {% endfor %}
-                  </select>
-                  <input name="username" required placeholder="Nome de usuário">
-                  <input name="password" type="password" required placeholder="Senha">
-                  <button class="btn" type="submit">Adicionar Usuário</button>
-               </form>
-               <div class="table-container">
-                  <table id="t-users">
-                     <thead>
-                        <tr>
-                           <th>Usuário</th>
-                           <th>Representante</th>
-                           <th style="width:140px;">Ações</th>
-                        </tr>
-                     </thead>
-                     <tbody>
-                        {% for u in users %}
-                        <tr data-id="{{ u.id }}">
-                           <td><strong>{{ u.username }}</strong></td>
-                           <td><span class="pill">{{ u.representative.name }}</span></td>
-                           <td class="actions">
-                              <form method="post" action="/admin/user/{{ u.id }}/delete" onsubmit="return confirm('Remover usuário?')">
-                                 <button class="btn btn--ghost" type="submit">Remover</button>
-                              </form>
-                           </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                           <td colspan="3" class="empty-state">Nenhum usuário cadastrado</td>
-                        </tr>
-                        {% endfor %}
-                     </tbody>
-                  </table>
-               </div>
-            </div>
-         </section>
-      </main>
-      <!-- ===== Helpers separados (fora de qualquer <script> aninhado) ===== -->
-      <script>
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1><span class="first-letter">C</span>onsole <span class="first-letter-admin">A</span>dministrativo</h1>
+    <div class="subtitle">
+      Gerencie chamados e usuários em uma única interface
+    </div>
+  </header>
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-target="#painel">Painel de Chamados</button> <button class="tab" role="tab" aria-selected="false" data-target="#cadastro">Cadastro de Usuários</button>
+  </nav>
+  <main>
+    <section id="painel" class="view active" role="tabpanel" aria-label="Painel de Chamados">
+      <div class="filters">
+        <div class="filter-group">
+          <label>Representante</label> <select id="fRep" class="select">
+            <option value="">
+              Todos os representantes
+            </option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Status</label> <select id="fStatus" class="select">
+            <option value="">
+              Todos os status
+            </option>
+            <option>
+              Em aberto
+            </option>
+            <option>
+              Em análise
+            </option>
+            <option>
+              Aguardando versão
+            </option>
+            <option>
+              Aguardando Requisição
+            </option>
+            <option>
+              Finalizado
+            </option>
+            <option>
+              Descartado
+            </option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Data inicial</label><input id="fDe" type="date" class="input">
+        </div>
+        <div class="filter-group">
+          <label>Data final</label><input id="fAte" type="date" class="input">
+        </div>
+        <div class="filter-group">
+          <label>Buscar por</label><input id="fQ" class="input" placeholder="Título ou descrição...">
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn--primary" id="btnAplicar">🔍 Aplicar Filtros</button> <button class="btn" id="btnLimpar">🧹 Limpar</button> <button class="btn" id="btnExportCsv"><img src="/static/csv.svg" alt="CSV" class="icon"> CSV</button> <button class="btn" id="btnExportExcel"><img src="/static/xlsx.svg" alt="Excel" class="icon"> Excel</button> <button class="btn btn--live push-right" id="btnRealtime">Monitoramento em Tempo Real</button>
+      </div>
+      <div class="count" id="countBox"></div>
+      <div class="table-container">
+        <div class="table-wrap">
+          <table id="tbl">
+            <thead>
+              <tr>
+                <th>Título</th>
+                <th>Representante</th>
+                <th>Status</th>
+                <th>Detalhes</th>
+                <th>Prioridade</th>
+                <th>Descrição</th>
+                <th>WhatsApp</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tbody">
+              <tr>
+                <td class="empty" colspan="8">
+                  <div class="loading"></div>Carregando chamados...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div id="pagination" style="text-align:center;margin:16px 0; display:none;">
+        <button class="btn" id="btnMore">Carregar mais</button>
+      </div>
+      <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal__box">
+          <h3 class="modal__title" id="modalTitle">Modal</h3>
+          <div class="modal__body" id="modalBody"></div>
+          <div class="modal__actions">
+            <button class="btn" id="btnFecharModal">Fechar</button>
+          </div>
+        </div>
+      </div><audio id="notifSound" src="/static/notify.mp3" preload="auto"></audio>
+    </section>
+    <section id="cadastro" class="view" role="tabpanel" aria-label="Cadastro de Usuários">
+      <div class="card">
+        <h3>Representantes</h3>
+        <form id="form-rep" class="row" onsubmit="return criarRep(event)" style="margin-bottom: 24px;" name="form-rep">
+          <input name="name" required="" placeholder="Nome do novo representante"> <button class="btn" type="submit">Adicionar Representante</button>
+        </form>
+        <div class="table-container">
+          {% for r in reps %} {% else %} {% endfor %}
+          <table id="t-reps">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th style="width:140px;">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-id="{{ r.id }}">
+                <td><strong>{{ r.name }}</strong></td>
+                <td class="actions">
+                  <form method="post" action="/admin/rep/{{%20r.id%20}}/delete" onsubmit="return confirm('Remover representante? (somente se não houver usuários)')">
+                    <button class="btn btn--ghost" type="submit">Remover</button>
+                  </form>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2" class="empty-state">Nenhum representante cadastrado</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Usuários</h3>
+        <form id="form-user" class="row" onsubmit="return criarUser(event)" style="margin-bottom: 24px;" name="form-user">
+          <select name="representative_id" required="">
+            <option value="">
+              Selecione o representante
+            </option>
+            <option value="{{ r.id }}">
+              {{ r.name }}
+            </option>
+          </select> <input name="username" required="" placeholder="Nome de usuário"> <input name="password" type="password" required="" placeholder="Senha"> <button class="btn" type="submit">Adicionar Usuário</button>
+        </form>
+        <div class="table-container">
+          {% for u in users %} {% else %} {% endfor %}
+          <table id="t-users">
+            <thead>
+              <tr>
+                <th>Usuário</th>
+                <th>Representante</th>
+                <th style="width:140px;">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-id="{{ u.id }}">
+                <td><strong>{{ u.username }}</strong></td>
+                <td><span class="pill">{{ u.representative.name }}</span></td>
+                <td class="actions">
+                  <form method="post" action="/admin/user/{{%20u.id%20}}/delete" onsubmit="return confirm('Remover usuário?')">
+                    <button class="btn btn--ghost" type="submit">Remover</button>
+                  </form>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="3" class="empty-state">Nenhum usuário cadastrado</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script>
          // Modal helpers
          let __timerId = null;
          function openModal(title, html) {
@@ -444,9 +453,10 @@
            try { window.open(url, '_self'); } catch { window.location.href = url; }
          }
          window.openWhatsApp = openWhatsApp;
-      </script>
-      <!-- ===== App principal ===== -->
-      <script>
+  </script> 
+  <script>
+
+
          (function checkServiceWorker(){
          const params = new URLSearchParams(location.search);
          if(params.get('nosw') === '1' && 'serviceWorker' in navigator){
@@ -925,55 +935,55 @@
          const url = '/api/chamados' + query + sep + 'offset=' + (page * pageSize) + '&limit=' + pageSize + '&_=' + cacheBuster;
          
          const fetchPromise = fetch(url, { signal: abortController.signal,
-           cache: 'no-store',
-           credentials: 'same-origin',
-           headers: { 
-             'Accept': 'application/json, text/plain;q=0.9, */*;q=0.8',
-             'Cache-Control': 'no-cache'
-           },
-           signal
+         cache: 'no-store',
+         credentials: 'same-origin',
+         headers: { 
+         'Accept': 'application/json, text/plain;q=0.9, */*;q=0.8',
+         'Cache-Control': 'no-cache'
+         },
+         signal
          });
          
          console.log('🌐 Fazendo fetch para:', url, 'Timestamp:', Date.now());
          return withTimeout(fetchPromise, (isRealTimeActive ? 15000 : 45000), abortController)
-           .then(async r => {
-             // Se não for a chamada mais recente, ignore
-             if(currentId !== latestLoadId) {
-               console.log('🗑️ Resposta descartada (stale):', currentId, 'vs', latestLoadId);
-               throw new Error('Stale');
-             }
-             
-             const ct = r.headers.get('content-type') || '';
-             const text = await r.text();
-             
-             if(!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText + '\n' + text.slice(0,800));
-             
-             let data;
-             try {
-               data = ct.includes('application/json') ? JSON.parse(text) : JSON.parse(text);
-             } catch(e){
-               throw new Error('Conteúdo não-JSON da API:\n' + text.slice(0,800));
-             }
-             
-             return Array.isArray(data) ? { items: data, total: data.length } : data;
-           })
-           .then(j => {
-             // Ignora se não for a resposta mais recente
-             if(currentId !== latestLoadId) {
-               console.log('🗑️ Dados descartados (stale):', currentId);
-               return;
-             }
-             
-             console.log('✅ Load concluído ID:', currentId);
-             
-             const items = (j.items || []).map(x => {
-               x.prioridade = x.prioridade || (x.descricao || '').match(/\*\*Prioridade:\*\*\s*([^\n]+)/i)?.[1] || '-';
-               return x;
-             });
-             
-             totalItems = j.total ?? items.length;
-             
-             if(append && page > 0){
+         .then(async r => {
+         // Se não for a chamada mais recente, ignore
+         if(currentId !== latestLoadId) {
+         console.log('🗑️ Resposta descartada (stale):', currentId, 'vs', latestLoadId);
+         throw new Error('Stale');
+         }
+         
+         const ct = r.headers.get('content-type') || '';
+         const text = await r.text();
+         
+         if(!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText + '\n' + text.slice(0,800));
+         
+         let data;
+         try {
+         data = ct.includes('application/json') ? JSON.parse(text) : JSON.parse(text);
+         } catch(e){
+         throw new Error('Conteúdo não-JSON da API:\n' + text.slice(0,800));
+         }
+         
+         return Array.isArray(data) ? { items: data, total: data.length } : data;
+         })
+         .then(j => {
+         // Ignora se não for a resposta mais recente
+         if(currentId !== latestLoadId) {
+         console.log('🗑️ Dados descartados (stale):', currentId);
+         return;
+         }
+         
+         console.log('✅ Load concluído ID:', currentId);
+         
+         const items = (j.items || []).map(x => {
+         x.prioridade = x.prioridade || (x.descricao || '').match(/\*\*Prioridade:\*\*\s*([^\n]+)/i)?.[1] || '-';
+         return x;
+         });
+         
+         totalItems = j.total ?? items.length;
+         
+         if(append && page > 0){
          const combined = cache.concat(items);
          // Limitar cache a 500 itens máximo para evitar vazamento de memória
          if(combined.length > 500){
@@ -988,6 +998,43 @@
          render(items, {silent});
          cache = items;
          }
+         
+         // Atualiza contagem
+         countBox.innerHTML = `📊 <strong>${totalItems}</strong> chamado${totalItems!==1?'s':''} no total`;
+         
+         // Mostra/oculta paginação
+         if(cache.length < totalItems){
+         pagination.style.display = 'block';
+         } else {
+         pagination.style.display = 'none';
+         }
+         })
+         .catch(err => {
+         // Se foi abortado ou é stale, não mostra erro
+         if(err.name === 'AbortError' || err.message === 'Stale') {
+         console.log('ℹ️ Requisição ignorada:', err.message);
+         return;
+         }
+         
+         console.error('❌ Erro no load:', err);
+         
+         const msg = String((err && err.message) || err);
+         countBox.innerHTML = '⚠️ Erro ao carregar dados';
+         
+         // Botão "Tentar novamente"
+         const retryBtn = '<button onclick="window.location.reload()" style="margin-top:8px;padding:8px 16px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;">🔄 Tentar Novamente</button>';
+         
+         tbody.innerHTML = '<tr><td class="empty" colspan="8">⚠️ Erro ao carregar chamados.<br><pre style="white-space:pre-wrap;margin-top:8px;color:#7f1d1d;background:#fff3f3;border:1px solid #fecaca;padding:10px;border-radius:8px;max-height:160px;overflow:auto">' +
+         msg.replace(/[<>&]/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[m])) +
+         '</pre>' + retryBtn + '</td></tr>';
+         
+         // Re-throw para que os chamadores saibam que houve erro
+         throw err;
+         })
+         .finally(() => {
+         const endTime = Date.now();
+         console.log('⏱️ Load FINALIZADO em:', (endTime - startTime), 'ms');
+         });
              
              // Atualiza contagem
              countBox.innerHTML = `📊 <strong>${totalItems}</strong> chamado${totalItems!==1?'s':''} no total`;
@@ -1111,8 +1158,10 @@
          } catch(e){}
          });
            })();
-      </script>
-      <script>
+  </script> 
+  <script>
+
+
          // Fecha monitoramento se sair do Painel (previne SSE/poll rodando em background)
          (function(){
            try {
@@ -1131,6 +1180,6 @@
              }));
            } catch(e){}
          })();
-      </script>
-   </body>
+  </script>
+</body>
 </html>
