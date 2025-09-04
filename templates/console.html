@@ -579,7 +579,7 @@
          abortController.abort(); 
          console.log('Fetch anterior abortado');
          } catch(e){}
-         abortController = null;
+         // Não zerar o abortController aqui, deixar para a função load criar um novo
          }
          }
          
@@ -635,13 +635,11 @@
            // Reinicia paginação
            page = 0;
            
-           // Recarrega com filtros atuais (aguarda finalização) com pequeno atraso
-setTimeout(() => {
-  load({ silent:false })
-    .then(() => { console.log('✅ Monitoramento desativado e dados recarregados'); })
-    .catch(err => { console.error('Erro ao recarregar após desativar:', err); });
-}, 120);
-}
+           // Recarrega com filtros atuais imediatamente
+         load({ silent:false })
+         .then(() => { console.log('✅ Monitoramento desativado e dados recarregados'); })
+         .catch(err => { console.error('Erro ao recarregar após desativar:', err); });
+         }
          }
          
          function startSSEConnection(){
@@ -874,29 +872,27 @@ setTimeout(() => {
          
              // Fetch com timeout e tratamento de retorno não-JSON
              function withTimeout(promise, ms, controller){
-  let to;
-  const timeout = new Promise((_, rej) => {
-    to = setTimeout(() => {
-      try { controller?.abort(); } catch(e){}
-      rej(new Error('Timeout após ' + ms + 'ms'));
-    }, ms);
-  });
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(to));
-}
-function load({silent=false, append=false}={}){
-  abortController = new AbortController();
-
-         console.log('📥 Load chamado:', {silent, append, page, isRealTimeActive});
+         let to;
+         const timeout = new Promise((_, rej) => {
+         to = setTimeout(() => {
+         try { controller?.abort(); } catch(e){}
+         rej(new Error('Timeout após ' + ms + 'ms'));
+         }, ms);
+         });
+         return Promise.race([promise, timeout]).finally(() => clearTimeout(to));
+         }
+         function load({silent=false, append=false}={}){
+         console.log('🔥 Load chamado:', {silent, append, page, isRealTimeActive});
          
          const currentId = ++latestLoadId;
          console.log('🆔 Load ID:', currentId);
          
          // Cancela chamada anterior
          if(abortController){
-           try {
-             abortController.abort();
-             console.log('🚫 Fetch anterior abortado');
-           } catch(e){}
+         try {
+         abortController.abort();
+         console.log('🚫 Fetch anterior abortado');
+         } catch(e){}
          }
          abortController = new AbortController();
          const { signal } = abortController;
@@ -1098,27 +1094,25 @@ function load({silent=false, append=false}={}){
          });
            })();
       </script>
-   
-<script>
-// Fecha monitoramento se sair do Painel (previne SSE/poll rodando em background)
-(function(){
-  try {
-    const tabs = document.querySelectorAll('.tab');
-    tabs.forEach(btn => btn.addEventListener('click', () => {
-      const target = btn.getAttribute('data-target') || '';
-      if (target !== '#painel' && typeof window.cleanupRealTime === 'function') {
-        try { window.cleanupRealTime(); } catch(e){}
-        if (typeof window.isRealTimeActive !== 'undefined') window.isRealTimeActive = false;
-        const liveBtn = document.getElementById('btnRealtime');
-        if (liveBtn) {
-          liveBtn.classList.remove('is-on');
-          liveBtn.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
-        }
-      }
-    }));
-  } catch(e){}
-})();
-</script>
-
-</body>
+      <script>
+         // Fecha monitoramento se sair do Painel (previne SSE/poll rodando em background)
+         (function(){
+           try {
+             const tabs = document.querySelectorAll('.tab');
+             tabs.forEach(btn => btn.addEventListener('click', () => {
+               const target = btn.getAttribute('data-target') || '';
+               if (target !== '#painel' && typeof window.cleanupRealTime === 'function') {
+                 try { window.cleanupRealTime(); } catch(e){}
+                 if (typeof window.isRealTimeActive !== 'undefined') window.isRealTimeActive = false;
+                 const liveBtn = document.getElementById('btnRealtime');
+                 if (liveBtn) {
+                   liveBtn.classList.remove('is-on');
+                   liveBtn.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
+                 }
+               }
+             }));
+           } catch(e){}
+         })();
+      </script>
+   </body>
 </html>
