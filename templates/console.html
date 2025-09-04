@@ -348,9 +348,8 @@
                      <option value="{{ r.id }}">{{ r.name }}</option>
                      {% endfor %}
                   </select>
-                  <!-- Adicione autocomplete explícito para melhorar UX e evitar avisos do navegador -->
-                  <input name="username" required placeholder="Nome de usuário" autocomplete="username">
-                  <input name="password" type="password" required placeholder="Senha" autocomplete="current-password">
+                  <input name="username" required placeholder="Nome de usuário">
+                  <input name="password" type="password" required placeholder="Senha">
                   <button class="btn" type="submit">Adicionar Usuário</button>
                </form>
                <div class="table-container">
@@ -585,65 +584,74 @@
          }
          
          
-             /**
-              * Alterna o monitoramento em tempo real.
-              * Ao ativar, força o filtro "Em aberto", reinicia a paginação e inicia SSE (ou fallback).
-              * Ao desativar, finaliza SSE/poll e recarrega a lista com filtros atuais.
-              */
-             function toggleRealTime(){
-         console.log('🔄 Toggle realtime:', !isRealTimeActive);
-         
-         if(!isRealTimeActive){
-           // ATIVANDO monitoramento
-           isRealTimeActive = true;
-           
-           // Força filtro "Em aberto"
-           try {
-             statusSelect.value = 'Em aberto';
-             if(typeof applyStatusSelectColors === 'function') applyStatusSelectColors();
-           } catch(e){}
-           
-           // Visual do botão
-           btnRealtime.classList.add('is-on');
-           btnRealtime.textContent = 'Parar Monitoramento';
-           
-           // Limpa conexões anteriores
-           cleanupRealTime();
-           
-           // Reinicia paginação e carrega
-           page = 0;
-           
-           // Carrega dados primeiro, DEPOIS inicia SSE
-           load({silent:false}).then(() => {
-             if(!isRealTimeActive) return; // Se foi desativado enquanto carregava
-             
-             startSSEConnection();
-           }).catch(err => {
-             console.error('Erro ao carregar para monitoramento:', err);
-           });
-           
-         } else {
-           // DESATIVANDO monitoramento
-           isRealTimeActive = false;
-           
-           // Visual do botão
-           btnRealtime.classList.remove('is-on');
-           btnRealtime.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
-           
-           // Limpa SSE/poll
-           cleanupRealTime();
-           
-           // Reinicia paginação
-           page = 0;
-           
-           // Recarrega com filtros atuais (aguarda finalização) com pequeno atraso
-setTimeout(() => {
-  load({ silent:false })
-    .then(() => { console.log('✅ Monitoramento desativado e dados recarregados'); })
-    .catch(err => { console.error('Erro ao recarregar após desativar:', err); });
-}, 120);
-}
-         }
+            /**
+             * Alterna o monitoramento em tempo real.
+             * Esta versão replica a lógica do console_antigo.html utilizando um simples
+             * polling a cada 6 segundos em vez de SSE. Ao ativar, força o filtro
+             * "Em aberto", reinicia a página e inicia o intervalo. Ao desativar,
+             * encerra o intervalo e recarrega os dados com os filtros atuais.
+             */
+            function toggleRealTime(){
+        console.log('🔄 Toggle realtime:', !isRealTimeActive);
+
+        if(!isRealTimeActive){
+          // ATIVANDO monitoramento
+          isRealTimeActive = true;
+
+          // Força filtro "Em aberto" e limpa outros filtros
+          try {
+            statusSelect.value = 'Em aberto';
+            deInput.value = '';
+            ateInput.value = '';
+            qInput.value = '';
+            if(typeof applyStatusSelectColors === 'function') applyStatusSelectColors();
+          } catch(e){}
+
+          // Visual do botão
+          btnRealtime.classList.add('is-on');
+          btnRealtime.textContent = 'Parar Monitoramento';
+
+          // Limpa quaisquer conexões anteriores (SSE ou polling)
+          cleanupRealTime();
+
+          // Reinicia paginação
+          page = 0;
+
+          // Carrega dados e, após finalizado, inicia o polling de 6s
+          load({silent:false}).then(() => {
+            if(!isRealTimeActive) return; // Se foi desativado enquanto carregava
+            // Inicia polling simples a cada 6 segundos
+            realTimeInterval = setInterval(() => {
+              if(isRealTimeActive) {
+                load({silent:true});
+              }
+            }, 6000);
+          }).catch(err => {
+            console.error('Erro ao carregar para monitoramento:', err);
+          });
+
+        } else {
+          // DESATIVANDO monitoramento
+          isRealTimeActive = false;
+
+          // Visual do botão
+          btnRealtime.classList.remove('is-on');
+          btnRealtime.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
+
+          // Encerra polling/SSE e aborta fetch pendente
+          cleanupRealTime();
+
+          // Reinicia paginação
+          page = 0;
+
+          // Aguarda um pequeno atraso e recarrega com filtros atuais
+          setTimeout(() => {
+            load({ silent:false })
+              .then(() => { console.log('✅ Monitoramento desativado e dados recarregados'); })
+              .catch(err => { console.error('Erro ao recarregar após desativar:', err); });
+          }, 120);
+        }
+            }
          
          function startSSEConnection(){
          if(!isRealTimeActive) return;
@@ -1012,11 +1020,25 @@ function load({silent=false, append=false}={}){
          
              // Aplica filtros: reseta a página e recarrega
              btnAplicar.addEventListener('click', () => {
+               // Se o monitoramento estiver ativo, desativa sem recarregar automaticamente
+               if(isRealTimeActive){
+                 isRealTimeActive = false;
+                 cleanupRealTime();
+                 btnRealtime.classList.remove('is-on');
+                 btnRealtime.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
+               }
                page = 0;
                load({silent:false});
              });
              // Limpa filtros: reseta campos, página e recarrega
              btnLimpar.addEventListener('click', () => {
+               // Se o monitoramento estiver ativo, desativa sem recarregar automaticamente
+               if(isRealTimeActive){
+                 isRealTimeActive = false;
+                 cleanupRealTime();
+                 btnRealtime.classList.remove('is-on');
+                 btnRealtime.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
+               }
                repSelect.value = '';
                statusSelect.value = '';
                deInput.value = '';
