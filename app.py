@@ -302,9 +302,7 @@ def trello_get(path: str, params: dict):
 _trello_cache: dict = {}
 
 
-def cached_trello_get(
-    path: str, params: dict, ttl: int = 30
-):  # reduzir TTL para 30 segundos
+def cached_trello_get(path: str, params: dict, ttl: int = 30):
     key = (path, tuple(sorted((params or {}).items())))
     now = time.monotonic()
     entry = _trello_cache.get(key)
@@ -316,15 +314,13 @@ def cached_trello_get(
             return entry[0]
 
     # Limpar cache muito antigo
-    # Limpar cache muito antigo
-
-
-if len(_trello_cache) > 30:  # Reduzir limite
-    cutoff = now - ttl  # Usar TTL simples, não TTL*2
-    old_keys = [k for k, v in _trello_cache.items() if v[1] < cutoff]
-    for k in old_keys:
-        _trello_cache.pop(k, None)
-    print(f"[CACHE] Limpou {len(old_keys)} entradas antigas")
+    if len(_trello_cache) > 30:  # Reduzir limite
+        cutoff = now - ttl  # Usar TTL simples
+        old_keys = [k for k, v in _trello_cache.items() if v[1] < cutoff]
+        for k in old_keys:
+            _trello_cache.pop(k, None)
+        if app.debug:
+            print(f"[CACHE] Limpou {len(old_keys)} entradas antigas")
 
     if app.debug:
         print(f"[CACHE] MISS {path}")
@@ -334,7 +330,6 @@ if len(_trello_cache) > 30:  # Reduzir limite
         _trello_cache[key] = (value, now)
         return value
     except Exception as e:
-        # Em caso de erro, retorna lista vazia para não travar
         if app.debug:
             print(f"[CACHE] Erro no Trello: {e}")
         if "lists" in path:
@@ -745,7 +740,7 @@ def api_chamados_change_status(card_id: str):
     except Exception as e:
         return jsonify(success=False, message="Erro ao mover card", detail=str(e)), 500
     response = jsonify(success=True)
-    
+
 
 # ---------------------------------------------------------------------------
 # Endpoint de streaming (Server-Sent Events) para monitoramento em tempo real.
@@ -763,49 +758,54 @@ def api_chamados_stream():
                 try:
                     yield 'data: {"ping": true}\n\n'  # heartbeat
                     time.sleep(1)
-                
-                cards = cached_trello_get(
-                    f"/boards/{BOARD_ID}/cards",
-                    params={
-                        "fields": "idList,dateLastActivity,id",
-                        "attachments": "false",
-                        "members": "false",
-                    },
-                )
-                consecutive_errors = 0  # reset contador de erros
-            except Exception as e:
-                consecutive_errors += 1
-                if consecutive_errors > 3:
-                    yield f'data: {{"error": "Muitos erros consecutivos"}}\n\n'
-                    break
-                cards = []
-            # Calcula um hash simples das IDs + última atividade para detectar mudanças
-            try:
-                summary = [
-                    {
-                        "id": c.get("id"),
-                        "idList": c.get("idList"),
-                        "last": c.get("dateLastActivity"),
-                    }
-                    for c in cards
-                ]
-                new_hash = hashlib.md5(
-                    json.dumps(summary, sort_keys=True).encode()
-                ).hexdigest()
-            except Exception:
-                new_hash = None
-            if last_hash is None:
-                last_hash = new_hash
-            elif new_hash != last_hash:
-                last_hash = new_hash
-                yield f'data: {{"update": true}}\n\n'
-            time.sleep(15)
+
+                    cards = cached_trello_get(
+                        f"/boards/{BOARD_ID}/cards",
+                        params={
+                            "fields": "idList,dateLastActivity,id",
+                            "attachments": "false",
+                            "members": "false",
+                        },
+                    )
+                    consecutive_errors = 0  # reset contador de erros
+                except Exception as e:
+                    consecutive_errors += 1
+                    if consecutive_errors > 3:
+                        yield f'data: {{"error": "Muitos erros consecutivos"}}\n\n'
+                        break
+                    cards = []
+
+                # Calcula hash para detectar mudanças
+                try:
+                    summary = [
+                        {
+                            "id": c.get("id"),
+                            "idList": c.get("idList"),
+                            "last": c.get("dateLastActivity"),
+                        }
+                        for c in cards
+                    ]
+                    new_hash = hashlib.md5(
+                        json.dumps(summary, sort_keys=True).encode()
+                    ).hexdigest()
+                except Exception:
+                    new_hash = None
+
+                if last_hash is None:
+                    last_hash = new_hash
+                elif new_hash != last_hash:
+                    last_hash = new_hash
+                    yield f'data: {{"update": true}}\n\n'
+
+                time.sleep(15)
         except GeneratorExit:
             # Cliente desconectou
-            break
+            pass
         finally:
             # Cleanup final se necessário
             pass
+
+    return Response(event_stream(), mimetype="text/event-stream")
 
 
 # ---------------------------------------------------------------------------
@@ -955,7 +955,6 @@ def api_representantes():
     response = jsonify([r.name for r in reps])
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     return response
-
 
 
 # -----------------------------------------------------------------------------
