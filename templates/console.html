@@ -589,7 +589,7 @@
               * Ao ativar, força o filtro "Em aberto", reinicia a paginação e inicia SSE (ou fallback).
               * Ao desativar, finaliza SSE/poll e recarrega a lista com filtros atuais.
               */
-             function toggleRealTime(){
+             async async function toggleRealTime(){
          console.log('🔄 Toggle realtime:', !isRealTimeActive);
          
          if(!isRealTimeActive){
@@ -622,8 +622,21 @@
            });
            
          } else {
-           // DESATIVANDO monitoramento
-           isRealTimeActive = false;
+         // DESATIVANDO
+         isRealTimeActive = false;
+         btnRealtime.classList.remove('is-on');
+         btnRealtime.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
+         
+         cleanupRealTime();   // fecha SSE/poll e aborta fetch pendente
+         page = 0;
+         
+         // >>> pequeno respiro para garantir que SSE/fetch anterior morreu
+         await new Promise(r => setTimeout(r, 120));
+         
+         await load({ silent:false });
+         console.log('✅ Monitoramento desativado e dados recarregados');
+         }
+         }
            
            // Visual do botão
            btnRealtime.classList.remove('is-on');
@@ -635,12 +648,12 @@
            // Reinicia paginação
            page = 0;
            
-           // Recarrega com filtros atuais (aguarda finalização)
-           load({silent:false}).then(() => {
-             console.log('✅ Monitoramento desativado e dados recarregados');
-           }).catch(err => {
-             console.error('Erro ao recarregar após desativar:', err);
-           });
+           // >>> pequeno respiro para garantir que SSE/fetch anterior morreu
+           await new Promise(r => setTimeout(r, 120));
+
+           await load({ silent:false });
+           console.log('✅ Monitoramento desativado e dados recarregados');
+});
          }
          }
          
@@ -872,8 +885,18 @@
                return p.length ? '?'+p.join('&') : '';
              }
          
-             // Fetch com timeout e tratamento de retorno não-JSON
-             function withTimeout(p, ms){ return Promise.race([p, new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timeout após '+ms+'ms')), ms))]); }
+             // SUBSTITUIR a função com abort real
+         function withTimeout(promise, ms, controller){
+         let to;
+         const timeout = new Promise((_, rej) => {
+         to = setTimeout(() => {
+         try { controller?.abort(); } catch(e){}
+         rej(new Error('Timeout após ' + ms + 'ms'));
+         }, ms);
+         });
+         return Promise.race([promise, timeout]).finally(() => clearTimeout(to));
+         }
+         
          
              function load({silent=false, append=false}={}){
          console.log('📥 Load chamado:', {silent, append, page, isRealTimeActive});
@@ -911,7 +934,7 @@
            signal
          });
          
-         return withTimeout(fetchPromise, 15000)
+         return withTimeout(fetchPromise, (isRealTimeActive ? 15000 : 45000), abortController)
            .then(async r => {
              // Se não for a chamada mais recente, ignore
              if(currentId !== latestLoadId) {
@@ -1088,5 +1111,27 @@
          });
            })();
       </script>
-   </body>
+   
+<script>
+// Extra safety: if dev exposed window.cleanupRealTime and window.isRealTimeActive, stop realtime when leaving Painel tab.
+(function(){
+  try {
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach(btn => btn.addEventListener('click', () => {
+      const target = btn.getAttribute('data-target') || '';
+      if (target !== '#painel' && typeof window.cleanupRealTime === 'function') {
+        try { window.cleanupRealTime(); } catch(e){}
+        if (typeof window.isRealTimeActive !== 'undefined') window.isRealTimeActive = false;
+        const liveBtn = document.getElementById('btnRealtime');
+        if (liveBtn) {
+          liveBtn.classList.remove('is-on');
+          liveBtn.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
+        }
+      }
+    }));
+  } catch(e){}
+})();
+</script>
+
+</body>
 </html>
