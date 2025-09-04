@@ -957,6 +957,118 @@ def api_representantes():
     return response
 
 
+# ---------------------------------------------------------------------------
+# Endpoint to fetch newly created Trello cards since a given timestamp.
+#
+# This endpoint accepts a `since` query parameter (ISO8601 string) and returns
+# a JSON array of cards that were created after this timestamp.  The creation
+# time is inferred from the card's ID (MongoDB ObjectId format).  Only cards
+# belonging to the configured list (LIST_NAME / TRELLO_LIST_ID) are returned.
+# It is intended to be polled periodically by the front‑end to detect new
+# cards in near real time.
+@app.route("/api/trello/new-cards")
+def api_trello_new_cards():
+    """
+    Returns newly created cards on the Trello board/list since a given time.
+    Expects a 'since' query parameter in ISO 8601 format (e.g. 2024-08-01T12:34:56Z).
+    The response is a list of cards with fields similar to /api/chamados.
+    """
+    if not API_KEY or not TOKEN or not BOARD_ID:
+        return (
+            jsonify(
+                {
+                    "error": "Configuração do Trello incompleta. "
+                    "Verifique TRELLO_KEY, TRELLO_TOKEN e TRELLO_BOARD.",
+                    "items": [],
+                }
+            ),
+            500,
+        )
+
+    since_raw = request.args.get("since", "")
+    since_dt = None
+    if since_raw:
+        try:
+            # Normaliza timezone: Trello usa UTC com 'Z'
+            # datetime.fromisoformat não aceita 'Z', converte para '+00:00'
+            s = since_raw.replace("Z", "+00:00")
+            since_dt = datetime.fromisoformat(s)
+        except Exception:
+            since_dt = None
+
+    # Se 'since' ausente ou inválido, retorna lista vazia
+    if not since_dt:
+        return jsonify([])  # nada a fazer
+
+    try:
+        # Buscar lista de cartões do board com TTL reduzido para captar rapidamente
+        cards = cached_trello_get(
+            f"/boards/{BOARD_ID}/cards",
+            params={
+                "fields": "name,desc,idList,dateLastActivity,shortUrl,id",
+                "attachments": "false",
+                "members": "false",
+            },
+            ttl=5,  # cache curto para detectar novos cartões
+        )
+
+        # Mapeia listas apenas uma vez
+        lists = cached_trello_get(f"/boards/{BOARD_ID}/lists", params={}, ttl=60)
+        id_to_list = {l.get("id"): l.get("name", "") for l in lists}
+        target_list_id = get_list_id()
+
+        new_cards = []
+        for c in cards:
+            # Filtra somente a lista configurada se definida
+            if target_list_id and c.get("idList") != target_list_id:
+                continue
+            cid = c.get("id")
+            created_str = _infer_created_from_trello_id(cid)
+            if not created_str:
+                continue
+            try:
+                created_dt = datetime.fromisoformat(created_str.replace("Z", "+00:00"))
+            except Exception:
+                continue
+            # Only cards after 'since'
+            if created_dt <= since_dt:
+                continue
+
+            list_name = id_to_list.get(c.get("idList"), "")
+            status = LIST_STATUS_MAP.get(list_name, "Em aberto")
+            new_cards.append(
+                {
+                    "id": cid,
+                    "titulo": (c.get("name") or "").strip(),
+                    "descricao": c.get("desc") or "",
+                    "lista": list_name,
+                    "status": status,
+                    "url": c.get("shortUrl"),
+                    "ultima_atividade": c.get("dateLastActivity"),
+                    "created_at": created_str,
+                }
+            )
+
+        # Ordena por criação (opcional) e retorna
+        new_cards.sort(key=lambda x: x.get("created_at"))
+        # A resposta é um array simples (sem metadata) para facilitar o front‑end
+        return jsonify(new_cards)
+
+    except Exception as e:
+        # Oculta tokens/chaves na mensagem
+        err_msg = str(e)
+        err_msg = re.sub(r"[A-Za-z0-9]{32,}", "***", err_msg)
+        return (
+            jsonify(
+                {
+                    "error": "Erro ao consultar o Trello: " + err_msg,
+                    "items": [],
+                }
+            ),
+            500,
+        )
+
+
 # -----------------------------------------------------------------------------
 # Login / Logout (USUÁRIO)
 # -----------------------------------------------------------------------------

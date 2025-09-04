@@ -548,6 +548,39 @@
          
              // Fonte para conexões SSE
              let realtimeSource = null;
+
+            // -- Integração Trello --
+            // Mantém o timestamp da última verificação de cartões no Trello.  Esse valor será
+            // enviado como parâmetro `since` para que o servidor retorne apenas os cartões
+            // criados após esse horário. Ajuste o endpoint `/api/trello/new-cards` no backend
+            // para lidar com esse parâmetro e retornar um array de cartões novos.
+            let lastTrelloCheck = new Date().toISOString();
+
+            /**
+             * Busca cartões recém‑criados no Trello desde o momento em que lastTrelloCheck foi
+             * atualizado. Essa função envia um fetch para `/api/trello/new-cards?since=...`
+             * que deve ser implementado no seu backend com a lógica de consultar a API do Trello.
+             * Ao receber uma lista de cartões, você pode inserir cada novo cartão na tabela
+             * ou emitir alguma notificação. Esta implementação não altera a UI diretamente,
+             * ficando a cargo do desenvolvedor tratar os resultados retornados.
+             */
+            async function fetchNewTrelloCards() {
+              try {
+                const url = '/api/trello/new-cards?since=' + encodeURIComponent(lastTrelloCheck);
+                const response = await fetch(url, { credentials: 'same-origin', cache: 'no-store' });
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                const data = await response.json();
+                if (Array.isArray(data) && data.length) {
+                  // TODO: Trate cada cartão retornado conforme necessário.
+                  // Por exemplo, inserir na tabela existente ou exibir um alerta.
+                  console.log('📦 Novos cartões Trello recebidos:', data);
+                }
+                // Atualiza o timestamp para a próxima consulta
+                lastTrelloCheck = new Date().toISOString();
+              } catch (err) {
+                console.warn('Erro ao buscar cartões do Trello:', err);
+              }
+            }
          
              /**
               * Encerra qualquer monitoramento em tempo real (SSE ou poll) e aborta requisições pendentes.
@@ -623,7 +656,9 @@
             // Inicia polling simples a cada 6 segundos
             realTimeInterval = setInterval(() => {
               if(isRealTimeActive) {
-                load({silent:true});
+                // Carrega chamados normalmente e também verifica novos cartões Trello
+                load({ silent: true });
+                fetchNewTrelloCards();
               }
             }, 6000);
           }).catch(err => {
