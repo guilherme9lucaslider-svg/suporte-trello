@@ -538,178 +538,48 @@
              };
          
              // Controle de cache e estado
-             let cache = []; let lastKeys = new Set();
-             let isRealTimeActive = false;
-             let realTimeInterval = null;
-         
-             // Cancelamento de chamadas pendentes
-             let abortController = null;
-             let latestLoadId = 0;
-         
-             // Fonte para conexões SSE
-             let realtimeSource = null;
-         
-             /**
-              * Encerra qualquer monitoramento em tempo real (SSE ou poll) e aborta requisições pendentes.
-              */
-             function cleanupRealTime(){
-         console.log('🧹 Iniciando cleanup...');
-         
-         // Fecha SSE se aberto
-         if(realtimeSource){
-         try { 
-         realtimeSource.close(); 
-         console.log('✅ SSE fechado');
-         } catch(e){
-         console.warn('⚠️ Erro ao fechar SSE:', e);
-         }
-         realtimeSource = null;
-         }
-         
-         // Cancela intervalo de fallback
-         if(realTimeInterval){
-         clearInterval(realTimeInterval);
-         realTimeInterval = null;
-         console.log('✅ Polling interrompido');
-         }
-         
-         // Aborta fetch pendente
-         if(abortController){
-         try { 
-         abortController.abort(); 
-         console.log('Fetch anterior abortado');
-         } catch(e){}
-         abortController = null;
-         }
-         }
-         
-         
-             /**
-              * Alterna o monitoramento em tempo real.
-              * Ao ativar, força o filtro "Em aberto", reinicia a paginação e inicia SSE (ou fallback).
-              * Ao desativar, finaliza SSE/poll e recarrega a lista com filtros atuais.
-              */
-             function toggleRealTime(){
-         console.log('🔄 Toggle realtime:', !isRealTimeActive);
-         
-         if(!isRealTimeActive){
-           // ATIVANDO monitoramento
-           isRealTimeActive = true;
-           
-           // Força filtro "Em aberto"
-           try {
-             statusSelect.value = 'Em aberto';
-             if(typeof applyStatusSelectColors === 'function') applyStatusSelectColors();
-           } catch(e){}
-           
-           // Visual do botão
-           btnRealtime.classList.add('is-on');
-           btnRealtime.textContent = 'Parar Monitoramento';
-           
-           // Limpa conexões anteriores
-           cleanupRealTime();
-           
-           // Reinicia paginação e carrega
-           page = 0;
-           
-           // Carrega dados primeiro, DEPOIS inicia SSE
-           load({silent:false}).then(() => {
-             if(!isRealTimeActive) return; // Se foi desativado enquanto carregava
              
-             startSSEConnection();
-           }).catch(err => {
-             console.error('Erro ao carregar para monitoramento:', err);
-           });
-           
-         } else {
-           // DESATIVANDO monitoramento
-           isRealTimeActive = false;
-           
-           // Visual do botão
-           btnRealtime.classList.remove('is-on');
-           btnRealtime.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
-           
-           // Limpa SSE/poll
-           cleanupRealTime();
-           
-           // Reinicia paginação
-           page = 0;
-           
-           // Recarrega com filtros atuais (aguarda finalização) com pequeno atraso
-setTimeout(() => {
-  load({ silent:false })
-    .then(() => { console.log('✅ Monitoramento desativado e dados recarregados'); })
-    .catch(err => { console.error('Erro ao recarregar após desativar:', err); });
-}, 120);
+// Estado e cache
+let cache = []; let lastKeys = new Set();
+let isRealTimeActive = false;
+let realtimeTimer = null;
+
+// Abortar fetch pendente (se existir)
+let abortController = null;
+function cleanupRealTime(){ try{ if (realtimeTimer) { clearInterval(realtimeTimer); realtimeTimer=null; } }catch(e){} }
+
+// Inicia monitoramento por polling simples (herdado do console_antigo.html)
+function startRealtime(){
+  isRealTimeActive = true;
+  btnRealtime.classList.add('is-on');
+  btnRealtime.innerHTML = '⏹ Parar Monitoramento';
+  // Força filtro "Em aberto" e limpa campos de data/busca
+  try {
+    statusSelect.value = 'Em aberto';
+    if(typeof applyStatusSelectColors === 'function') applyStatusSelectColors();
+    if (deInput) deInput.value='';
+    if (ateInput) ateInput.value='';
+    if (qInput) qInput.value='';
+  } catch(e){}
+  // Carrega agora e agenda polling a cada 6s
+  load({silent:false}).then(()=>{
+    if (realtimeTimer) clearInterval(realtimeTimer);
+    realtimeTimer = setInterval(() => load({silent:true}), 6000);
+  });
 }
-         }
-         
-         function startSSEConnection(){
-         if(!isRealTimeActive) return;
-         
-         let reconnectAttempts = 0; // Declarar no escopo da função principal
-         
-         const handleSSEMessage = function(ev){
-         try {
-         const data = JSON.parse(ev.data || '{}');
-         if(data && data.update){
-         load({silent:true});
-         }
-         } catch(err){}
-         };
-         
-         const reconnectSSE = function(){
-         if(!isRealTimeActive) return;
-         
-         try {
-         if(realtimeSource) {
-         realtimeSource.close();
-         realtimeSource = null;
-         }
-         
-         realtimeSource = new EventSource('/api/chamados/stream');
-         
-         realtimeSource.onopen = function(){
-         console.log('✅ SSE conectado');
-         reconnectAttempts = 0; // Reset contador quando conecta com sucesso
-         };
-         
-         realtimeSource.onmessage = handleSSEMessage;
-         
-         realtimeSource.onerror = function(err){
-         console.warn('Erro no SSE:', err);
-         if(realtimeSource) {
-          realtimeSource.close();
-          realtimeSource = null;
-         }
-         
-         if(isRealTimeActive) {
-          reconnectAttempts++;
-          const delay = Math.min(Math.pow(2, reconnectAttempts) * 5000, 60000);
-          setTimeout(() => {
-            if(isRealTimeActive) {
-              reconnectSSE();
-            }
-          }, delay);
-         }
-         };
-         
-         } catch(e) {
-         console.warn('Falha ao criar SSE:', e);
-         if(!realTimeInterval && isRealTimeActive) {
-         realTimeInterval = setInterval(() => {
-          if(isRealTimeActive) load({silent:true});
-         }, 30000);
-         }
-         }
-         };
-         
-         reconnectSSE(); // Iniciar a primeira conexão
-         }
-             // Conecta evento do botão
-             btnRealtime.addEventListener('click', toggleRealTime);
-         
-             function buildRowHTML(it,i){
+
+function stopRealtime(){
+  isRealTimeActive = false;
+  btnRealtime.classList.remove('is-on');
+  btnRealtime.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
+  if (realtimeTimer){ clearInterval(realtimeTimer); realtimeTimer=null; }
+}
+
+// Botão toggle
+btnRealtime.addEventListener('click', () => {
+  if (realtimeTimer) stopRealtime(); else startRealtime();
+});
+function buildRowHTML(it,i){
                const prio = it.prioridade || parsePriority(it.descricao);
                const trelloLink = it.url ? (`
                  <a data-kind="trello-link" class="btn" href="${esc(it.url)}" target="_blank" rel="noopener">
