@@ -635,13 +635,10 @@
            // Reinicia paginação
            page = 0;
            
-           // Recarrega com filtros atuais (aguarda finalização) com pequeno atraso
-setTimeout(() => {
-  load({ silent:false })
-    .then(() => { console.log('✅ Monitoramento desativado e dados recarregados'); })
-    .catch(err => { console.error('Erro ao recarregar após desativar:', err); });
-}, 0);
-}
+           // Recarrega com filtros atuais (imediato, sem bloquear UI)
+           setTimeout(() => { load({ silent:false }); }, 0);
+});
+         }
          }
          
          function startSSEConnection(){
@@ -873,18 +870,10 @@ setTimeout(() => {
              }
          
              // Fetch com timeout e tratamento de retorno não-JSON
-             function withTimeout(promise, ms, controller){
-  let to;
-  const timeout = new Promise((_, rej) => {
-    to = setTimeout(() => {
-      try { controller?.abort(); } catch(e){}
-      rej(new Error('Timeout após ' + ms + 'ms'));
-    }, ms);
-  });
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(to));
-}
-function load({silent=false, append=false}={}){
-  console.log('📥 Load chamado:', {silent, append, page, isRealTimeActive});
+             function withTimeout(p, ms){ return Promise.race([p, new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timeout após '+ms+'ms')), ms))]); }
+         
+             function load({silent=false, append=false}={}){
+         console.log('📥 Load chamado:', {silent, append, page, isRealTimeActive});
          
          const currentId = ++latestLoadId;
          console.log('🆔 Load ID:', currentId);
@@ -919,7 +908,7 @@ function load({silent=false, append=false}={}){
            signal
          });
          
-         return withTimeout(fetchPromise, (isRealTimeActive ? 1000 : 5000), abortController)
+         return withTimeout(fetchPromise, 15000)
            .then(async r => {
              // Se não for a chamada mais recente, ignore
              if(currentId !== latestLoadId) {
@@ -1096,93 +1085,5 @@ function load({silent=false, append=false}={}){
          });
            })();
       </script>
-   
-<script>
-// Fecha monitoramento se sair do Painel (previne SSE/poll rodando em background)
-(function(){
-  try {
-    const tabs = document.querySelectorAll('.tab');
-    tabs.forEach(btn => btn.addEventListener('click', () => {
-      const target = btn.getAttribute('data-target') || '';
-      if (target !== '#painel' && typeof window.cleanupRealTime === 'function') {
-        try { window.cleanupRealTime(); } catch(e){}
-        if (typeof window.isRealTimeActive !== 'undefined') window.isRealTimeActive = false;
-        const liveBtn = document.getElementById('btnRealtime');
-        if (liveBtn) {
-          liveBtn.classList.remove('is-on');
-          liveBtn.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
-        }
-      }
-    }));
-  } catch(e){}
-})();
-</script>
-
-
-<script>
-// === Legacy realtime logic: polling only, immediate stop ===
-(function(){
-  try {
-    // If these are already defined somewhere, we'll wrap safely
-    const painel = document.getElementById('painel');
-    if (!painel) return;
-    const btnRealtime = painel.querySelector('#btnRealtime');
-    const statusSelect = painel.querySelector('#fStatus');
-    const deInput = painel.querySelector('#fDe');
-    const ateInput = painel.querySelector('#fAte');
-    const qInput = painel.querySelector('#fQ');
-    const tbody = painel.querySelector('#tbody');
-
-    // Attempt to access existing functions/vars from main scope
-    let _load = (window.load || (function(){ return Promise.resolve(); }));
-    let realTimeInterval = null;
-    window.isRealTimeActive = false;
-
-    function startRealtime(){
-      window.isRealTimeActive = true; // note: will fix capitalization after insert
-      try {
-        btnRealtime && btnRealtime.classList.add('is-on');
-        if (btnRealtime) btnRealtime.innerHTML = '⏹ Parar Monitoramento';
-        if (statusSelect) statusSelect.value = 'Em aberto';
-        if (deInput) deInput.value='';
-        if (ateInput) ateInput.value='';
-        if (qInput)  qInput.value='';
-      } catch(e){}
-
-      return _load({silent:false}).then(()=>{
-        if (realTimeInterval) clearInterval(realTimeInterval);
-        realTimeInterval = setInterval(()=> _load({silent:true}), 6000);
-      });
-    }
-
-    function stopRealtime(){
-      window.isRealTimeActive = false; // will fix capitalization
-      try {
-        btnRealtime && btnRealtime.classList.remove('is-on');
-        if (btnRealtime) btnRealtime.innerHTML = '🔴 Monitoramento em Tempo Real';
-      } catch(e){}
-
-      if (realTimeInterval) { clearInterval(realTimeInterval); realTimeInterval = null; }
-
-      // Immediate UX; reload in background
-      setTimeout(()=> { _load({silent:false}); }, 0);
-    }
-
-    // Bind button to legacy logic
-    if (btnRealtime) {
-      btnRealtime.onclick = function(){
-        if (window.isRealTimeActive) stopRealtime(); else startRealtime();
-      };
-    }
-
-    // Expose for other handlers if needed
-    window.startRealtime = startRealtime;
-    window.stopRealtime  = stopRealtime;
-  } catch(e){ console.error(e); }
-})();
-</script>
-
-
-<script>try{ if (typeof load === 'function') window.load = load; }catch(e){}</script>
-</body>
+   </body>
 </html>
