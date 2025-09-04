@@ -622,18 +622,22 @@
            });
            
          } else {
-           // DESATIVANDO monitoramento
-           isRealTimeActive = false;
-           
-           // Visual do botão
-           btnRealtime.classList.remove('is-on');
-           btnRealtime.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
-           
-           // Limpa SSE/poll
-           cleanupRealTime();
-           
-           // Reinicia paginação
-           page = 0;
+         // DESATIVANDO monitoramento
+         console.log('🔴 INICIANDO DESATIVAÇÃO - Timestamp:', Date.now());
+         isRealTimeActive = false;
+         
+         // Visual do botão
+         btnRealtime.classList.remove('is-on');
+         btnRealtime.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
+         
+         // Limpa SSE/poll
+         console.log('🧹 Chamando cleanupRealTime...');
+         cleanupRealTime();
+         console.log('✅ cleanupRealTime concluído');
+         
+         // Reinicia paginação
+         page = 0;
+         console.log('📄 Página resetada para 0');
            
            // Recarrega com filtros atuais imediatamente
          load({ silent:false })
@@ -882,7 +886,8 @@
          return Promise.race([promise, timeout]).finally(() => clearTimeout(to));
          }
          function load({silent=false, append=false}={}){
-         console.log('🔥 Load chamado:', {silent, append, page, isRealTimeActive});
+         const startTime = Date.now();
+         console.log('🔥 Load INICIADO:', {silent, append, page, isRealTimeActive, startTime});
          
          const currentId = ++latestLoadId;
          console.log('🆔 Load ID:', currentId);
@@ -896,6 +901,11 @@
          }
          abortController = new AbortController();
          const { signal } = abortController;
+         
+         .finally(() => {
+         const endTime = Date.now();
+         console.log('⏱️ Load FINALIZADO em:', (endTime - startTime), 'ms');
+         });
          
          // Exibe spinner se necessário
          if(!silent){
@@ -917,6 +927,7 @@
            signal
          });
          
+         console.log('🌐 Fazendo fetch para:', url, 'Timestamp:', Date.now());
          return withTimeout(fetchPromise, (isRealTimeActive ? 15000 : 45000), abortController)
            .then(async r => {
              // Se não for a chamada mais recente, ignore
