@@ -388,18 +388,26 @@
          // Modal helpers
          let __timerId = null;
          function openModal(title, html) {
-           const modal = document.getElementById('modal');
-           const modalTitle = document.getElementById('modalTitle');
-           const modalBody = document.getElementById('modalBody');
-           if (__timerId) { clearInterval(__timerId); __timerId = null; }
+         const modal = document.getElementById('modal');
+         const modalTitle = document.getElementById('modalTitle');
+         const modalBody = document.getElementById('modalBody');
+         // Limpeza mais robusta do timer
+         if (window.__timerId) { 
+         clearInterval(window.__timerId); 
+         window.__timerId = null; 
+         }
            modalTitle.textContent = title;
            modalBody.innerHTML = html;
            modal.style.display = 'flex';
          }
          function closeModal(){
-           const modal = document.getElementById('modal');
-           if (__timerId) { clearInterval(__timerId); __timerId = null; }
-           modal.style.display = 'none';
+         const modal = document.getElementById('modal');
+         // Garantir limpeza do timer ao fechar
+         if (window.__timerId) { 
+         clearInterval(window.__timerId); 
+         window.__timerId = null; 
+         }
+         modal.style.display = 'none';
          }
          document.getElementById('btnFecharModal')?.addEventListener('click', closeModal);
          document.getElementById('modal')?.addEventListener('click', (e)=>{ if (e.target.id==='modal') closeModal(); });
@@ -549,31 +557,32 @@
          
          // Fecha SSE se aberto
          if(realtimeSource){
-           try { 
-             realtimeSource.close(); 
-             console.log('✅ SSE fechado');
-           } catch(e){
-             console.warn('⚠️ Erro ao fechar SSE:', e);
-           }
-           realtimeSource = null;
+         try { 
+         realtimeSource.close(); 
+         console.log('✅ SSE fechado');
+         } catch(e){
+         console.warn('⚠️ Erro ao fechar SSE:', e);
+         }
+         realtimeSource = null;
          }
          
          // Cancela intervalo de fallback
          if(realTimeInterval){
-           clearInterval(realTimeInterval);
-           realTimeInterval = null;
-           console.log('✅ Polling interrompido');
+         clearInterval(realTimeInterval);
+         realTimeInterval = null;
+         console.log('✅ Polling interrompido');
          }
          
          // Aborta fetch pendente
          if(abortController){
-           try { 
-             abortController.abort(); 
-             console.log('✅ Fetch anterior abortado');
-           } catch(e){}
-           abortController = null;
+         try { 
+         abortController.abort(); 
+         console.log('Fetch anterior abortado');
+         } catch(e){}
+         abortController = null;
          }
          }
+         
          
              /**
               * Alterna o monitoramento em tempo real.
@@ -638,56 +647,64 @@
          function startSSEConnection(){
          if(!isRealTimeActive) return;
          
+         let reconnectAttempts = 0; // Declarar no escopo da função principal
+         
          const handleSSEMessage = function(ev){
-           try {
-             const data = JSON.parse(ev.data || '{}');
-             if(data && data.update){
-               load({silent:true});
-             }
-           } catch(err){}
+         try {
+         const data = JSON.parse(ev.data || '{}');
+         if(data && data.update){
+         load({silent:true});
+         }
+         } catch(err){}
          };
          
          const reconnectSSE = function(){
-           if(!isRealTimeActive) return;
-           
-           try {
-             if(realtimeSource) {
-               realtimeSource.close();
-               realtimeSource = null;
-             }
-             
-             realtimeSource = new EventSource('/api/chamados/stream');
-             
-             realtimeSource.onopen = function(){
-               console.log('✅ SSE conectado');
-             };
-             
-             realtimeSource.onmessage = handleSSEMessage;
-             
-             realtimeSource.onerror = function(err){
-               console.warn('⚠️ Erro no SSE:', err);
-               if(realtimeSource) {
-                 realtimeSource.close();
-                 realtimeSource = null;
-               }
-               // Reagenda reconexão em 10 segundos
-               if(isRealTimeActive) {
-                 setTimeout(reconnectSSE, 10000);
-               }
-             };
-             
-           } catch(e) {
-             console.warn('Falha ao criar SSE:', e);
-             // Fallback para polling
-             if(!realTimeInterval && isRealTimeActive) {
-               realTimeInterval = setInterval(() => {
-                 if(isRealTimeActive) load({silent:true});
-               }, 30000);
-             }
-           }
+         if(!isRealTimeActive) return;
+         
+         try {
+         if(realtimeSource) {
+         realtimeSource.close();
+         realtimeSource = null;
+         }
+         
+         realtimeSource = new EventSource('/api/chamados/stream');
+         
+         realtimeSource.onopen = function(){
+         console.log('✅ SSE conectado');
+         reconnectAttempts = 0; // Reset contador quando conecta com sucesso
          };
          
-         reconnectSSE();
+         realtimeSource.onmessage = handleSSEMessage;
+         
+         realtimeSource.onerror = function(err){
+         console.warn('Erro no SSE:', err);
+         if(realtimeSource) {
+          realtimeSource.close();
+          realtimeSource = null;
+         }
+         
+         if(isRealTimeActive) {
+          reconnectAttempts++;
+          const delay = Math.min(Math.pow(2, reconnectAttempts) * 5000, 60000);
+          setTimeout(() => {
+            if(isRealTimeActive) {
+              reconnectSSE();
+            }
+          }, delay);
+         }
+         };
+         
+         } catch(e) {
+         console.warn('Falha ao criar SSE:', e);
+         if(!realTimeInterval && isRealTimeActive) {
+         realTimeInterval = setInterval(() => {
+          if(isRealTimeActive) load({silent:true});
+         }, 30000);
+         }
+         }
+         };
+         
+         reconnectSSE(); // Iniciar a primeira conexão
          }
              // Conecta evento do botão
              btnRealtime.addEventListener('click', toggleRealTime);
@@ -776,20 +793,32 @@
              });
          
              // Mudar status: envia requisição e atualiza a tabela
-             tbody.addEventListener('change', async (e) => {
-           const sel = e.target.closest('select.status-select');
-           if (!sel) return;
+             let pendingStatusChanges = new Map(); // Adicionar no início do initPainel
          
-           const prev = sel.getAttribute('data-prev') || sel.value; // guarda último valor conhecido
-           const newStatus = sel.value;
-           const cardId = sel.getAttribute('data-id');
-           if (!cardId) return;
+         tbody.addEventListener('change', async (e) => {
+         const sel = e.target.closest('select.status-select');
+         if (!sel) return;
          
-           // feedback visual imediato
-           sel.style.color = statusColor(newStatus);
-           sel.disabled = true;
+         const cardId = sel.getAttribute('data-id');
+         if (!cardId) return;
          
-           try {
+         // Evitar múltiplas mudanças simultâneas no mesmo card
+         if (pendingStatusChanges.has(cardId)) {
+         sel.value = sel.getAttribute('data-prev') || sel.value;
+         return;
+         }
+         
+         const prev = sel.getAttribute('data-prev') || sel.value;
+         const newStatus = sel.value;
+         
+         // Marcar como pendente
+         pendingStatusChanges.set(cardId, true);
+         
+         // feedback visual imediato
+         sel.style.color = statusColor(newStatus);
+         sel.disabled = true;
+         
+         try {
              const r = await fetch('/api/chamados/' + encodeURIComponent(cardId) + '/status', {
                method: 'POST',
                headers: { 'Content-Type': 'application/json' },
@@ -813,9 +842,11 @@
              sel.style.color = statusColor(prev);
              alert('Erro ao atualizar status: ' + err.message);
            } finally {
-             sel.disabled = false;
-           }
-             });
+         // Sempre remover do mapa de pendentes
+         pendingStatusChanges.delete(cardId);
+         sel.disabled = false;
+         }
+         });
          
              function render(items,{silent=false}={}){
                const prev = lastKeys;
@@ -880,7 +911,7 @@
            signal
          });
          
-         return withTimeout(fetchPromise, 45000)
+         return withTimeout(fetchPromise, 15000)
            .then(async r => {
              // Se não for a chamada mais recente, ignore
              if(currentId !== latestLoadId) {
@@ -919,13 +950,20 @@
              totalItems = j.total ?? items.length;
              
              if(append && page > 0){
-               const combined = cache.concat(items);
-               render(combined, {silent});
-               cache = combined;
-             } else {
-               render(items, {silent});
-               cache = items;
-             }
+         const combined = cache.concat(items);
+         // Limitar cache a 500 itens máximo para evitar vazamento de memória
+         if(combined.length > 500){
+         const trimmed = combined.slice(-500);
+         render(trimmed, {silent});
+         cache = trimmed;
+         } else {
+         render(combined, {silent});
+         cache = combined;
+         }
+         } else {
+         render(items, {silent});
+         cache = items;
+         }
              
              // Atualiza contagem
              countBox.innerHTML = `📊 <strong>${totalItems}</strong> chamado${totalItems!==1?'s':''} no total`;
@@ -1039,8 +1077,15 @@
          
              // Garante que qualquer conexão SSE ou pesquisa em curso seja encerrada ao sair ou atualizar a página.
              window.addEventListener('beforeunload', () => {
-               try { cleanupRealTime(); } catch(e){}
-             });
+         try { 
+         cleanupRealTime(); 
+         // Aborta qualquer fetch ainda pendente
+         if(abortController) {
+         abortController.abort();
+         abortController = null;
+         }
+         } catch(e){}
+         });
            })();
       </script>
    </body>

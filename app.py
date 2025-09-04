@@ -10,7 +10,19 @@ from pathlib import Path
 from datetime import datetime, timezone
 from functools import wraps
 
-from flask import Flask, Response, abort, jsonify, make_response, render_template, request, send_from_directory, session, redirect, url_for
+from flask import (
+    Flask,
+    Response,
+    abort,
+    jsonify,
+    make_response,
+    render_template,
+    request,
+    send_from_directory,
+    session,
+    redirect,
+    url_for,
+)
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -33,7 +45,7 @@ IS_DESKTOP = os.getenv("APP_DESKTOP", "0") == "1"
 BASE_DIR = Path(__file__).resolve().parent
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB
+app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB
 
 # ==== Mostrar/ocultar botão "Baixar aplicativo" ====
 def _compute_show_download(req=None):
@@ -44,22 +56,30 @@ def _compute_show_download(req=None):
     except Exception:
         ua = ""
     is_electron = "electron" in ua
-    hide = os.getenv("HIDE_DOWNLOAD_BUTTON", "0") == "1" or os.getenv("APP_DESKTOP", "0") == "1"
+    hide = (
+        os.getenv("HIDE_DOWNLOAD_BUTTON", "0") == "1"
+        or os.getenv("APP_DESKTOP", "0") == "1"
+    )
     return not (is_electron or hide)
+
 
 @app.context_processor
 def inject_show_download():
     return {"show_download": _compute_show_download()}
+
+
 app.secret_key = os.getenv("APP_SECRET", "super-secret-key")  # troque em produção
 # Não manter sessões permanentes: o usuário deverá fazer login novamente
 app.config["SESSION_PERMANENT"] = False
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
 
 def _no_store(resp):
     resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     resp.headers["Pragma"] = "no-cache"
     resp.headers["Expires"] = "0"
     return resp
+
 
 # -----------------------------------------------------------------------------
 # Database (SQLite + SQLAlchemy)
@@ -72,17 +92,21 @@ app.config["SQLALCHEMY_DATABASE_URI"] = db_uri or f"sqlite:///{DB_PATH}"
 
 db = SQLAlchemy(app)
 
+
 class Representative(db.Model):
     __tablename__ = "representatives"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(160), unique=True, nullable=False)
+
 
 class User(db.Model):
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(160), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
-    representative_id = db.Column(db.Integer, db.ForeignKey("representatives.id"), nullable=False)
+    representative_id = db.Column(
+        db.Integer, db.ForeignKey("representatives.id"), nullable=False
+    )
     representative = db.relationship("Representative", backref="users")
 
     def set_password(self, pwd: str):
@@ -91,16 +115,33 @@ class User(db.Model):
     def check_password(self, pwd: str) -> bool:
         return check_password_hash(self.password_hash, pwd)
 
+
 with app.app_context():
     db.create_all()
     # Seed representatives se vazio (lista do seu projeto)
     if Representative.query.count() == 0:
         PRESET_REPS = [
-            "Host.com","2RTI Soluções","MT Solutions","Unai System","Multitech",
-            "Mad Automação","Tecnuve Soluções","GoSystem Automação","RJ Soluções",
-            "Raizes Tecnologia","Webside Sistemas","Web System Norte","Online Soluções",
-            "Delane","Supriserv","MS Tech Soluções","Use Tecnologia","Unity Automação",
-            "Digital RF Tecnologia","Connecta Informática","R.A Soluções"
+            "Host.com",
+            "2RTI Soluções",
+            "MT Solutions",
+            "Unai System",
+            "Multitech",
+            "Mad Automação",
+            "Tecnuve Soluções",
+            "GoSystem Automação",
+            "RJ Soluções",
+            "Raizes Tecnologia",
+            "Webside Sistemas",
+            "Web System Norte",
+            "Online Soluções",
+            "Delane",
+            "Supriserv",
+            "MS Tech Soluções",
+            "Use Tecnologia",
+            "Unity Automação",
+            "Digital RF Tecnologia",
+            "Connecta Informática",
+            "R.A Soluções",
         ]
         for name in PRESET_REPS:
             db.session.add(Representative(name=name))
@@ -112,11 +153,14 @@ with app.app_context():
 ADMIN_USER = os.getenv("ADMIN_USER", "lider")
 ADMIN_PASS = os.getenv("ADMIN_PASS", "2018")
 
+
 def admin_logged():
     return session.get("admin") is True
 
+
 def serialize_rep(rep):
     return {"id": rep.id, "name": rep.name}
+
 
 def serialize_user(u):
     return {
@@ -126,43 +170,45 @@ def serialize_user(u):
         "representative_id": u.representative_id,
     }
 
+
 def wants_json():
-    xr = request.headers.get('X-Requested-With','')
-    if xr.lower() == 'xmlhttprequest':
+    xr = request.headers.get("X-Requested-With", "")
+    if xr.lower() == "xmlhttprequest":
         return True
-    accept = request.headers.get('Accept','')
-    return 'application/json' in accept
+    accept = request.headers.get("Accept", "")
+    return "application/json" in accept
+
 
 # -----------------------------------------------------------------------------
 # Trello / Downloads / Configs diversas
 # -----------------------------------------------------------------------------
-API_KEY   = os.getenv("TRELLO_KEY", "")
-TOKEN     = os.getenv("TRELLO_TOKEN", "")
-BOARD_ID  = os.getenv("TRELLO_BOARD", "fGQqUBuw")
+API_KEY = os.getenv("TRELLO_KEY", "")
+TOKEN = os.getenv("TRELLO_TOKEN", "")
+BOARD_ID = os.getenv("TRELLO_BOARD", "fGQqUBuw")
 LIST_NAME = os.getenv("TRELLO_LIST", "Chamados abertos")
 TRELLO_BASE = "https://api.trello.com/1"
 
 # Resolve automaticamente o LIST_ID (env TRELLO_LIST_ID > busca por nome no board)
 def get_list_id():
-    lid = app.config.get('TRELLO_LIST_ID')
+    lid = app.config.get("TRELLO_LIST_ID")
     if lid:
         return lid
     lid = os.getenv("TRELLO_LIST_ID")
     if lid:
-        app.config['TRELLO_LIST_ID'] = lid
+        app.config["TRELLO_LIST_ID"] = lid
         return lid
     try:
         resp = requests.get(
             f"{TRELLO_BASE}/boards/{BOARD_ID}/lists",
             params={"key": API_KEY, "token": TOKEN},
-            timeout=15
+            timeout=15,
         )
         if resp.ok:
             for lst in resp.json():
-                if (lst.get("name","") or "").lower() == LIST_NAME.lower():
+                if (lst.get("name", "") or "").lower() == LIST_NAME.lower():
                     lid = lst.get("id")
                     if lid:
-                        app.config['TRELLO_LIST_ID'] = lid
+                        app.config["TRELLO_LIST_ID"] = lid
                         return lid
         if app.debug:
             print(f"[WARN] Lista '{LIST_NAME}' não encontrada no board {BOARD_ID}.")
@@ -171,14 +217,31 @@ def get_list_id():
             print("[WARN] Falha ao resolver LIST_ID:", e)
     return None
 
+
 try:
-    LABEL_IDS = json.loads(os.getenv("TRELLO_LABELS","{}"))
+    LABEL_IDS = json.loads(os.getenv("TRELLO_LABELS", "{}"))
     if not isinstance(LABEL_IDS, dict):
         LABEL_IDS = {}
 except Exception:
     LABEL_IDS = {}
-HIDE_DOWNLOAD_BUTTON = (os.getenv("HIDE_DOWNLOAD_BUTTON", "0") == "1")
-ALLOWED_EXT = {"png","jpg","jpeg","gif","webp","pdf","txt","csv","xlsx","xls","doc","docx","zip","rar","7z"}
+HIDE_DOWNLOAD_BUTTON = os.getenv("HIDE_DOWNLOAD_BUTTON", "0") == "1"
+ALLOWED_EXT = {
+    "png",
+    "jpg",
+    "jpeg",
+    "gif",
+    "webp",
+    "pdf",
+    "txt",
+    "csv",
+    "xlsx",
+    "xls",
+    "doc",
+    "docx",
+    "zip",
+    "rar",
+    "7z",
+}
 
 LIST_STATUS_MAP = {
     "Chamados abertos": "Em aberto",
@@ -192,6 +255,7 @@ LIST_STATUS_MAP = {
 # Status string to Trello list name (inverse of LIST_STATUS_MAP).
 # Used for moving cards between lists via the Trello API.
 STATUS_TO_LIST_NAME = {v: k for k, v in LIST_STATUS_MAP.items()}
+
 
 def _infer_created_from_trello_id(tid: str) -> str | None:
     """
@@ -210,14 +274,18 @@ def _infer_created_from_trello_id(tid: str) -> str | None:
     except Exception:
         return None
 
+
 def _allowed(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXT
+
 
 def trello_get(path: str, params: dict):
     p = {"key": API_KEY, "token": TOKEN}
     p.update(params or {})
     try:
-        r = requests.get(f"{TRELLO_BASE}{path}", params=p, timeout=10)  # reduzir timeout
+        r = requests.get(
+            f"{TRELLO_BASE}{path}", params=p, timeout=10
+        )  # reduzir timeout
         if app.debug:
             print(f"[TRELLO][GET] {path} -> {r.status_code}")
         if not r.ok:
@@ -230,8 +298,13 @@ def trello_get(path: str, params: dict):
     except Exception as e:
         raise RuntimeError(f"[TRELLO][GET {path}] Erro: {str(e)}")
 
+
 _trello_cache: dict = {}
-def cached_trello_get(path: str, params: dict, ttl: int = 30):  # reduzir TTL para 30 segundos
+
+
+def cached_trello_get(
+    path: str, params: dict, ttl: int = 30
+):  # reduzir TTL para 30 segundos
     key = (path, tuple(sorted((params or {}).items())))
     now = time.monotonic()
     entry = _trello_cache.get(key)
@@ -241,17 +314,21 @@ def cached_trello_get(path: str, params: dict, ttl: int = 30):  # reduzir TTL pa
             if app.debug:
                 print(f"[CACHE] HIT {path} age={age:.1f}s")
             return entry[0]
-    
+
     # Limpar cache muito antigo
-    if len(_trello_cache) > 50:
-        cutoff = now - (ttl * 2)
-        old_keys = [k for k, v in _trello_cache.items() if v[1] < cutoff]
-        for k in old_keys:
-            _trello_cache.pop(k, None)
-    
+    # Limpar cache muito antigo
+
+
+if len(_trello_cache) > 30:  # Reduzir limite
+    cutoff = now - ttl  # Usar TTL simples, não TTL*2
+    old_keys = [k for k, v in _trello_cache.items() if v[1] < cutoff]
+    for k in old_keys:
+        _trello_cache.pop(k, None)
+    print(f"[CACHE] Limpou {len(old_keys)} entradas antigas")
+
     if app.debug:
         print(f"[CACHE] MISS {path}")
-    
+
     try:
         value = trello_get(path, params)
         _trello_cache[key] = (value, now)
@@ -260,11 +337,12 @@ def cached_trello_get(path: str, params: dict, ttl: int = 30):  # reduzir TTL pa
         # Em caso de erro, retorna lista vazia para não travar
         if app.debug:
             print(f"[CACHE] Erro no Trello: {e}")
-        if 'lists' in path:
+        if "lists" in path:
             return []
-        elif 'cards' in path:
+        elif "cards" in path:
             return []
         raise e
+
 
 def trello_post(path: str, params: dict):
     p = {"key": API_KEY, "token": TOKEN}
@@ -279,6 +357,7 @@ def trello_post(path: str, params: dict):
     except Exception:
         raise RuntimeError(f"[TRELLO][POST {path}] Resposta não é JSON: {r.text[:300]}")
 
+
 def trello_attach_file(card_id: str, filename: str, fileobj, mimetype: str = None):
     url = f"{TRELLO_BASE}/cards/{card_id}/attachments"
     files = {"file": (filename, fileobj, mimetype or "application/octet-stream")}
@@ -289,6 +368,7 @@ def trello_attach_file(card_id: str, filename: str, fileobj, mimetype: str = Non
     if not r.ok:
         print("[TRELLO][ATTACH] Falha:", r.status_code, r.text[:300])
 
+
 def trello_clear_cover(card_id: str):
     try:
         url = f"{TRELLO_BASE}/cards/{card_id}/cover"
@@ -296,7 +376,7 @@ def trello_clear_cover(card_id: str):
             url,
             params={"key": API_KEY, "token": TOKEN},
             json={"idAttachment": None},
-            timeout=15
+            timeout=15,
         )
         if app.debug:
             print(f"[TRELLO][COVER] clear -> {r.status_code}")
@@ -304,6 +384,7 @@ def trello_clear_cover(card_id: str):
             print("[TRELLO][COVER] Falha ao remover capa:", r.status_code, r.text[:300])
     except Exception as e:
         print("[TRELLO][COVER] Exceção ao remover capa:", e)
+
 
 # -----------------------------------------------------------------------------
 # Auth Guard (público: painel e API; cadastro exige login; admin exige admin)
@@ -313,12 +394,12 @@ def _auth_guard():
     path = request.path or "/"
     # Público (sem sessão de user/admin)
     if (
-        path.startswith("/static/") or
-        path in {"/static", "/sw.js", "/favicon.ico"} or
-        path.startswith("/api/chamados") or
-        path.startswith("/api/representantes") or
-        path == "/login" or
-        path.startswith("/admin/login")
+        path.startswith("/static/")
+        or path in {"/static", "/sw.js", "/favicon.ico"}
+        or path.startswith("/api/chamados")
+        or path.startswith("/api/representantes")
+        or path == "/login"
+        or path.startswith("/admin/login")
     ):
         return
 
@@ -337,28 +418,33 @@ def _auth_guard():
         if "/admin" not in ref:
             return redirect(url_for("admin_home"))
 
+
 # -----------------------------------------------------------------------------
 # Páginas principais (usuário)
 # -----------------------------------------------------------------------------
 @app.route("/")
 def index():
     # exige login fresco para abrir o cadastro
-    if not session.get('user') or not session.pop('fresh_cadastro', None):
-        return redirect(url_for('login'))
+    if not session.get("user") or not session.pop("fresh_cadastro", None):
+        return redirect(url_for("login"))
     show_download = (not IS_DESKTOP) and (not HIDE_DOWNLOAD_BUTTON)
     rep = session.get("representante", "")
     reps = []
-    if session.get('admin') and not rep:
+    if session.get("admin") and not rep:
         reps = Representative.query.order_by(Representative.name.asc()).all()
-    return render_template("index.html", show_download=show_download, representante_logado=rep, reps=reps)
+    return render_template(
+        "index.html", show_download=show_download, representante_logado=rep, reps=reps
+    )
+
 
 @app.route("/painel")
 def painel_redirect():
     return redirect(url_for("admin_home"), code=308)
+
+
 # ==== Helpers de WhatsApp ====
 def _only_digits(s: str) -> str:
     return re.sub(r"\D+", "", s or "")
-
 
 
 def _parse_rep_from_desc(desc: str) -> str:
@@ -376,7 +462,6 @@ def _parse_rep_from_desc(desc: str) -> str:
     return (m.group(1).strip() if m else "").strip()
 
 
-
 def _normalize_phone_br(raw: str) -> str:
     """
     Normaliza para E.164 BR sem o '+', ex.: 5511987654321.
@@ -392,6 +477,7 @@ def _normalize_phone_br(raw: str) -> str:
         d = "55" + sem_ddi[:2] + "9" + sem_ddi[2:]
     return d
 
+
 def _parse_whatsapp_from_desc(desc: str) -> str:
     """
     Procura um WhatsApp no texto (padrão **Whatsapp:** ... ou número solto).
@@ -406,7 +492,9 @@ def _parse_whatsapp_from_desc(desc: str) -> str:
         return n if re.fullmatch(r"\d{12,13}", n) else ""
 
     # 2) fallback: primeira sequência que parece telefone BR
-    m2 = re.search(r"(?:\+?55\s*)?(?:\(?\d{2}\)?\s*)?(?:9?\s*\d{4})[-\s]?\d{4}", text, flags=re.I)
+    m2 = re.search(
+        r"(?:\+?55\s*)?(?:\(?\d{2}\)?\s*)?(?:9?\s*\d{4})[-\s]?\d{4}", text, flags=re.I
+    )
     if m2:
         n = _normalize_phone_br(m2.group(0))
         return n if re.fullmatch(r"\d{12,13}", n) else ""
@@ -418,70 +506,80 @@ def _parse_whatsapp_from_desc(desc: str) -> str:
 # Nova implementação do endpoint /api/chamados com suporte a id, created_at,
 # paginação via offset/limit e filtragem.
 
+
 def _iso_date_only(s: str):
     try:
         return datetime.strptime(s, "%Y-%m-%d").date()
     except Exception:
         return None
 
+
 @app.route("/api/chamados")
 def api_chamados():
-    f_rep   = (request.args.get("representante") or "").strip()
-    f_stat  = (request.args.get("status") or "").strip()
-    f_de    = _iso_date_only(request.args.get("de") or "")
-    f_ate   = _iso_date_only(request.args.get("ate") or "")
-    f_q     = (request.args.get("q") or "").strip().lower()
-    
+    f_rep = (request.args.get("representante") or "").strip()
+    f_stat = (request.args.get("status") or "").strip()
+    f_de = _iso_date_only(request.args.get("de") or "")
+    f_ate = _iso_date_only(request.args.get("ate") or "")
+    f_q = (request.args.get("q") or "").strip().lower()
+
     try:
         offset = int(request.args.get("offset", "0"))
-        if offset < 0: offset = 0
-    except: 
+        if offset < 0:
+            offset = 0
+    except:
         offset = 0
     try:
         limit = int(request.args.get("limit", "0"))
-        if limit < 0: limit = 0
-    except: 
+        if limit < 0:
+            limit = 0
+    except:
         limit = 0
-    
+
     # Force representative filter for non-admin users
     if session.get("user") and not session.get("admin"):
         f_rep = session.get("representante", "").strip()
-    
+
     # Verificação rápida de conectividade
     if not API_KEY or not TOKEN or not BOARD_ID:
-        return jsonify({
-            "error": "Configuração do Trello incompleta",
-            "total": 0, 
-            "items": []
-        }), 500
+        return (
+            jsonify(
+                {"error": "Configuração do Trello incompleta", "total": 0, "items": []}
+            ),
+            500,
+        )
 
     # Pagination params
     try:
         offset = int(request.args.get("offset", "0"))
-        if offset < 0: offset = 0
-    except: offset = 0
+        if offset < 0:
+            offset = 0
+    except:
+        offset = 0
     try:
         limit = int(request.args.get("limit", "0"))
-        if limit < 0: limit = 0
-    except: limit = 0
-    
+        if limit < 0:
+            limit = 0
+    except:
+        limit = 0
+
     # Force representative filter for non-admin users
     if session.get("user") and not session.get("admin"):
         f_rep = session.get("representante", "").strip()
-    
+
     # Verificar credenciais
     if not API_KEY or not TOKEN or not BOARD_ID:
-        return jsonify({
-            "error": "Configuração do Trello incompleta",
-            "total": 0, 
-            "items": []
-        }), 500
-    
+        return (
+            jsonify(
+                {"error": "Configuração do Trello incompleta", "total": 0, "items": []}
+            ),
+            500,
+        )
+
     try:
         # Build list mapping
         lists = cached_trello_get(f"/boards/{BOARD_ID}/lists", params={})
         id_to_list = {l["id"]: l.get("name", "") for l in lists}
-        
+
         # Fetch cards
         cards = cached_trello_get(
             f"/boards/{BOARD_ID}/cards",
@@ -494,31 +592,36 @@ def api_chamados():
     except Exception as e:
         if app.debug:
             print(f"[API] Erro Trello: {e}")
-        return jsonify({
-            "error": "Erro ao conectar com Trello: " + str(e),
-            "total": 0,
-            "items": []
-        }), 500
-    
+        return (
+            jsonify(
+                {
+                    "error": "Erro ao conectar com Trello: " + str(e),
+                    "total": 0,
+                    "items": [],
+                }
+            ),
+            500,
+        )
+
     items = []
     for c in cards:
         titulo = (c.get("name") or "").strip()
-        desc   = c.get("desc") or ""
+        desc = c.get("desc") or ""
         lista_id = c.get("idList") or ""
-        lista  = id_to_list.get(lista_id, "")
+        lista = id_to_list.get(lista_id, "")
         status = LIST_STATUS_MAP.get(lista, "Em aberto")
-        url    = c.get("shortUrl")
+        url = c.get("shortUrl")
         dt_raw = c.get("dateLastActivity")
         ultima = dt_raw
         representante = _parse_rep_from_desc(desc)
         whats = _parse_whatsapp_from_desc(desc)
-        
+
         # Filters
         if f_rep and representante != f_rep:
             continue
         if f_stat and status != f_stat:
             continue
-            
+
         # Date range filter
         if (f_de or f_ate) and dt_raw:
             try:
@@ -529,48 +632,48 @@ def api_chamados():
                     continue
             except Exception:
                 pass
-                
+
         # Text search
         if f_q:
             base = (titulo + "\n" + desc).lower()
             if f_q not in base:
                 continue
-        
+
         card_id = c.get("id")
         created_at = _infer_created_from_trello_id(card_id)
-        items.append({
-            "id": card_id,
-            "titulo": titulo,
-            "descricao": desc,
-            "representante": representante,
-            "lista": lista,
-            "status": status,
-            "url": url,
-            "ultima_atividade": ultima,
-            "whatsapp": whats,
-            "created_at": created_at,
-        })
-    
+        items.append(
+            {
+                "id": card_id,
+                "titulo": titulo,
+                "descricao": desc,
+                "representante": representante,
+                "lista": lista,
+                "status": status,
+                "url": url,
+                "ultima_atividade": ultima,
+                "whatsapp": whats,
+                "created_at": created_at,
+            }
+        )
+
     total = len(items)
     paginated = items
     if limit:
-        paginated = items[offset:offset + limit]
-    
+        paginated = items[offset : offset + limit]
+
     if app.debug:
         print(f"[API] /api/chamados -> {total} itens (retornando {len(paginated)})")
 
     response = jsonify({"total": total, "items": paginated})
-    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
     return response
-    
-    return jsonify({"total": total, "items": paginated})
 
 
-#---------------------------------------------
-# Diagnostico 
-#---------------------------------------------
+# ---------------------------------------------
+# Diagnostico
+# ---------------------------------------------
 @app.route("/api/diagnostico")
 def api_diagnostico():
     """Endpoint para testar conectividade com Trello"""
@@ -580,10 +683,10 @@ def api_diagnostico():
         "board_id_configured": bool(BOARD_ID),
         "trello_connection": False,
     }
-    
+
     if not API_KEY or not TOKEN or not BOARD_ID:
         return jsonify(diagnostics)
-    
+
     try:
         lists = trello_get(f"/boards/{BOARD_ID}/lists", {})
         diagnostics["trello_connection"] = True
@@ -591,8 +694,9 @@ def api_diagnostico():
         diagnostics["list_names"] = [l.get("name") for l in lists]
     except Exception as e:
         diagnostics["error"] = str(e)
-    
+
     return jsonify(diagnostics)
+
 
 # ---------------------------------------------------------------------------
 # Endpoint para mudar o status (lista) de um card específico. Recebe JSON com
@@ -634,10 +738,14 @@ def api_chamados_change_status(card_id: str):
             timeout=30,
         )
         if not resp.ok:
-            return jsonify(success=False, message="Falha ao mover card", detail=resp.text), 500
+            return (
+                jsonify(success=False, message="Falha ao mover card", detail=resp.text),
+                500,
+            )
     except Exception as e:
         return jsonify(success=False, message="Erro ao mover card", detail=str(e)), 500
-    return jsonify(success=True)
+    response = jsonify(success=True)
+    
 
 # ---------------------------------------------------------------------------
 # Endpoint de streaming (Server-Sent Events) para monitoramento em tempo real.
@@ -645,17 +753,17 @@ def api_chamados_change_status(card_id: str):
 # atividade). O cliente deve abrir uma EventSource neste endpoint. A verificação
 # é feita em intervalos de 10 segundos usando o cache da API do Trello para
 # minimizar requisições.
+@app.route("/api/chamados/stream")
 def api_chamados_stream():
     def event_stream():
         last_hash = None
         consecutive_errors = 0
         try:
             while True:
-            try:
-                    yield "data: {\"ping\": true}\n\n"  # heartbeat
-                except GeneratorExit:
-                    break
-            try:
+                try:
+                    yield 'data: {"ping": true}\n\n'  # heartbeat
+                    time.sleep(1)
+                
                 cards = cached_trello_get(
                     f"/boards/{BOARD_ID}/cards",
                     params={
@@ -668,7 +776,7 @@ def api_chamados_stream():
             except Exception as e:
                 consecutive_errors += 1
                 if consecutive_errors > 3:
-                    yield f"data: {{\"error\": \"Muitos erros consecutivos\"}}\n\n"
+                    yield f'data: {{"error": "Muitos erros consecutivos"}}\n\n'
                     break
                 cards = []
             # Calcula um hash simples das IDs + última atividade para detectar mudanças
@@ -681,30 +789,24 @@ def api_chamados_stream():
                     }
                     for c in cards
                 ]
-                new_hash = hashlib.md5(json.dumps(summary, sort_keys=True).encode()).hexdigest()
+                new_hash = hashlib.md5(
+                    json.dumps(summary, sort_keys=True).encode()
+                ).hexdigest()
             except Exception:
                 new_hash = None
             if last_hash is None:
                 last_hash = new_hash
             elif new_hash != last_hash:
                 last_hash = new_hash
-                yield f"data: {{\"update\": true}}\n\n"
+                yield f'data: {{"update": true}}\n\n'
             time.sleep(15)
         except GeneratorExit:
             # Cliente desconectou
-            pass
+            break
         finally:
-            # Cleanup final
+            # Cleanup final se necessário
             pass
-    
-    response = Response(event_stream(), 
-                       mimetype="text/event-stream",
-                       headers={
-                           'Cache-Control': 'no-cache, no-store, must-revalidate',
-                           'Connection': 'keep-alive',
-                           'X-Accel-Buffering': 'no'  # Para nginx/proxy
-                       })
-    return response
+
 
 # ---------------------------------------------------------------------------
 # Endpoint para exportar os chamados filtrados em CSV ou XLSX. Utiliza as
@@ -712,11 +814,11 @@ def api_chamados_stream():
 @app.route("/api/chamados/export")
 def api_chamados_export():
     fmt = (request.args.get("format") or "csv").lower()
-    f_rep   = (request.args.get("representante") or "").strip()
-    f_stat  = (request.args.get("status") or "").strip()
-    f_de    = _iso_date_only(request.args.get("de") or "")
-    f_ate   = _iso_date_only(request.args.get("ate") or "")
-    f_q     = (request.args.get("q") or "").strip().lower()
+    f_rep = (request.args.get("representante") or "").strip()
+    f_stat = (request.args.get("status") or "").strip()
+    f_de = _iso_date_only(request.args.get("de") or "")
+    f_ate = _iso_date_only(request.args.get("ate") or "")
+    f_q = (request.args.get("q") or "").strip().lower()
     # Força filtro do representante para usuários não admin
     if session.get("user") and not session.get("admin"):
         f_rep = session.get("representante", "").strip()
@@ -735,11 +837,11 @@ def api_chamados_export():
     items: list[dict] = []
     for c in cards:
         titulo = (c.get("name") or "").strip()
-        desc   = c.get("desc") or ""
+        desc = c.get("desc") or ""
         lista_id = c.get("idList") or ""
-        lista  = id_to_list.get(lista_id, "")
+        lista = id_to_list.get(lista_id, "")
         status = LIST_STATUS_MAP.get(lista, "Em aberto")
-        url    = c.get("shortUrl")
+        url = c.get("shortUrl")
         dt_raw = c.get("dateLastActivity")
         ultima = dt_raw
         representante = _parse_rep_from_desc(desc)
@@ -764,29 +866,42 @@ def api_chamados_export():
                 continue
         card_id = c.get("id")
         created_at = _infer_created_from_trello_id(card_id)
-        items.append({
-            "id": card_id,
-            "titulo": titulo,
-            "descricao": desc,
-            "representante": representante,
-            "lista": lista,
-            "status": status,
-            "url": url,
-            "ultima_atividade": ultima,
-            "whatsapp": whats,
-            "created_at": created_at,
-        })
+        items.append(
+            {
+                "id": card_id,
+                "titulo": titulo,
+                "descricao": desc,
+                "representante": representante,
+                "lista": lista,
+                "status": status,
+                "url": url,
+                "ultima_atividade": ultima,
+                "whatsapp": whats,
+                "created_at": created_at,
+            }
+        )
     # Gera arquivo
     now_str = datetime.now().strftime("%Y%m%d_%H%M%S")
     if fmt == "csv":
         # CSV
         output = io.StringIO()
-        fieldnames = ["id","titulo","descricao","representante","lista","status","url","ultima_atividade","whatsapp","created_at"]
+        fieldnames = [
+            "id",
+            "titulo",
+            "descricao",
+            "representante",
+            "lista",
+            "status",
+            "url",
+            "ultima_atividade",
+            "whatsapp",
+            "created_at",
+        ]
         writer = csv.DictWriter(output, fieldnames=fieldnames)
         writer.writeheader()
         for it in items:
             writer.writerow(it)
-        bom = '\ufeff'
+        bom = "\ufeff"
         csv_data = bom + output.getvalue()
         output.close()
         fname = f"chamados_{now_str}.csv"
@@ -807,7 +922,10 @@ def api_chamados_export():
                 df.to_excel(writer, index=False, sheet_name="Chamados")
         except Exception as e:
             # Fallback: if engine is unavailable, return error message.
-            return jsonify(success=False, message="Falha ao gerar Excel", detail=str(e)), 500
+            return (
+                jsonify(success=False, message="Falha ao gerar Excel", detail=str(e)),
+                500,
+            )
         excel_data = output.getvalue()
         output.close()
         fname = f"chamados_{now_str}.xlsx"
@@ -819,7 +937,11 @@ def api_chamados_export():
             },
         )
     else:
-        return jsonify(success=False, message="Formato inválido", allowed=["csv","xlsx"]), 400
+        return (
+            jsonify(success=False, message="Formato inválido", allowed=["csv", "xlsx"]),
+            400,
+        )
+
 
 @app.route("/api/representantes")
 def api_representantes():
@@ -830,39 +952,45 @@ def api_representantes():
     listas duplicadas no JavaScript.
     """
     reps = Representative.query.order_by(Representative.name.asc()).all()
-    return jsonify([r.name for r in reps])
+    response = jsonify([r.name for r in reps])
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    return response
+
+
 
 # -----------------------------------------------------------------------------
 # Login / Logout (USUÁRIO)
 # -----------------------------------------------------------------------------
-@app.route('/login', methods=['GET','POST'])
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    if request.method == 'GET':
-        return render_template('login.html', error=None)
+    if request.method == "GET":
+        return render_template("login.html", error=None)
 
-    username = (request.form.get('username') or '').strip()
-    password = (request.form.get('password') or '').strip()
+    username = (request.form.get("username") or "").strip()
+    password = (request.form.get("password") or "").strip()
 
     user = User.query.filter_by(username=username).first()
     if user and user.check_password(password):
         session.clear()
-        session['user'] = username
-        session['representante'] = user.representative.name
-        session['fresh_cadastro'] = True
+        session["user"] = username
+        session["representante"] = user.representative.name
+        session["fresh_cadastro"] = True
         if app.debug:
             print(f"[AUTH] login OK: {username}")
-        return redirect(url_for('index'))
+        return redirect(url_for("index"))
 
     if app.debug:
         print(f"[AUTH] login FAIL: {username}")
-    return render_template('login.html', error='Usuário ou senha inválidos.')
+    return render_template("login.html", error="Usuário ou senha inválidos.")
 
-@app.route('/logout')
+
+@app.route("/logout")
 def logout():
     if app.debug:
         print("[AUTH] logout")
     session.clear()
-    return redirect(url_for('login'))
+    return redirect(url_for("login"))
+
 
 # -----------------------------------------------------------------------------
 # Salvar chamado (formulário)
@@ -870,16 +998,18 @@ def logout():
 @app.route("/salvar", methods=["POST"])
 def salvar():
     data = request.form if request.form else (request.json or {})
-    nome           = (data.get("nome") or "").strip()
-    whatsapp       = (data.get("whatsapp") or "").strip()
-    representante  = ((session.get('representante') or data.get('representante') or '')).strip()
-    suporte        = (data.get("suporte") or "").strip()
-    sistema        = (data.get("sistema") or "").strip()
-    modulo         = (data.get("modulo") or "").strip()
-    ocorrencia     = (data.get("ocorrencia") or "").strip()
-    descricao      = (data.get("descricao") or "").strip()
-    observacao     = (data.get("observacao") or "").strip()
-    prioridade     = (data.get("prioridade") or "").strip()
+    nome = (data.get("nome") or "").strip()
+    whatsapp = (data.get("whatsapp") or "").strip()
+    representante = (
+        (session.get("representante") or data.get("representante") or "")
+    ).strip()
+    suporte = (data.get("suporte") or "").strip()
+    sistema = (data.get("sistema") or "").strip()
+    modulo = (data.get("modulo") or "").strip()
+    ocorrencia = (data.get("ocorrencia") or "").strip()
+    descricao = (data.get("descricao") or "").strip()
+    observacao = (data.get("observacao") or "").strip()
+    prioridade = (data.get("prioridade") or "").strip()
 
     # ---- Melhor mensagem de erro: listar faltantes
     labels = {
@@ -892,16 +1022,20 @@ def salvar():
         "ocorrencia": "Ocorrência",
         "prioridade": "Prioridade",
     }
-    faltando = [labels[k] for k, v in {
-        "nome": nome,
-        "whatsapp": whatsapp,
-        "representante": representante,
-        "suporte": suporte,
-        "sistema": sistema,
-        "modulo": modulo,
-        "ocorrencia": ocorrencia,
-        "prioridade": prioridade,
-    }.items() if not v]
+    faltando = [
+        labels[k]
+        for k, v in {
+            "nome": nome,
+            "whatsapp": whatsapp,
+            "representante": representante,
+            "suporte": suporte,
+            "sistema": sistema,
+            "modulo": modulo,
+            "ocorrencia": ocorrencia,
+            "prioridade": prioridade,
+        }.items()
+        if not v
+    ]
 
     if faltando:
         msg = "Campos obrigatórios faltando: " + ", ".join(faltando) + "."
@@ -910,7 +1044,12 @@ def salvar():
     # ---- Validação de WhatsApp: exigir dígitos suficientes
     digits = re.sub(r"\D+", "", whatsapp)
     if len(digits) < 10:
-        return jsonify(success=False, message="Informe um telefone válido no campo Whatsapp."), 400
+        return (
+            jsonify(
+                success=False, message="Informe um telefone válido no campo Whatsapp."
+            ),
+            400,
+        )
 
     titulo = f"{nome} - {sistema} ({ocorrencia})"
     desc = (
@@ -928,7 +1067,13 @@ def salvar():
 
     lid = get_list_id()
     if not lid:
-        return jsonify(success=False, message="LIST_ID não configurado. Ajuste TRELLO_LIST/TRELLO_LIST_ID."), 500
+        return (
+            jsonify(
+                success=False,
+                message="LIST_ID não configurado. Ajuste TRELLO_LIST/TRELLO_LIST_ID.",
+            ),
+            500,
+        )
 
     params = {"idList": lid, "name": titulo, "desc": desc}
     label_id = LABEL_IDS.get(prioridade)
@@ -945,7 +1090,9 @@ def salvar():
                     continue
                 if not _allowed(f.filename):
                     continue
-                trello_attach_file(card_id, secure_filename(f.filename), f.stream, f.mimetype)
+                trello_attach_file(
+                    card_id, secure_filename(f.filename), f.stream, f.mimetype
+                )
 
         trello_clear_cover(card_id)
         return jsonify(success=True, message="Chamado criado com sucesso no Trello!")
@@ -954,18 +1101,21 @@ def salvar():
         err_msg = str(e)
         # Remover partes sensíveis da mensagem que contenham tokens ou chaves.
         err_msg = re.sub(r"[A-Za-z0-9]{32,}", "***", err_msg)
-        return jsonify(success=False, message=f"Falha ao criar o chamado: {err_msg}"), 400
+        return (
+            jsonify(success=False, message=f"Falha ao criar o chamado: {err_msg}"),
+            400,
+        )
 
 
 # -----------------------------------------------------------------------------
 # Admin (rotas) – agora usando console.html como tela principal
 # -----------------------------------------------------------------------------
-@app.route("/admin/login", methods=["GET","POST"])
+@app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
     if request.method == "GET":
         return render_template("admin_login.html", error=None)
-    u = request.form.get("username","")
-    p = request.form.get("password","")
+    u = request.form.get("username", "")
+    p = request.form.get("password", "")
     if u == ADMIN_USER and p == ADMIN_PASS:
         session.clear()
         session["admin"] = True
@@ -973,16 +1123,18 @@ def admin_login():
         return redirect(url_for("admin_home"))
     return render_template("admin_login.html", error="Credenciais inválidas.")
 
+
 @app.route("/admin/logout")
 def admin_logout():
     session.pop("admin", None)
     return redirect(url_for("admin_login"))
 
+
 @app.route("/admin")
 def admin_home():
     # exige login fresco para abrir o admin
-    if not session.get('admin') or not session.pop('fresh_admin', None):
-        return redirect(url_for('admin_login'))
+    if not session.get("admin") or not session.pop("fresh_admin", None):
+        return redirect(url_for("admin_login"))
     if not admin_logged():
         return redirect(url_for("admin_login"))
     reps = Representative.query.order_by(Representative.name.asc()).all()
@@ -990,6 +1142,7 @@ def admin_home():
     # Agora o admin usa o layout do console.html
     resp = make_response(render_template("console.html", reps=reps, users=users))
     return _no_store(resp)
+
 
 @app.route("/admin/rep/new", methods=["POST"])
 def admin_rep_new():
@@ -1002,9 +1155,13 @@ def admin_rep_new():
         db.session.commit()
         created = True
     if wants_json():
-        reps = [serialize_rep(r) for r in Representative.query.order_by(Representative.name.asc()).all()]
+        reps = [
+            serialize_rep(r)
+            for r in Representative.query.order_by(Representative.name.asc()).all()
+        ]
         return jsonify(ok=True, created=created, reps=reps)
     return redirect(url_for("admin_home"))
+
 
 @app.route("/admin/rep/<int:rep_id>/delete", methods=["POST"])
 def admin_rep_del(rep_id):
@@ -1017,9 +1174,13 @@ def admin_rep_del(rep_id):
         db.session.commit()
         deleted = True
     if wants_json():
-        reps = [serialize_rep(r) for r in Representative.query.order_by(Representative.name.asc()).all()]
+        reps = [
+            serialize_rep(r)
+            for r in Representative.query.order_by(Representative.name.asc()).all()
+        ]
         return jsonify(ok=True, deleted=deleted, reps=reps)
     return redirect(url_for("admin_home"))
+
 
 @app.route("/admin/user/new", methods=["POST"])
 def admin_user_new():
@@ -1039,9 +1200,12 @@ def admin_user_new():
             db.session.commit()
             created = True
     if wants_json():
-        users = [serialize_user(u) for u in User.query.order_by(User.username.asc()).all()]
+        users = [
+            serialize_user(u) for u in User.query.order_by(User.username.asc()).all()
+        ]
         return jsonify(ok=True, created=created, users=users)
     return redirect(url_for("admin_home"))
+
 
 @app.route("/admin/user/<int:user_id>/delete", methods=["POST"])
 def admin_user_del(user_id):
@@ -1051,9 +1215,12 @@ def admin_user_del(user_id):
     db.session.delete(u)
     db.session.commit()
     if wants_json():
-        users = [serialize_user(u) for u in User.query.order_by(User.username.asc()).all()]
+        users = [
+            serialize_user(u) for u in User.query.order_by(User.username.asc()).all()
+        ]
         return jsonify(ok=True, deleted=True, users=users)
     return redirect(url_for("admin_home"))
+
 
 # -----------------------------------------------------------------------------
 # Compat / antigo /console -> agora redireciona para /admin
@@ -1061,6 +1228,7 @@ def admin_user_del(user_id):
 @app.route("/console")
 def console_redirect():
     return redirect(url_for("admin_home"))
+
 
 # -----------------------------------------------------------------------------
 # Main
