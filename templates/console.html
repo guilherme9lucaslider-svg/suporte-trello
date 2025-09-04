@@ -623,26 +623,33 @@
            
          } else {
          // DESATIVANDO monitoramento
-         console.log('🔴 INICIANDO DESATIVAÇÃO - Timestamp:', Date.now());
+         console.log('Desativando monitoramento...');
+         
+         // Para TUDO imediatamente
          isRealTimeActive = false;
          
-         // Visual do botão
+         // Fecha SSE
+         if(realtimeSource) {
+         try { realtimeSource.close(); } catch(e){}
+         realtimeSource = null;
+         }
+         
+         // Para polling
+         if(realTimeInterval) {
+         clearInterval(realTimeInterval);
+         realTimeInterval = null;
+         }
+         
+         // Visual do botao
          btnRealtime.classList.remove('is-on');
          btnRealtime.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
          
-         // Limpa SSE/poll
-         console.log('🧹 Chamando cleanupRealTime...');
-         cleanupRealTime();
-         console.log('✅ cleanupRealTime concluído');
-         
-         // Reinicia paginação
+         // Reset paginacao UMA VEZ SO
          page = 0;
-         console.log('📄 Página resetada para 0');
-           
-           // Recarrega com filtros atuais imediatamente
-         load({ silent:false })
-         .then(() => { console.log('✅ Monitoramento desativado e dados recarregados'); })
-         .catch(err => { console.error('Erro ao recarregar após desativar:', err); });
+         
+         // Carrega dados normais imediatamente
+         load({ silent: false });
+         }
          }
          }
          
