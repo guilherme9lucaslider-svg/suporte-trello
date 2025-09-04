@@ -640,7 +640,7 @@ setTimeout(() => {
   load({ silent:false })
     .then(() => { console.log('✅ Monitoramento desativado e dados recarregados'); })
     .catch(err => { console.error('Erro ao recarregar após desativar:', err); });
-}, 120);
+}, 0);
 }
          }
          
@@ -884,9 +884,7 @@ setTimeout(() => {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(to));
 }
 function load({silent=false, append=false}={}){
-  abortController = new AbortController();
-
-         console.log('📥 Load chamado:', {silent, append, page, isRealTimeActive});
+  console.log('📥 Load chamado:', {silent, append, page, isRealTimeActive});
          
          const currentId = ++latestLoadId;
          console.log('🆔 Load ID:', currentId);
@@ -911,7 +909,7 @@ function load({silent=false, append=false}={}){
          const cacheBuster = Date.now();
          const url = '/api/chamados' + query + sep + 'offset=' + (page * pageSize) + '&limit=' + pageSize + '&_=' + cacheBuster;
          
-         const fetchPromise = fetch(url, { signal: abortController.signal,
+         const fetchPromise = fetch(url, {
            cache: 'no-store',
            credentials: 'same-origin',
            headers: { 
@@ -1030,7 +1028,7 @@ function load({silent=false, append=false}={}){
          const sep = query ? '&' : '?';
          const url = '/api/chamados/export' + query + sep + 'format=csv&_=' + Date.now();
                try {
-                 const res = await fetch(url, { signal: abortController.signal, credentials:'same-origin', cache:'no-store' });
+                 const res = await fetch(url, { credentials:'same-origin', cache:'no-store' });
                  if(!res.ok) throw new Error('HTTP ' + res.status);
                  const dispo = res.headers.get('Content-Disposition') || '';
                  let filename = 'chamados.csv';
@@ -1052,7 +1050,7 @@ function load({silent=false, append=false}={}){
          const sep = query ? '&' : '?';
          const url = '/api/chamados/export' + query + sep + 'format=xlsx&_=' + Date.now();
                try {
-                 const res = await fetch(url, { signal: abortController.signal, credentials:'same-origin', cache:'no-store' });
+                 const res = await fetch(url, { credentials:'same-origin', cache:'no-store' });
                  if(!res.ok) throw new Error('HTTP ' + res.status);
                  const dispo = res.headers.get('Content-Disposition') || '';
                  let filename = 'chamados.xlsx';
