@@ -323,7 +323,7 @@
                      <tbody>
                         {% for r in reps %}
                         <tr data-id="{{ r.id }}">
-                           <td><strong>{{ r.name }}</strong></td>
+                           <td><strong>{{ r.nome }}</strong></td>
                            <td class="actions">
                               <form method="post" action="/admin/rep/{{ r.id }}/delete" onsubmit="return confirm('Remover representante? (somente se não houver usuários)')">
                                  <button class="btn btn--ghost" type="submit">Remover</button>
@@ -345,7 +345,7 @@
                   <select name="representative_id" required>
                      <option value="">Selecione o representante</option>
                      {% for r in reps %}
-                     <option value="{{ r.id }}">{{ r.name }}</option>
+                     <option value="{{ r.id }}">{{ r.nome }}</option>
                      {% endfor %}
                   </select>
                   <input name="username" required placeholder="Nome de usuário">
@@ -365,7 +365,7 @@
                         {% for u in users %}
                         <tr data-id="{{ u.id }}">
                            <td><strong>{{ u.username }}</strong></td>
-                           <td><span class="pill">{{ u.representative.name }}</span></td>
+                           <td><span class="pill">{{ u.representative.nome }}</span></td>
                            <td class="actions">
                               <form method="post" action="/admin/user/{{ u.id }}/delete" onsubmit="return confirm('Remover usuário?')">
                                  <button class="btn btn--ghost" type="submit">Remover</button>

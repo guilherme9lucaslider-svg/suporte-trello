@@ -326,7 +326,7 @@
 <select id="representante" name="representante" required>
   <option value="" disabled selected>Selecione o representante</option>
   {% for r in reps %}
-    <option value="{{ r.name }}">{{ r.name }}</option>
+    <option value="{{ r.nome }}">{{ r.nome }}</option>
   {% endfor %}
 </select>
 {% endif %}

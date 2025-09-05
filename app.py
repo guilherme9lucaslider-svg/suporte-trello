@@ -24,6 +24,7 @@ from flask import (
     url_for,
 )
 from flask_sqlalchemy import SQLAlchemy
+from urllib.parse import quote_plus
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import requests
@@ -72,6 +73,60 @@ app.secret_key = os.getenv("APP_SECRET", "super-secret-key")  # troque em produ�
 # Não manter sessões permanentes: o usuário deverá fazer login novamente
 app.config["SESSION_PERMANENT"] = False
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+# -----------------------------------------------------------------------------
+# Database configuration
+#
+# Use a DATABASE_URL environment variable if provided, otherwise default to
+# the remote PostgreSQL database provided by the user.  The password may
+# contain special characters such as '@', so we percent‑encode it to form
+# a valid URI.
+db_uri = os.getenv("DATABASE_URL")
+if not db_uri:
+    db_user = os.getenv("DB_USER", "postgres")
+    db_password = os.getenv("DB_PASS", "@PGl2013A")
+    db_host = os.getenv("DB_HOST", "52.86.225.143")
+    db_name = os.getenv("DB_NAME", "suporte_trello")
+    # Percent‑encode special characters in the password.
+    db_password_quoted = quote_plus(db_password)
+    db_uri = f"postgresql://{db_user}:{db_password_quoted}@{db_host}/{db_name}"
+app.config["SQLALCHEMY_DATABASE_URI"] = db_uri
+db = SQLAlchemy(app)
+
+# -----------------------------------------------------------------------------
+# Database models
+#
+# A Representative (representante) has many Users (usuarios).  Each User is
+# linked to exactly one Representative via the representante_id foreign key.
+class Representative(db.Model):
+    __tablename__ = "representantes"
+    id = db.Column(db.Integer, primary_key=True)
+    # 'nome' is unique to avoid duplicates.
+    nome = db.Column(db.String(255), nullable=False, unique=True)
+    # Relationship to users: cascade deletions so that removing a representative
+    # will also remove its users (but the admin UI prevents deletion when users
+    # exist).
+    users = db.relationship(
+        "User", back_populates="representative", cascade="all, delete-orphan"
+    )
+
+
+class User(db.Model):
+    __tablename__ = "usuarios"
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(255), nullable=False, unique=True)
+    password_hash = db.Column(db.String(255), nullable=False)
+    representante_id = db.Column(
+        db.Integer, db.ForeignKey("representantes.id"), nullable=False
+    )
+    representative = db.relationship("Representative", back_populates="users")
+
+    def set_password(self, password: str) -> None:
+        """Hash and store the user's password."""
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password: str) -> bool:
+        """Check the provided password against the stored hash."""
+        return check_password_hash(self.password_hash, password)
 
 
 def _no_store(resp):
@@ -82,70 +137,6 @@ def _no_store(resp):
 
 
 # -----------------------------------------------------------------------------
-# Database (SQLite + SQLAlchemy)
-# -----------------------------------------------------------------------------
-DB_PATH = os.getenv("USERS_DB_PATH") or str((BASE_DIR / "users.db").resolve())
-db_uri = os.getenv("DATABASE_URL")
-if db_uri and db_uri.startswith("postgres://"):
-    db_uri = db_uri.replace("postgres://", "postgresql://", 1)
-app.config["SQLALCHEMY_DATABASE_URI"] = db_uri or f"sqlite:///{DB_PATH}"
-
-db = SQLAlchemy(app)
-
-
-class Representative(db.Model):
-    __tablename__ = "representatives"
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(160), unique=True, nullable=False)
-
-
-class User(db.Model):
-    __tablename__ = "users"
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(160), unique=True, nullable=False)
-    password_hash = db.Column(db.String(255), nullable=False)
-    representative_id = db.Column(
-        db.Integer, db.ForeignKey("representatives.id"), nullable=False
-    )
-    representative = db.relationship("Representative", backref="users")
-
-    def set_password(self, pwd: str):
-        self.password_hash = generate_password_hash(pwd)
-
-    def check_password(self, pwd: str) -> bool:
-        return check_password_hash(self.password_hash, pwd)
-
-
-with app.app_context():
-    db.create_all()
-    # Seed representatives se vazio (lista do seu projeto)
-    if Representative.query.count() == 0:
-        PRESET_REPS = [
-            "Host.com",
-            "2RTI Soluções",
-            "MT Solutions",
-            "Unai System",
-            "Multitech",
-            "Mad Automação",
-            "Tecnuve Soluções",
-            "GoSystem Automação",
-            "RJ Soluções",
-            "Raizes Tecnologia",
-            "Webside Sistemas",
-            "Web System Norte",
-            "Online Soluções",
-            "Delane",
-            "Supriserv",
-            "MS Tech Soluções",
-            "Use Tecnologia",
-            "Unity Automação",
-            "Digital RF Tecnologia",
-            "Connecta Informática",
-            "R.A Soluções",
-        ]
-        for name in PRESET_REPS:
-            db.session.add(Representative(name=name))
-        db.session.commit()
 
 # -----------------------------------------------------------------------------
 # Admin helpers
@@ -159,15 +150,17 @@ def admin_logged():
 
 
 def serialize_rep(rep):
-    return {"id": rep.id, "name": rep.name}
+    # Return a simple representation using the column names defined above.
+    # Use 'nome' instead of 'name' to reflect the Portuguese field.
+    return {"id": rep.id, "nome": rep.nome}
 
 
 def serialize_user(u):
     return {
         "id": u.id,
         "username": u.username,
-        "representative": u.representative.name if u.representative else None,
-        "representative_id": u.representative_id,
+        "representante": u.representative.nome if u.representative else None,
+        "representante_id": u.representante_id,
     }
 
 
@@ -426,7 +419,8 @@ def index():
     rep = session.get("representante", "")
     reps = []
     if session.get("admin") and not rep:
-        reps = Representative.query.order_by(Representative.name.asc()).all()
+        # Order by 'nome' to list representatives alphabetically
+        reps = Representative.query.order_by(Representative.nome.asc()).all()
     return render_template(
         "index.html", show_download=show_download, representante_logado=rep, reps=reps
     )
@@ -952,8 +946,8 @@ def api_representantes():
     permite que o front-end preencha selects dinamicamente sem manter
     listas duplicadas no JavaScript.
     """
-    reps = Representative.query.order_by(Representative.name.asc()).all()
-    response = jsonify([r.name for r in reps])
+    reps = Representative.query.order_by(Representative.nome.asc()).all()
+    response = jsonify([r.nome for r in reps])
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     return response
 
@@ -1085,7 +1079,8 @@ def login():
     if user and user.check_password(password):
         session.clear()
         session["user"] = username
-        session["representante"] = user.representative.name
+        # Store the representative's name ('nome') in session to prefill forms.
+        session["representante"] = user.representative.nome
         session["fresh_cadastro"] = True
         if app.debug:
             print(f"[AUTH] login OK: {username}")
@@ -1249,7 +1244,7 @@ def admin_home():
         return redirect(url_for("admin_login"))
     if not admin_logged():
         return redirect(url_for("admin_login"))
-    reps = Representative.query.order_by(Representative.name.asc()).all()
+    reps = Representative.query.order_by(Representative.nome.asc()).all()
     users = User.query.order_by(User.username.asc()).all()
     # Agora o admin usa o layout do console.html
     resp = make_response(render_template("console.html", reps=reps, users=users))
@@ -1260,16 +1255,18 @@ def admin_home():
 def admin_rep_new():
     if not admin_logged():
         return redirect(url_for("admin_login"))
-    name = (request.form.get("name") or "").strip()
+    # Accept either 'nome' or 'name' from the form to create a new representative.
+    name = (request.form.get("nome") or request.form.get("name") or "").strip()
     created = False
-    if name and not Representative.query.filter_by(name=name).first():
-        db.session.add(Representative(name=name))
+    # Only create if it doesn't exist yet
+    if name and not Representative.query.filter_by(nome=name).first():
+        db.session.add(Representative(nome=name))
         db.session.commit()
         created = True
     if wants_json():
         reps = [
             serialize_rep(r)
-            for r in Representative.query.order_by(Representative.name.asc()).all()
+            for r in Representative.query.order_by(Representative.nome.asc()).all()
         ]
         return jsonify(ok=True, created=created, reps=reps)
     return redirect(url_for("admin_home"))
@@ -1288,7 +1285,7 @@ def admin_rep_del(rep_id):
     if wants_json():
         reps = [
             serialize_rep(r)
-            for r in Representative.query.order_by(Representative.name.asc()).all()
+            for r in Representative.query.order_by(Representative.nome.asc()).all()
         ]
         return jsonify(ok=True, deleted=deleted, reps=reps)
     return redirect(url_for("admin_home"))
@@ -1300,7 +1297,8 @@ def admin_user_new():
         return redirect(url_for("admin_login"))
     username = (request.form.get("username") or "").strip()
     password = (request.form.get("password") or "").strip()
-    rep_id = request.form.get("representative_id")
+    # Accept either 'representative_id' or 'representante_id' from the form
+    rep_id = request.form.get("representative_id") or request.form.get("representante_id")
     created = False
     if username and password and rep_id:
         rep = Representative.query.get(int(rep_id))
