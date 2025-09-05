@@ -740,6 +740,7 @@ def api_chamados_change_status(card_id: str):
     except Exception as e:
         return jsonify(success=False, message="Erro ao mover card", detail=str(e)), 500
     response = jsonify(success=True)
+    return response
 
 
 # ---------------------------------------------------------------------------
