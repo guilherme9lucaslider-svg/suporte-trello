@@ -1178,5 +1178,27 @@ function load({silent=false, append=false}={}){
 })();
 </script>
 
+<!-- Admin helper functions: create representative and user via fetch -->
+<script>
+// ====== Funções do CADASTRO ======
+function criarRep(e) {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  fetch('/admin/rep/new', { method: 'POST', body: formData, cache: 'no-store' })
+    .then(() => location.reload())
+    .catch(err => alert('Erro: ' + err));
+  return false;
+}
+
+function criarUser(e) {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  fetch('/admin/user/new', { method: 'POST', body: formData, cache: 'no-store' })
+    .then(() => location.reload())
+    .catch(err => alert('Erro: ' + err));
+  return false;
+}
+</script>
+
 </body>
 </html>

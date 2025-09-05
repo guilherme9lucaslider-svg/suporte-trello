@@ -1269,6 +1269,8 @@ def admin_rep_new():
             for r in Representative.query.order_by(Representative.nome.asc()).all()
         ]
         return jsonify(ok=True, created=created, reps=reps)
+    # Reset fresh_admin so that after adding a representative the admin page can be reopened
+    session["fresh_admin"] = True
     return redirect(url_for("admin_home"))
 
 
@@ -1288,6 +1290,8 @@ def admin_rep_del(rep_id):
             for r in Representative.query.order_by(Representative.nome.asc()).all()
         ]
         return jsonify(ok=True, deleted=deleted, reps=reps)
+    # Reset fresh_admin so that after deleting a representative the admin page can be reopened
+    session["fresh_admin"] = True
     return redirect(url_for("admin_home"))
 
 
@@ -1314,6 +1318,8 @@ def admin_user_new():
             serialize_user(u) for u in User.query.order_by(User.username.asc()).all()
         ]
         return jsonify(ok=True, created=created, users=users)
+    # Reset fresh_admin so that after adding a user the admin page can be reopened
+    session["fresh_admin"] = True
     return redirect(url_for("admin_home"))
 
 
