@@ -222,6 +222,120 @@
          }
          #painel a[data-kind="trello-link"] .icon { width: 16px; height: 16px; display: inline-block; }
          #painel a[data-kind="trello-link"]:hover{ filter: brightness(.98); transform: translateY(-2px); box-shadow: var(--shadow); }
+
+        /* ==================== Relatórios ==================== */
+        /* Barra de ações do relatório */
+        #relatorios .report-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          align-items: center;
+          background: #fff;
+          padding: 16px 24px;
+          border: 1px solid var(--stroke);
+          border-radius: 24px;
+          box-shadow: var(--shadow);
+          margin-bottom: 24px;
+        }
+        #relatorios .report-actions .separator {
+          width: 1px;
+          height: 32px;
+          background: var(--stroke);
+          margin: 0 8px;
+        }
+        #relatorios .report-actions .btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          height: 40px;
+          padding: 8px 16px;
+          border-radius: 12px;
+          font-size: 14px;
+          font-weight: 600;
+          border: 1px solid var(--stroke);
+          background: linear-gradient(135deg,var(--stroke-light) 0%,#f8fafc 100%);
+          color: var(--ink);
+          cursor: pointer;
+          transition: .2s;
+          box-shadow: var(--shadow-sm);
+        }
+        #relatorios .report-actions .btn:hover {
+          transform: translateY(-2px);
+          box-shadow: var(--shadow);
+        }
+        #relatorios .report-actions .btn img.icon {
+          width: 20px;
+          height: 20px;
+        }
+        /* Layout lateral do relatório */
+        #relatorios .report-layout {
+          display: flex;
+          gap: 24px;
+          align-items: flex-start;
+          margin-top: 24px;
+        }
+        #relatorios .report-sidebar {
+          width: 350px; /* Largura reduzida para acomodar todos filtros */
+          background: #fff;
+          padding: 24px 20px;
+          border: 1px solid var(--stroke);
+          border-radius: 24px;
+          box-shadow: var(--shadow);
+        }
+        #relatorios .report-main {
+          flex: 1;
+          background: #f8fafc;
+          border: 1px solid var(--stroke-light);
+          border-radius: 24px;
+          padding: 24px;
+          min-height: 500px;
+          overflow: auto;
+        }
+        #relatorios .sidebar-group {
+          margin-bottom: 20px;
+        }
+        #relatorios .sidebar-group label.title {
+          display: block;
+          font-weight: 700;
+          margin-bottom: 8px;
+        }
+        #relatorios .sidebar-group .radio-options {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+          margin-top: 4px;
+          margin-bottom: 8px;
+          width: 100%;
+        }
+        #relatorios .sidebar-group .sub-field {
+          margin-top: 8px;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        #relatorios .filter-adv {
+          margin-bottom: 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        #relatorios .filter-adv .checkbox-label {
+          display: flex;
+          align-items: center;
+          gap: 4px; /* Espaço menor entre checkbox e texto */
+          font-weight: 600;
+          font-size: 14px;
+        }
+        #relatorios .filter-adv .input,
+        #relatorios .filter-adv select {
+          width: 100%;
+        }
+
+        /* Reduz a largura mínima dos campos dentro da barra lateral de relatórios para caber */
+        #relatorios .report-sidebar input,
+        #relatorios .report-sidebar select {
+          min-width: 0;
+        }
       </style>
    </head>
    <body>
@@ -232,6 +346,8 @@
       <nav class="tabs" role="tablist">
          <button class="tab" role="tab" aria-selected="true" data-target="#painel">Painel de Chamados</button>
          <button class="tab" role="tab" aria-selected="false" data-target="#cadastro">Cadastro de Usuários</button>
+         <!-- Aba de Relatórios adicionada -->
+         <button class="tab" role="tab" aria-selected="false" data-target="#relatorios">Relatórios</button>
       </nav>
       <main>
          <section id="painel" class="view active" role="tabpanel" aria-label="Painel de Chamados">
@@ -382,6 +498,113 @@
                </div>
             </div>
          </section>
+
+        <!-- ===================== Aba de Relatórios ===================== -->
+        <section id="relatorios" class="view" role="tabpanel" aria-label="Relatórios">
+          <!-- Barra de ações do relatório -->
+          <div class="report-actions">
+            <button class="btn" id="btnPdfRel"><span class="icon">📄</span> PDF</button>
+            <button class="btn" id="btnXlsRel"><span class="icon">📊</span> XLS</button>
+            <button class="btn" id="btnPrintRel"><span class="icon">🖨️</span> Imprimir</button>
+            <button class="btn" id="btnEmailRel"><span class="icon">✉️</span> E‑mail</button>
+            <div class="separator"></div>
+            <button class="btn" id="btnZoomInRel"><span class="icon">➕</span> Zoom +</button>
+            <button class="btn" id="btnZoomOutRel"><span class="icon">➖</span> Zoom −</button>
+            <div class="separator"></div>
+            <button class="btn" id="btnFirstPageRel"><span class="icon">⏮️</span></button>
+            <button class="btn" id="btnPrevPageRel"><span class="icon">⏪</span></button>
+            <button class="btn" id="btnNextPageRel"><span class="icon">⏩</span></button>
+            <button class="btn" id="btnLastPageRel"><span class="icon">⏭️</span></button>
+          </div>
+
+          <!-- Layout: painel de filtros lateral + área de visualização -->
+          <div class="report-layout">
+            <!-- Painel lateral de filtros -->
+            <div class="report-sidebar">
+              <!-- Cabeçalho opcional -->
+              <h3 style="margin-bottom:16px;font-weight:700;font-size:18px;">Curva ABC de Chamados</h3>
+              <!-- Período -->
+              <div class="sidebar-group">
+                <label class="title">Período</label>
+                <div class="sub-field">
+                  <label style="font-weight:600;font-size:13px;margin-bottom:2px;">Inicial</label>
+                  <input id="relInicio" type="date" class="input">
+                </div>
+                <div class="sub-field" style="margin-top:8px;">
+                  <label style="font-weight:600;font-size:13px;margin-bottom:2px;">Fim</label>
+                  <input id="relFim" type="date" class="input">
+                </div>
+              </div>
+              <!-- Tipo de Relatório -->
+              <div class="sidebar-group">
+                <label class="title">Tipo de Relatório:</label>
+                <div class="radio-options">
+                  <label><input type="radio" name="tipoRelatorio" value="sintetico" checked> Sintético</label>
+                  <label><input type="radio" name="tipoRelatorio" value="analitico"> Analítico</label>
+                </div>
+              </div>
+              <!-- Agrupar por -->
+              <div class="sidebar-group">
+                <label class="title">Agrupar por:</label>
+                <div class="radio-options">
+                  <label><input type="radio" name="agruparPor" value="cliente" checked> Cliente</label>
+                  <label><input type="radio" name="agruparPor" value="representante"> Representante</label>
+                </div>
+              </div>
+              <!-- Tipo de Chamado -->
+              <div class="sidebar-group">
+                <label class="title">Tipo de Chamado:</label>
+                <div class="radio-options">
+                  <label><input type="radio" name="tipoChamado" value="todos" checked> Todos</label>
+                  <label><input type="radio" name="tipoChamado" value="duvida"> Dúvida</label>
+                  <label><input type="radio" name="tipoChamado" value="melhoria"> Melhoria</label>
+                  <label><input type="radio" name="tipoChamado" value="bug"> Bug</label>
+                </div>
+              </div>
+              <!-- Filtros adicionais -->
+              <div class="sidebar-group">
+                <div class="filter-adv">
+                  <label class="checkbox-label"><input type="checkbox" id="chkClienteRel"> Cliente</label>
+                  <input id="fClienteRel" type="text" class="input" placeholder="Nome do cliente" disabled>
+                </div>
+                <div class="filter-adv">
+                  <label class="checkbox-label"><input type="checkbox" id="chkRepresentanteRel"> Representante</label>
+                  <select id="fRepresentanteRel" class="input" disabled>
+                    <option value="">Selecione...</option>
+                  </select>
+                </div>
+                <div class="filter-adv">
+                  <label class="checkbox-label"><input type="checkbox" id="chkSistemaRel"> Sistema</label>
+                  <select id="fSistemaRel" class="input" disabled>
+                    <option value="">Selecione...</option>
+                  </select>
+                </div>
+                <div class="filter-adv">
+                  <label class="checkbox-label"><input type="checkbox" id="chkModuloRel"> Módulo</label>
+                  <select id="fModuloRel" class="input" disabled>
+                    <option value="">Selecione...</option>
+                  </select>
+                </div>
+                <div class="filter-adv">
+                  <label class="checkbox-label"><input type="checkbox" id="chkOcorrenciaRel"> Ocorrência</label>
+                  <select id="fOcorrenciaRel" class="input" disabled>
+                    <option value="">Selecione...</option>
+                  </select>
+                </div>
+              </div>
+              <div style="margin-top:24px; text-align:right;">
+                <button class="btn btn--primary" id="btnConfirmarRel">Confirmar</button>
+              </div>
+            </div>
+            <!-- Área principal onde o relatório será exibido -->
+            <div class="report-main">
+              <!-- Espaço reservado para a visualização do relatório -->
+              <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);">
+                <p>Visualização do relatório virá aqui</p>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
       <!-- ===== Helpers separados (fora de qualquer <script> aninhado) ===== -->
       <script>
@@ -1302,6 +1525,37 @@ function criarUser(e) {
     });
   return false;
 }
+
+// ====== Script da aba de Relatórios ======
+// Este script habilita/desabilita os campos de filtro adicionais conforme as checkboxes
+// são marcadas ou desmarcadas.
+(() => {
+  // Aguarda o carregamento do DOM para garantir que os elementos existam
+  document.addEventListener('DOMContentLoaded', () => {
+    const advFilters = [
+      { chk: 'chkClienteRel', field: 'fClienteRel' },
+      { chk: 'chkRepresentanteRel', field: 'fRepresentanteRel' },
+      { chk: 'chkSistemaRel', field: 'fSistemaRel' },
+      { chk: 'chkModuloRel', field: 'fModuloRel' },
+      { chk: 'chkOcorrenciaRel', field: 'fOcorrenciaRel' }
+    ];
+    advFilters.forEach(({ chk, field }) => {
+      const c = document.getElementById(chk);
+      const f = document.getElementById(field);
+      if (!c || !f) return;
+      // Define estado inicial
+      f.disabled = !c.checked;
+      c.addEventListener('change', () => {
+        f.disabled = !c.checked;
+        if (!c.checked) {
+          // Limpa o valor quando desabilitar
+          if (f.tagName === 'SELECT') f.selectedIndex = 0;
+          else f.value = '';
+        }
+      });
+    });
+  });
+})();
 </script>
 
 </body>
