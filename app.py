@@ -1160,7 +1160,7 @@ def salvar():
 
     titulo = f"{nome} - {sistema} ({ocorrencia})"
     desc = (
-        f"**Nome:** {nome}\n"
+        f"**Cliente:** {nome}\n"
         f"**Whatsapp:** {whatsapp}\n"
         f"**Representante:** {representante}\n"
         f"**Suporte:** {suporte}\n"
