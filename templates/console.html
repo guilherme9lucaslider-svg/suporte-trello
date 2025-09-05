@@ -528,6 +528,15 @@ function openWhatsApp(rawPhone, text){
                // padrão: cor principal
                return 'var(--ink)';
              };
+
+            // Cor de cada prioridade. Utilizado para colorir a coluna de prioridade.
+            const priorityColor = (p) => {
+              const m = (p || '').toLowerCase();
+              if (m.includes('alta')) return '#e74c3c';
+              if (m.includes('média') || m.includes('media')) return '#eab308';
+              if (m.includes('baixa')) return '#22c55e';
+              return 'var(--ink)';
+            };
           
           function applyStatusSelectColors(rootEl){
            (rootEl || document).querySelectorAll('select.status-select').forEach(sel=>{
@@ -783,6 +792,7 @@ function openWhatsApp(rawPhone, text){
                // Ações: apenas botão do Trello (aplica estilos via CSS .actions)
                const actionsHtml = `<div class="actions">${trelloLink}</div>`;
          
+               const prioCol = priorityColor(prio);
                return (
                  '<tr data-key="'+esc(it.id || it.url || it.titulo || String(i))+'">'+
                    '<td class="title" title="'+esc(it.titulo)+'">'+esc(it.titulo)+'</td>'+ 
@@ -790,7 +800,7 @@ function openWhatsApp(rawPhone, text){
                    // Coluna de status contém o <select>
                    '<td>'+statusSelect+'</td>'+ 
                    '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="detalhes">📋 Detalhes</button></td>'+ 
-                   '<td class="prio">'+esc(prio||"-")+'</td>'+ 
+                   '<td class="prio" style="color:'+prioCol+'">'+esc(prio||"-")+'</td>'+ 
                    '<td><button class="btn btn--ghost" data-i="'+i+'" data-action="ver">👁 Ver</button></td>'+ 
                    '<td>'+whatsappLink+'</td>'+ 
                    '<td>'+actionsHtml+'</td>'+ 
@@ -1191,18 +1201,105 @@ function load({silent=false, append=false}={}){
 function criarRep(e) {
   e.preventDefault();
   const formData = new FormData(e.target);
-  fetch('/admin/rep/new', { method: 'POST', body: formData, cache: 'no-store' })
-    .then(() => location.reload())
-    .catch(err => alert('Erro: ' + err));
+  fetch('/admin/rep/new', {
+    method: 'POST',
+    body: formData,
+    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    credentials: 'same-origin'
+  })
+    .then(res => {
+      if(res.ok) return res.json();
+      throw new Error('HTTP ' + res.status);
+    })
+    .then(data => {
+      if(!data || !data.ok){
+        alert('Erro ao adicionar representante');
+        return;
+      }
+      const reps = data.reps || [];
+      // Atualiza a tabela de representantes
+      const tbody = document.querySelector('#t-reps tbody');
+      if(tbody){
+        let html = '';
+        reps.forEach(r => {
+          html += '<tr data-id="'+r.id+'">'+
+                    '<td><strong>'+r.nome+'</strong></td>'+
+                    '<td class="actions">'+
+                      '<form method="post" action="/admin/rep/'+r.id+'/delete" onsubmit="return confirm(\'Remover representante? (somente se não houver usuários)\')">'+
+                        '<button class="btn btn--ghost" type="submit">Remover</button>'+
+                      '</form>'+
+                    '</td>'+
+                  '</tr>';
+        });
+        if(!html){
+          html = '<tr><td colspan="2" class="empty-state">Nenhum representante cadastrado</td></tr>';
+        }
+        tbody.innerHTML = html;
+      }
+      // Atualiza o select de representantes no cadastro de usuários
+      const repSel = document.querySelector('select[name="representative_id"]');
+      if(repSel){
+        const opts = ['<option value="">Selecione o representante</option>'];
+        reps.forEach(r => {
+          opts.push('<option value="'+r.id+'">'+r.nome+'</option>');
+        });
+        repSel.innerHTML = opts.join('');
+      }
+      // Reseta o formulário
+      e.target.reset();
+    })
+    .catch(err => {
+      alert('Erro: ' + err.message);
+    });
   return false;
 }
 
 function criarUser(e) {
   e.preventDefault();
   const formData = new FormData(e.target);
-  fetch('/admin/user/new', { method: 'POST', body: formData, cache: 'no-store' })
-    .then(() => location.reload())
-    .catch(err => alert('Erro: ' + err));
+  fetch('/admin/user/new', {
+    method: 'POST',
+    body: formData,
+    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    credentials: 'same-origin'
+  })
+    .then(res => {
+      if(res.ok) return res.json();
+      throw new Error('HTTP ' + res.status);
+    })
+    .then(data => {
+      if(!data || !data.ok){
+        alert('Erro ao adicionar usuário');
+        return;
+      }
+      const users = data.users || [];
+      // Atualiza a tabela de usuários
+      const tbody = document.querySelector('#t-users tbody');
+      if(tbody){
+        let html = '';
+        users.forEach(u => {
+          const repName = u.representante || '';
+          html += '<tr data-id="'+u.id+'">'+
+                    '<td><strong>'+u.username+'</strong></td>'+
+                    '<td><span class="pill">'+repName+'</span></td>'+
+                    '<td class="actions">'+
+                      '<form method="post" action="/admin/user/'+u.id+'/delete" onsubmit="return confirm(\'Remover usuário?\')">'+
+                        '<button class="btn btn--ghost" type="submit">Remover</button>'+
+                      '</form>'+
+                    '</td>'+
+                  '</tr>';
+        });
+        if(!html){
+          html = '<tr><td colspan="3" class="empty-state">Nenhum usuário cadastrado</td></tr>';
+        }
+        tbody.innerHTML = html;
+      }
+      // Reseta o formulário
+      e.target.reset();
+    })
+    .catch(err => {
+      alert('Erro: ' + err.message);
+    });
   return false;
 }
 </script>
