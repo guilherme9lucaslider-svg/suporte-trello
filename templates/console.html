@@ -437,12 +437,15 @@
            n = n.replace(/^55+/, '');
            return '55' + n;
          }
-         function openWhatsApp(rawPhone, text){
-           const phone = normalizeBRPhone(rawPhone);
-           const q = text ? ('&text=' + encodeURIComponent(text)) : '';
-           const url = 'whatsapp://send?phone=' + phone + q;
-           try { window.open(url, '_self'); } catch { window.location.href = url; }
-         }
+function openWhatsApp(rawPhone, text){
+  // Normalize to Brazilian format and build a WhatsApp web URL (fallback to https instead of custom protocol).
+  const phone = normalizeBRPhone(rawPhone);
+  const q = text ? ('&text=' + encodeURIComponent(text)) : '';
+  // Use the universal API URL to avoid browser/OS restrictions on the whatsapp:// protocol.
+  const url = 'https://api.whatsapp.com/send?phone=' + phone + q;
+  // Open in a new tab or the same tab depending on browser preference.
+  try { window.open(url, '_blank'); } catch { window.location.href = url; }
+}
          window.openWhatsApp = openWhatsApp;
       </script>
       <!-- ===== App principal ===== -->
@@ -1082,13 +1085,15 @@ function load({silent=false, append=false}={}){
                page = 0;
                load({silent:false});
              });
-             // Export CSV via fetch + blob (não abre nova aba)
+             // Export CSV via fetch + blob (não abre nova aba).
+             // Use a separate AbortController so that exports are not cancelled by other fetches.
              btnExportCsv.addEventListener('click', async () => {
                const query = qs();
-         const sep = query ? '&' : '?';
-         const url = '/api/chamados/export' + query + sep + 'format=csv&_=' + Date.now();
+               const sep = query ? '&' : '?';
+               const url = '/api/chamados/export' + query + sep + 'format=csv&_=' + Date.now();
+               const ac = new AbortController();
                try {
-                 const res = await fetch(url, { signal: abortController.signal, credentials:'same-origin', cache:'no-store' });
+                 const res = await fetch(url, { signal: ac.signal, credentials: 'same-origin', cache: 'no-store' });
                  if(!res.ok) throw new Error('HTTP ' + res.status);
                  const dispo = res.headers.get('Content-Disposition') || '';
                  let filename = 'chamados.csv';
@@ -1104,13 +1109,15 @@ function load({silent=false, append=false}={}){
                  alert('Falha ao exportar CSV');
                }
              });
-             // Export Excel via fetch + blob (não abre nova aba)
+             // Export Excel via fetch + blob (não abre nova aba).
+             // Use a separate AbortController so that exports are not cancelled by other fetches.
              btnExportExcel.addEventListener('click', async () => {
                const query = qs();
-         const sep = query ? '&' : '?';
-         const url = '/api/chamados/export' + query + sep + 'format=xlsx&_=' + Date.now();
+               const sep = query ? '&' : '?';
+               const url = '/api/chamados/export' + query + sep + 'format=xlsx&_=' + Date.now();
+               const ac = new AbortController();
                try {
-                 const res = await fetch(url, { signal: abortController.signal, credentials:'same-origin', cache:'no-store' });
+                 const res = await fetch(url, { signal: ac.signal, credentials: 'same-origin', cache: 'no-store' });
                  if(!res.ok) throw new Error('HTTP ' + res.status);
                  const dispo = res.headers.get('Content-Disposition') || '';
                  let filename = 'chamados.xlsx';
