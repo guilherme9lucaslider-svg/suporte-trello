@@ -538,7 +538,7 @@ def api_chamados():
     f_de_criacao  = _iso_date_only(request.args.get("de_criacao") or "")
     f_ate_criacao = _iso_date_only(request.args.get("ate_criacao") or "")
 
-    # Pagination params
+    # paginação
     try:
         offset = int(request.args.get("offset", "0"))
         if offset < 0:
@@ -552,25 +552,22 @@ def api_chamados():
     except Exception:
         limit = 0
 
-    # Force representative filter for non-admin users
+    # força representante para não-admin
     if session.get("user") and not session.get("admin"):
         f_rep = session.get("representante", "").strip()
 
-    # Verificar credenciais
+    # credenciais Trello
     if not API_KEY or not TOKEN or not BOARD_ID:
-        return (
-            jsonify(
-                {"error": "Configuração do Trello incompleta", "total": 0, "items": []}
-            ),
-            500,
-        )
+        response = jsonify({"error":"Configuração do Trello incompleta","total":0,"items":[]})
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response, 500
 
+    # listar listas e cards
     try:
-        # Build list mapping
         lists = cached_trello_get(f"/boards/{BOARD_ID}/lists", params={})
         id_to_list = {l["id"]: l.get("name", "") for l in lists}
-
-        # Fetch cards
         cards = cached_trello_get(
             f"/boards/{BOARD_ID}/cards",
             params={
@@ -582,16 +579,11 @@ def api_chamados():
     except Exception as e:
         if app.debug:
             print(f"[API] Erro Trello: {e}")
-        return (
-            jsonify(
-                {
-                    "error": "Erro ao conectar com Trello: " + str(e),
-                    "total": 0,
-                    "items": [],
-                }
-            ),
-            500,
-        )
+        response = jsonify({"error":"Erro ao conectar com Trello: "+str(e),"total":0,"items":[]})
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response, 500
 
     items = []
     for c in cards:
@@ -601,24 +593,21 @@ def api_chamados():
         lista = id_to_list.get(lista_id, "")
         status = LIST_STATUS_MAP.get(lista, "Em aberto")
         url = c.get("shortUrl")
-        dt_raw = c.get("dateLastActivity")
-        ultima = dt_raw
-
+        dt_raw = c.get("dateLastActivity")  # ISO do Trello
         representante = _parse_rep_from_desc(desc)
         whats = _parse_whatsapp_from_desc(desc)
         cliente = _parse_cliente_from_desc(desc)
 
-        # === Filtros existentes ===
+        # filtros
         if f_rep and representante != f_rep:
             continue
         if f_stat and status != f_stat:
             continue
-
-        # Filtro de Cliente — SOMENTE no campo 'Cliente/Nome' extraído
+        # cliente: somente pelo campo 'cliente' extraído da descrição
         if f_cliente and f_cliente not in (cliente or "").lower():
             continue
 
-        # Data pela última atividade (de/ate)
+        # filtro por última atividade (de/ate)
         if (f_de or f_ate) and dt_raw:
             try:
                 d = datetime.fromisoformat(dt_raw.replace("Z", "+00:00")).date()
@@ -629,18 +618,15 @@ def api_chamados():
             except Exception:
                 pass
 
-        # Busca textual (q)
+        # busca textual opcional
         if f_q:
-            base = (titulo + "
-" + desc).lower()
+            base = (titulo + "\n" + desc).lower()
             if f_q not in base:
                 continue
 
-        # === Inferir criação pelo ObjectID e filtrar por criação (de_criacao/ate_criacao) ===
+        # inferir criação e aplicar filtro de criação apenas se AMBAS as datas vierem
         card_id = c.get("id")
         created_at = _infer_created_from_trello_id(card_id)
-
-        # Só filtra por criação se as DUAS datas foram informadas
         if f_de_criacao and f_ate_criacao:
             try:
                 created_date = (
@@ -664,15 +650,13 @@ def api_chamados():
             "lista": lista,
             "status": status,
             "url": url,
-            "ultima_atividade": ultima,
+            "ultima_atividade": dt_raw,
             "whatsapp": whats,
             "created_at": created_at,
         })
 
     total = len(items)
-    paginated = items
-    if limit:
-        paginated = items[offset : offset + limit]
+    paginated = items if not limit else items[offset: offset + limit]
 
     if app.debug:
         print(f"[API] /api/chamados -> {total} itens (retornando {len(paginated)})")
