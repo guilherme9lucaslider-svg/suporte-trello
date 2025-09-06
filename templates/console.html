@@ -377,8 +377,6 @@
             <div class="actions">
                <button class="btn btn--primary" id="btnAplicar">🔍 Aplicar Filtros</button>
                <button class="btn" id="btnLimpar">🧹 Limpar</button>
-               <button class="btn" id="btnExportCsv"><img src="/static/csv.svg" alt="CSV" class="icon"> CSV</button>
-               <button class="btn" id="btnExportExcel"><img src="/static/xlsx.svg" alt="Excel" class="icon"> Excel</button>
                <button class="btn btn--live push-right" id="btnRealtime"><span class="dot"></span> Monitoramento em Tempo Real</button>
             </div>
             <div class="count" id="countBox"></div>
@@ -504,6 +502,7 @@
           <!-- Barra de ações do relatório -->
           <div class="report-actions">
             <button class="btn" id="btnPdfRel"><span class="icon">📄</span> PDF</button>
+			<button class="btn" id="btnCsvRel"><span class="icon">🧾</span> CSV</button>
             <button class="btn" id="btnXlsRel"><span class="icon">📊</span> XLS</button>
             <button class="btn" id="btnPrintRel"><span class="icon">🖨️</span> Imprimir</button>
             <button class="btn" id="btnEmailRel"><span class="icon">✉️</span> E‑mail</button>
@@ -709,8 +708,6 @@ function openWhatsApp(rawPhone, text){
              const btnRealtime = painel.querySelector('#btnRealtime');
              const btnAplicar = painel.querySelector('#btnAplicar');
              const btnLimpar = painel.querySelector('#btnLimpar');
-             const btnExportCsv = painel.querySelector('#btnExportCsv');
-             const btnExportExcel = painel.querySelector('#btnExportExcel');
              const btnMore = document.getElementById('btnMore');
              const pagination = document.getElementById('pagination');
          
@@ -1318,54 +1315,6 @@ function load({silent=false, append=false}={}){
                page = 0;
                load({silent:false});
              });
-             // Export CSV via fetch + blob (não abre nova aba).
-             // Use a separate AbortController so that exports are not cancelled by other fetches.
-             btnExportCsv.addEventListener('click', async () => {
-               const query = qs();
-               const sep = query ? '&' : '?';
-               const url = '/api/chamados/export' + query + sep + 'format=csv&_=' + Date.now();
-               const ac = new AbortController();
-               try {
-                 const res = await fetch(url, { signal: ac.signal, credentials: 'same-origin', cache: 'no-store' });
-                 if(!res.ok) throw new Error('HTTP ' + res.status);
-                 const dispo = res.headers.get('Content-Disposition') || '';
-                 let filename = 'chamados.csv';
-                 const m = /filename="?([^";]+)"?/i.exec(dispo);
-                 if(m) filename = m[1];
-                 const blob = await res.blob();
-                 const href = URL.createObjectURL(blob);
-                 const a = document.createElement('a');
-                 a.href = href; a.download = filename;
-                 document.body.appendChild(a); a.click(); a.remove();
-                 URL.revokeObjectURL(href);
-               } catch(err) {
-                 alert('Falha ao exportar CSV');
-               }
-             });
-             // Export Excel via fetch + blob (não abre nova aba).
-             // Use a separate AbortController so that exports are not cancelled by other fetches.
-             btnExportExcel.addEventListener('click', async () => {
-               const query = qs();
-               const sep = query ? '&' : '?';
-               const url = '/api/chamados/export' + query + sep + 'format=xlsx&_=' + Date.now();
-               const ac = new AbortController();
-               try {
-                 const res = await fetch(url, { signal: ac.signal, credentials: 'same-origin', cache: 'no-store' });
-                 if(!res.ok) throw new Error('HTTP ' + res.status);
-                 const dispo = res.headers.get('Content-Disposition') || '';
-                 let filename = 'chamados.xlsx';
-                 const m = /filename="?([^";]+)"?/i.exec(dispo);
-                 if(m) filename = m[1];
-                 const blob = await res.blob();
-                 const href = URL.createObjectURL(blob);
-                 const a = document.createElement('a');
-                 a.href = href; a.download = filename;
-                 document.body.appendChild(a); a.click(); a.remove();
-                 URL.revokeObjectURL(href);
-               } catch(err) {
-                 alert('Falha ao exportar Excel');
-               }
-             });
              // Paginação: carregar mais
              btnMore.addEventListener('click', () => {
                page++;
@@ -1557,6 +1506,85 @@ function criarUser(e) {
   });
 })();
 </script>
+
+<script>
+(() => {
+  const btn = document.getElementById('btnConfirmarRel');
+  const mainEl = document.querySelector('#relatorios .report-main');
+  const dtIni  = document.getElementById('relInicio');
+  const dtFim  = document.getElementById('relFim');
+  const inpCliente = document.getElementById('fClienteRel'); // já existe no HTML
+
+
+  function esc(s){ return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+  btn?.addEventListener('click', async () => {
+    const de = (dtIni?.value || '').trim();
+    const ate = (dtFim?.value || '').trim();
+	const cli = (inpCliente?.value || '').trim();
+
+    mainEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b;">Carregando cartões abertos no período…</div>';
+
+    const qs = new URLSearchParams();
+    if (de)  qs.set('de_criacao', de);
+    if (ate) qs.set('ate_criacao', ate);
+	if (cli) qs.set('cliente', cli);
+
+    const res = await fetch('/api/chamados?' + qs.toString(), { headers: { 'Accept':'application/json' }, cache:'no-store' });
+    const data = await res.json();
+    const items = Array.isArray(data) ? data : (data.items || []);
+
+    if (!items.length) {
+      mainEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b;">Nenhum cartão encontrado no período.</div>';
+      return;
+    }
+
+    const rows = items.map(it=>{
+      const dt = it.created_at ? new Date(it.created_at) : null;
+      const d  = dt ? dt.toLocaleString('pt-BR') : '—';
+      return `<tr><td>${esc(it.titulo)}</td><td>${esc(it.representante||'-')}</td><td>${esc(it.status||'-')}</td><td>${esc(d)}</td></tr>`;
+    }).join('');
+
+    mainEl.innerHTML = `
+      <div style="background:#fff;border:1px solid var(--stroke);border-radius:16px;overflow:auto;">
+        <table style="width:100%;min-width:720px;border-collapse:separate;border-spacing:0">
+          <thead><tr>
+            <th style="text-align:left;padding:12px 16px;border-bottom:1px solid var(--stroke);">Título</th>
+            <th style="text-align:left;padding:12px 16px;border-bottom:1px solid var(--stroke);">Representante</th>
+            <th style="text-align:left;padding:12px 16px;border-bottom:1px solid var(--stroke);">Status</th>
+            <th style="text-align:left;padding:12px 16px;border-bottom:1px solid var(--stroke);">Criado em</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div style="margin-top:12px;color:var(--muted);font-size:14px;">📊 <strong>${items.length}</strong> cartão(is) aberto(s) no período.</div>`;
+  });
+
+  // Export CSV/XLS do Relatório
+  async function baixar(formato){
+    const de  = (dtIni?.value || '').trim();
+    const ate = (dtFim?.value || '').trim();
+	const cli = (inpCliente?.value || '').trim();
+    const qs  = new URLSearchParams({ format: formato });
+    if (de)  qs.set('de_criacao', de);
+    if (ate) qs.set('ate_criacao', ate);
+	if (cli) qs.set('cliente', cli);
+    const res = await fetch('/api/chamados/export?' + qs.toString(), { cache:'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    let filename = `chamados.${formato==='xlsx'?'xlsx':'csv'}`;
+    const dispo = res.headers.get('Content-Disposition') || '';
+    const m = /filename="?([^";]+)"?/i.exec(dispo); if (m) filename = m[1];
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }
+  document.getElementById('btnCsvRel')?.addEventListener('click', ()=>baixar('csv').catch(e=>alert(e.message)));
+  document.getElementById('btnXlsRel')?.addEventListener('click', ()=>baixar('xlsx').catch(e=>alert(e.message)));
+})();
+</script>
+
+
 
 </body>
 </html>

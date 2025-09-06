@@ -388,6 +388,10 @@ def _auth_guard():
         or path.startswith("/api/representantes")
         or path == "/login"
         or path.startswith("/admin/login")
+        or path.startswith("/api/clientes") \
+        or path.startswith("/api/sistemas") \
+        or path.startswith("/api/modulos") \
+        or path.startswith("/api/ocorrencias")
     ):
         return
 
@@ -450,6 +454,19 @@ def _parse_rep_from_desc(desc: str) -> str:
         m = re.search(r"Representante\s*:\s*(.+)", desc, flags=re.I)
     return (m.group(1).strip() if m else "").strip()
 
+def _parse_cliente_from_desc(desc: str) -> str:
+    """
+    Extrai o nome do Cliente da descrição do card.
+    Aceita formatos com ou sem **, ex.: '**Cliente:** Supermercado X' ou 'Cliente: Supermercado X'.
+    Retorna '' se não encontrar.
+    """
+    if not desc:
+        return ""
+    m = re.search(r"\*\*\s*Cliente\s*:\s*\*\*\s*(.+)", desc, flags=re.I)
+    if not m:
+        m = re.search(r"Cliente\s*:\s*(.+)", desc, flags=re.I)
+    return (m.group(1).strip() if m else "").strip()
+
 
 def _normalize_phone_br(raw: str) -> str:
     """
@@ -505,38 +522,19 @@ def _iso_date_only(s: str):
 
 @app.route("/api/chamados")
 def api_chamados():
+    f_cliente = (request.args.get("cliente") or "").strip().lower()
+    f_sistema = (request.args.get("sistema") or "").strip().lower()
+    f_modulo  = (request.args.get("modulo") or "").strip().lower()
+    f_ocor    = (request.args.get("ocorrencia") or "").strip().lower()
     f_rep = (request.args.get("representante") or "").strip()
     f_stat = (request.args.get("status") or "").strip()
     f_de = _iso_date_only(request.args.get("de") or "")
     f_ate = _iso_date_only(request.args.get("ate") or "")
     f_q = (request.args.get("q") or "").strip().lower()
+    f_de_criacao  = _iso_date_only(request.args.get("de_criacao") or "")
+    f_ate_criacao = _iso_date_only(request.args.get("ate_criacao") or "")
 
-    try:
-        offset = int(request.args.get("offset", "0"))
-        if offset < 0:
-            offset = 0
-    except:
-        offset = 0
-    try:
-        limit = int(request.args.get("limit", "0"))
-        if limit < 0:
-            limit = 0
-    except:
-        limit = 0
-
-    # Force representative filter for non-admin users
-    if session.get("user") and not session.get("admin"):
-        f_rep = session.get("representante", "").strip()
-
-    # Verificação rápida de conectividade
-    if not API_KEY or not TOKEN or not BOARD_ID:
-        return (
-            jsonify(
-                {"error": "Configuração do Trello incompleta", "total": 0, "items": []}
-            ),
-            500,
-        )
-
+    
     # Pagination params
     try:
         offset = int(request.args.get("offset", "0"))
@@ -605,13 +603,13 @@ def api_chamados():
         representante = _parse_rep_from_desc(desc)
         whats = _parse_whatsapp_from_desc(desc)
 
-        # Filters
+        # === Filtros existentes ===
         if f_rep and representante != f_rep:
             continue
         if f_stat and status != f_stat:
             continue
 
-        # Date range filter
+        # Data pela última atividade (de/ate)
         if (f_de or f_ate) and dt_raw:
             try:
                 d = datetime.fromisoformat(dt_raw.replace("Z", "+00:00")).date()
@@ -622,28 +620,49 @@ def api_chamados():
             except Exception:
                 pass
 
-        # Text search
+        # Busca textual (q)
         if f_q:
             base = (titulo + "\n" + desc).lower()
             if f_q not in base:
                 continue
 
+        # Cliente (parcial/insensível a maiúsculas) — casa no título ou descrição
+        if f_cliente:
+            base_cli = (titulo + "\n" + desc).lower()
+            if f_cliente not in base_cli:
+                continue
+
+        # === Inferir criação pelo ObjectID e filtrar por criação (de_criacao/ate_criacao) ===
         card_id = c.get("id")
         created_at = _infer_created_from_trello_id(card_id)
-        items.append(
-            {
-                "id": card_id,
-                "titulo": titulo,
-                "descricao": desc,
-                "representante": representante,
-                "lista": lista,
-                "status": status,
-                "url": url,
-                "ultima_atividade": ultima,
-                "whatsapp": whats,
-                "created_at": created_at,
-            }
-        )
+
+        if f_de_criacao or f_ate_criacao:
+            try:
+                created_date = datetime.fromisoformat(
+                    created_at.replace("Z", "+00:00")
+                ).date() if created_at else None
+            except Exception:
+                created_date = None
+            if created_date:
+                if f_de_criacao and created_date < f_de_criacao:
+                    continue
+                if f_ate_criacao and created_date > f_ate_criacao:
+                    continue
+
+        items.append({
+            "id": card_id,
+            "titulo": titulo,
+            "descricao": desc,
+            "representante": representante,
+            "lista": lista,
+            "status": status,
+            "url": url,
+            "ultima_atividade": ultima,
+            "whatsapp": whats,
+            "created_at": created_at,
+        })
+
+
 
     total = len(items)
     paginated = items
@@ -814,6 +833,9 @@ def api_chamados_export():
     f_de = _iso_date_only(request.args.get("de") or "")
     f_ate = _iso_date_only(request.args.get("ate") or "")
     f_q = (request.args.get("q") or "").strip().lower()
+    f_de_criacao  = _iso_date_only(request.args.get("de_criacao") or "")
+    f_ate_criacao = _iso_date_only(request.args.get("ate_criacao") or "")
+    f_cliente = (request.args.get("cliente") or "").strip().lower()
     # Força filtro do representante para usuários não admin
     if session.get("user") and not session.get("admin"):
         f_rep = session.get("representante", "").strip()
@@ -838,14 +860,14 @@ def api_chamados_export():
         status = LIST_STATUS_MAP.get(lista, "Em aberto")
         url = c.get("shortUrl")
         dt_raw = c.get("dateLastActivity")
-        ultima = dt_raw
-        representante = _parse_rep_from_desc(desc)
-        whats = _parse_whatsapp_from_desc(desc)
-        # Filtros
-        if f_rep and representante != f_rep:
+
+        # === Filtros existentes ===
+        if f_rep and _parse_rep_from_desc(desc) != f_rep:
             continue
         if f_stat and status != f_stat:
             continue
+
+        # Data pela última atividade (de/ate)
         if (f_de or f_ate) and dt_raw:
             try:
                 d = datetime.fromisoformat(dt_raw.replace("Z", "+00:00")).date()
@@ -855,26 +877,51 @@ def api_chamados_export():
                     continue
             except Exception:
                 pass
+
+        # Busca textual (q)
         if f_q:
             base = (titulo + "\n" + desc).lower()
             if f_q not in base:
                 continue
+
+        # Cliente (parcial/insensível a maiúsculas) — casa no título ou descrição
+        if f_cliente:
+            base_cli = (titulo + "\n" + desc).lower()
+            if f_cliente not in base_cli:
+                continue
+
+        # === Inferir criação pelo ObjectID e filtrar por criação (de_criacao/ate_criacao) ===
         card_id = c.get("id")
         created_at = _infer_created_from_trello_id(card_id)
-        items.append(
-            {
-                "id": card_id,
-                "titulo": titulo,
-                "descricao": desc,
-                "representante": representante,
-                "lista": lista,
-                "status": status,
-                "url": url,
-                "ultima_atividade": ultima,
-                "whatsapp": whats,
-                "created_at": created_at,
-            }
-        )
+
+        if f_de_criacao or f_ate_criacao:
+            try:
+                created_date = datetime.fromisoformat(
+                    created_at.replace("Z", "+00:00")
+                ).date() if created_at else None
+            except Exception:
+                created_date = None
+            if created_date:
+                if f_de_criacao and created_date < f_de_criacao:
+                    continue
+                if f_ate_criacao and created_date > f_ate_criacao:
+                    continue
+
+        items.append({
+            "id": card_id,
+            "titulo": titulo,
+            "descricao": desc,
+            "representante": _parse_rep_from_desc(desc),
+            "lista": lista,
+            "status": status,
+            "url": url,
+            "ultima_atividade": dt_raw,
+            "whatsapp": _parse_whatsapp_from_desc(desc),
+            "created_at": created_at,
+        })
+
+
+
     # Gera arquivo
     now_str = datetime.now().strftime("%Y%m%d_%H%M%S")
     if fmt == "csv":
@@ -884,6 +931,7 @@ def api_chamados_export():
             "id",
             "titulo",
             "descricao",
+             "cliente",
             "representante",
             "lista",
             "status",
@@ -949,6 +997,8 @@ def api_representantes():
     reps = Representative.query.order_by(Representative.nome.asc()).all()
     response = jsonify([r.nome for r in reps])
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
     return response
 
 
