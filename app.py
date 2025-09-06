@@ -841,7 +841,7 @@ def api_chamados_stream():
 def api_chamados_export():
     fmt = (request.args.get("format") or "csv").lower()
 
-    # Filtros
+    # filtros
     f_rep = (request.args.get("representante") or "").strip()
     f_stat = (request.args.get("status") or "").strip()
     f_de = _iso_date_only(request.args.get("de") or "")
@@ -851,15 +851,15 @@ def api_chamados_export():
     f_ate_criacao = _iso_date_only(request.args.get("ate_criacao") or "")
     f_cliente = (request.args.get("cliente") or "").strip().lower()
 
-    # Força representante para não-admin
+    # força representante para não-admin
     if session.get("user") and not session.get("admin"):
         f_rep = session.get("representante", "").strip()
 
-    # Mapas de listas
+    # listas -> mapa id->nome
     lists = cached_trello_get(f"/boards/{BOARD_ID}/lists", params={})
     id_to_list = {l["id"]: l.get("name", "") for l in lists}
 
-    # Cartões do board
+    # busca cards
     cards = cached_trello_get(
         f"/boards/{BOARD_ID}/cards",
         params={
@@ -879,18 +879,18 @@ def api_chamados_export():
         url = c.get("shortUrl")
         dt_raw = c.get("dateLastActivity")
 
-        # Campos derivados da descrição
-        rep     = _parse_rep_from_desc(desc)
-        whats   = _parse_whatsapp_from_desc(desc)
-        cliente = _parse_cliente_from_desc(desc)
+        # campos derivados
+        rep      = _parse_rep_from_desc(desc)
+        whats    = _parse_whatsapp_from_desc(desc)
+        cliente  = _parse_cliente_from_desc(desc)   # <- seu extrator de Cliente
 
-        # ----- Filtros -----
+        # filtros simples
         if f_rep and rep != f_rep:
             continue
         if f_stat and status != f_stat:
             continue
 
-        # Período pela última atividade
+        # filtro por última atividade (de/ate)
         if (f_de or f_ate) and dt_raw:
             try:
                 d = datetime.fromisoformat(dt_raw.replace("Z", "+00:00")).date()
@@ -901,22 +901,20 @@ def api_chamados_export():
             except Exception:
                 pass
 
-        # Texto livre
+        # busca textual livre
         if f_q:
             base = (titulo + "\n" + desc).lower()
             if f_q not in base:
                 continue
 
-        # Cliente: agora só compara com o campo 'cliente' extraído
+        # filtro de Cliente — agora só pelo campo Cliente extraído
         if f_cliente:
             if f_cliente not in (cliente or "").lower():
                 continue
 
-        # Criado em (inferido pelo id do Trello)
+        # inferir criação e filtrar por criação (aplica somente se AMBAS as datas vierem)
         card_id = c.get("id")
         created_at = _infer_created_from_trello_id(card_id)
-
-        # Aplica filtro de criação apenas se AMBAS datas forem dadas
         if f_de_criacao and f_ate_criacao:
             try:
                 created_date = (
@@ -945,19 +943,21 @@ def api_chamados_export():
             "created_at": created_at,
         })
 
-    # ----- Saída: CSV ou XLSX -----
+    # gerar arquivo
     now_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+
     if fmt == "csv":
         output = io.StringIO()
         fieldnames = [
-            "id", "titulo", "descricao", "cliente", "representante",
-            "lista", "status", "url", "ultima_atividade", "whatsapp", "created_at",
+            "id","titulo","descricao","cliente","representante","lista",
+            "status","url","ultima_atividade","whatsapp","created_at",
         ]
         writer = csv.DictWriter(output, fieldnames=fieldnames)
         writer.writeheader()
         for it in items:
             writer.writerow(it)
-        csv_data = "\ufeff" + output.getvalue()  # BOM p/ Excel PT-BR
+        bom = "\ufeff"
+        csv_data = bom + output.getvalue()
         output.close()
         fname = f"chamados_{now_str}.csv"
         return Response(
@@ -968,7 +968,7 @@ def api_chamados_export():
             },
         )
 
-    if fmt in ("xlsx", "xls"):
+    elif fmt in ("xlsx", "xls"):
         df = pd.DataFrame(items)
         output = io.BytesIO()
         try:
@@ -976,16 +976,20 @@ def api_chamados_export():
                 df.to_excel(writer, index=False, sheet_name="Chamados")
         except Exception as e:
             return jsonify(success=False, message="Falha ao gerar Excel", detail=str(e)), 500
+        excel_data = output.getvalue()
+        output.close()
         fname = f"chamados_{now_str}.xlsx"
         return Response(
-            output.getvalue(),
+            excel_data,
             headers={
                 "Content-Disposition": f"attachment; filename={fname}",
                 "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             },
         )
 
-    return jsonify(success=False, message="Formato inválido", allowed=["csv", "xlsx"]), 400
+    else:
+        return jsonify(success=False, message="Formato inválido", allowed=["csv", "xlsx"]), 400
+
 
 
 
