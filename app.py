@@ -538,19 +538,18 @@ def api_chamados():
     f_de_criacao  = _iso_date_only(request.args.get("de_criacao") or "")
     f_ate_criacao = _iso_date_only(request.args.get("ate_criacao") or "")
 
-    
     # Pagination params
     try:
         offset = int(request.args.get("offset", "0"))
         if offset < 0:
             offset = 0
-    except:
+    except Exception:
         offset = 0
     try:
         limit = int(request.args.get("limit", "0"))
         if limit < 0:
             limit = 0
-    except:
+    except Exception:
         limit = 0
 
     # Force representative filter for non-admin users
@@ -604,6 +603,7 @@ def api_chamados():
         url = c.get("shortUrl")
         dt_raw = c.get("dateLastActivity")
         ultima = dt_raw
+
         representante = _parse_rep_from_desc(desc)
         whats = _parse_whatsapp_from_desc(desc)
         cliente = _parse_cliente_from_desc(desc)
@@ -613,7 +613,9 @@ def api_chamados():
             continue
         if f_stat and status != f_stat:
             continue
-        if f_cliente and f_cliente not in cliente_nome.lower():
+
+        # Filtro de Cliente — SOMENTE no campo 'Cliente/Nome' extraído
+        if f_cliente and f_cliente not in (cliente or "").lower():
             continue
 
         # Data pela última atividade (de/ate)
@@ -629,39 +631,35 @@ def api_chamados():
 
         # Busca textual (q)
         if f_q:
-            base = (titulo + "\n" + desc).lower()
+            base = (titulo + "
+" + desc).lower()
             if f_q not in base:
                 continue
-
-        # Cliente (parcial/insensível a maiúsculas) — casa no título ou descrição
-        if f_cliente:
-    if f_cliente not in (cliente or "").lower():
-        continue
-
 
         # === Inferir criação pelo ObjectID e filtrar por criação (de_criacao/ate_criacao) ===
         card_id = c.get("id")
         created_at = _infer_created_from_trello_id(card_id)
 
         # Só filtra por criação se as DUAS datas foram informadas
-if f_de_criacao and f_ate_criacao:
-    try:
-        created_date = datetime.fromisoformat(
-            created_at.replace("Z", "+00:00")
-        ).date() if created_at else None
-    except Exception:
-        created_date = None
-    if created_date:
-        if created_date < f_de_criacao:
-            continue
-        if created_date > f_ate_criacao:
-            continue
-
+        if f_de_criacao and f_ate_criacao:
+            try:
+                created_date = (
+                    datetime.fromisoformat(created_at.replace("Z", "+00:00")).date()
+                    if created_at else None
+                )
+            except Exception:
+                created_date = None
+            if created_date:
+                if created_date < f_de_criacao:
+                    continue
+                if created_date > f_ate_criacao:
+                    continue
 
         items.append({
             "id": card_id,
             "titulo": titulo,
             "descricao": desc,
+            "cliente": cliente,
             "representante": representante,
             "lista": lista,
             "status": status,
@@ -669,12 +667,7 @@ if f_de_criacao and f_ate_criacao:
             "ultima_atividade": ultima,
             "whatsapp": whats,
             "created_at": created_at,
-            "cliente": cliente,
-            "cliente": cliente_nome,
-
         })
-
-
 
     total = len(items)
     paginated = items
