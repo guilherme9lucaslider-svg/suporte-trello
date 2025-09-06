@@ -1513,22 +1513,33 @@ function criarUser(e) {
   const mainEl = document.querySelector('#relatorios .report-main');
   const dtIni  = document.getElementById('relInicio');
   const dtFim  = document.getElementById('relFim');
-  const inpCliente = document.getElementById('fClienteRel'); // já existe no HTML
-
+  const inpCliente = document.getElementById('fClienteRel');
 
   function esc(s){ return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
   btn?.addEventListener('click', async () => {
-    const de = (dtIni?.value || '').trim();
+    const de  = (dtIni?.value || '').trim();
     const ate = (dtFim?.value || '').trim();
-	const cli = (inpCliente?.value || '').trim();
+    const cli = (inpCliente?.value || '').trim();
+
+    // >>> OBRIGATÓRIO: exigir as DUAS datas
+    if (!de || !ate) {
+      mainEl.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:center;height:100%;">
+          <div style="color:#7f1d1d;background:#fff3f3;border:1px solid #fecaca;padding:16px;border-radius:12px;max-width:720px;">
+            <strong>Informe a data inicial e a data final</strong> para gerar o relatório.
+          </div>
+        </div>`;
+      return;
+    }
+    // <<< FIM obrigatório
 
     mainEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b;">Carregando cartões abertos no período…</div>';
 
     const qs = new URLSearchParams();
-    if (de)  qs.set('de_criacao', de);
-    if (ate) qs.set('ate_criacao', ate);
-	if (cli) qs.set('cliente', cli);
+    qs.set('de_criacao', de);
+    qs.set('ate_criacao', ate);
+    if (cli) qs.set('cliente', cli);
 
     const res = await fetch('/api/chamados?' + qs.toString(), { headers: { 'Accept':'application/json' }, cache:'no-store' });
     const data = await res.json();
@@ -1560,15 +1571,25 @@ function criarUser(e) {
       <div style="margin-top:12px;color:var(--muted);font-size:14px;">📊 <strong>${items.length}</strong> cartão(is) aberto(s) no período.</div>`;
   });
 
-  // Export CSV/XLS do Relatório
+
+    // Export CSV/XLS do Relatório
   async function baixar(formato){
     const de  = (dtIni?.value || '').trim();
     const ate = (dtFim?.value || '').trim();
-	const cli = (inpCliente?.value || '').trim();
+    const cli = (inpCliente?.value || '').trim();
+
+    // >>> OBRIGATÓRIO: exigir as DUAS datas
+    if (!de || !ate) {
+      alert('Para exportar, informe a data inicial e a data final.');
+      return;
+    }
+    // <<< FIM obrigatório
+
     const qs  = new URLSearchParams({ format: formato });
-    if (de)  qs.set('de_criacao', de);
-    if (ate) qs.set('ate_criacao', ate);
-	if (cli) qs.set('cliente', cli);
+    qs.set('de_criacao', de);
+    qs.set('ate_criacao', ate);
+    if (cli) qs.set('cliente', cli);
+
     const res = await fetch('/api/chamados/export?' + qs.toString(), { cache:'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     let filename = `chamados.${formato==='xlsx'?'xlsx':'csv'}`;
@@ -1583,6 +1604,7 @@ function criarUser(e) {
   document.getElementById('btnXlsRel')?.addEventListener('click', ()=>baixar('xlsx').catch(e=>alert(e.message)));
 })();
 </script>
+
 
 
 

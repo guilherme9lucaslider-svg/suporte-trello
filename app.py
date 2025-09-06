@@ -456,16 +456,20 @@ def _parse_rep_from_desc(desc: str) -> str:
 
 def _parse_cliente_from_desc(desc: str) -> str:
     """
-    Extrai o nome do Cliente da descrição do card.
-    Aceita formatos com ou sem **, ex.: '**Cliente:** Supermercado X' ou 'Cliente: Supermercado X'.
-    Retorna '' se não encontrar.
+    Extrai o nome do Cliente/Nome da descrição do card.
+    Aceita '**Cliente:** X', '**Nome:** X' ou sem asteriscos.
+    Pega só a primeira linha após o rótulo.
     """
     if not desc:
         return ""
-    m = re.search(r"\*\*\s*Cliente\s*:\s*\*\*\s*(.+)", desc, flags=re.I)
+    m = re.search(r"\*\*\s*(?:Cliente|Nome)\s*:\s*\*\*\s*(.+)", desc, flags=re.I)
     if not m:
-        m = re.search(r"Cliente\s*:\s*(.+)", desc, flags=re.I)
-    return (m.group(1).strip() if m else "").strip()
+        m = re.search(r"(?:Cliente|Nome)\s*:\s*(.+)", desc, flags=re.I)
+    val = (m.group(1) if m else "").strip()
+    return val.splitlines()[0].strip()
+
+
+
 
 
 def _normalize_phone_br(raw: str) -> str:
@@ -602,11 +606,14 @@ def api_chamados():
         ultima = dt_raw
         representante = _parse_rep_from_desc(desc)
         whats = _parse_whatsapp_from_desc(desc)
+        cliente = _parse_cliente_from_desc(desc)
 
         # === Filtros existentes ===
         if f_rep and representante != f_rep:
             continue
         if f_stat and status != f_stat:
+            continue
+        if f_cliente and f_cliente not in cliente_nome.lower():
             continue
 
         # Data pela última atividade (de/ate)
@@ -628,26 +635,28 @@ def api_chamados():
 
         # Cliente (parcial/insensível a maiúsculas) — casa no título ou descrição
         if f_cliente:
-            base_cli = (titulo + "\n" + desc).lower()
-            if f_cliente not in base_cli:
-                continue
+    if f_cliente not in (cliente or "").lower():
+        continue
+
 
         # === Inferir criação pelo ObjectID e filtrar por criação (de_criacao/ate_criacao) ===
         card_id = c.get("id")
         created_at = _infer_created_from_trello_id(card_id)
 
-        if f_de_criacao or f_ate_criacao:
-            try:
-                created_date = datetime.fromisoformat(
-                    created_at.replace("Z", "+00:00")
-                ).date() if created_at else None
-            except Exception:
-                created_date = None
-            if created_date:
-                if f_de_criacao and created_date < f_de_criacao:
-                    continue
-                if f_ate_criacao and created_date > f_ate_criacao:
-                    continue
+        # Só filtra por criação se as DUAS datas foram informadas
+if f_de_criacao and f_ate_criacao:
+    try:
+        created_date = datetime.fromisoformat(
+            created_at.replace("Z", "+00:00")
+        ).date() if created_at else None
+    except Exception:
+        created_date = None
+    if created_date:
+        if created_date < f_de_criacao:
+            continue
+        if created_date > f_ate_criacao:
+            continue
+
 
         items.append({
             "id": card_id,
@@ -660,6 +669,9 @@ def api_chamados():
             "ultima_atividade": ultima,
             "whatsapp": whats,
             "created_at": created_at,
+            "cliente": cliente,
+            "cliente": cliente_nome,
+
         })
 
 
@@ -853,7 +865,7 @@ def api_chamados_export():
     )
     items: list[dict] = []
     for c in cards:
-        titulo = (c.get("name") or "").strip()
+                titulo = (c.get("name") or "").strip()
         desc = c.get("desc") or ""
         lista_id = c.get("idList") or ""
         lista = id_to_list.get(lista_id, "")
@@ -861,8 +873,13 @@ def api_chamados_export():
         url = c.get("shortUrl")
         dt_raw = c.get("dateLastActivity")
 
+        # Campos derivados da descrição
+        rep     = _parse_rep_from_desc(desc)
+        whats   = _parse_whatsapp_from_desc(desc)
+        cliente = _parse_cliente_from_desc(desc)
+
         # === Filtros existentes ===
-        if f_rep and _parse_rep_from_desc(desc) != f_rep:
+        if f_rep and rep != f_rep:
             continue
         if f_stat and status != f_stat:
             continue
@@ -884,17 +901,18 @@ def api_chamados_export():
             if f_q not in base:
                 continue
 
-        # Cliente (parcial/insensível a maiúsculas) — casa no título ou descrição
+        # >>> Cliente: agora filtra SOMENTE pelo campo 'Cliente/Nome' extraído
         if f_cliente:
-            base_cli = (titulo + "\n" + desc).lower()
-            if f_cliente not in base_cli:
+            if f_cliente not in (cliente or "").lower():
                 continue
+        # <<< fim cliente
 
-        # === Inferir criação pelo ObjectID e filtrar por criação (de_criacao/ate_criacao) ===
+        # === Inferir criação e filtrar por criação (de_criacao/ate_criacao) ===
         card_id = c.get("id")
         created_at = _infer_created_from_trello_id(card_id)
 
-        if f_de_criacao or f_ate_criacao:
+        # Obrigatório: aplica APENAS se as DUAS datas foram informadas
+        if f_de_criacao and f_ate_criacao:
             try:
                 created_date = datetime.fromisoformat(
                     created_at.replace("Z", "+00:00")
@@ -902,23 +920,26 @@ def api_chamados_export():
             except Exception:
                 created_date = None
             if created_date:
-                if f_de_criacao and created_date < f_de_criacao:
+                if created_date < f_de_criacao:
                     continue
-                if f_ate_criacao and created_date > f_ate_criacao:
+                if created_date > f_ate_criacao:
                     continue
 
         items.append({
             "id": card_id,
             "titulo": titulo,
             "descricao": desc,
-            "representante": _parse_rep_from_desc(desc),
+            "cliente": cliente,            # exporta a coluna cliente
+            "representante": rep,
             "lista": lista,
             "status": status,
             "url": url,
             "ultima_atividade": dt_raw,
-            "whatsapp": _parse_whatsapp_from_desc(desc),
+            "whatsapp": whats,
             "created_at": created_at,
         })
+
+
 
 
 
