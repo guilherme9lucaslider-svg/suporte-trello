@@ -439,9 +439,7 @@
                         <tr data-id="{{ r.id }}">
                            <td><strong>{{ r.nome }}</strong></td>
                            <td class="actions">
-                              <form method="post" action="/admin/rep/{{ r.id }}/delete" onsubmit="return confirm('Remover representante? (somente se não houver usuários)')">
-                                 <button class="btn btn--ghost" type="submit">Remover</button>
-                              </form>
+                              <button class="btn btn--ghost" type="button" onclick="removerRep({{ r.id }})">Remover</button>
                            </td>
                         </tr>
                         {% else %}
@@ -481,9 +479,7 @@
                            <td><strong>{{ u.username }}</strong></td>
                            <td><span class="pill">{{ u.representative.nome }}</span></td>
                            <td class="actions">
-                              <form method="post" action="/admin/user/{{ u.id }}/delete" onsubmit="return confirm('Remover usuário?')">
-                                 <button class="btn btn--ghost" type="submit">Remover</button>
-                              </form>
+                              <button class="btn btn--ghost" type="button" onclick="removerUser({{ u.id }})">Remover</button>
                            </td>
                         </tr>
                         {% else %}
@@ -1397,9 +1393,7 @@ function criarRep(e) {
           html += '<tr data-id="'+r.id+'">'+
                     '<td><strong>'+r.nome+'</strong></td>'+
                     '<td class="actions">'+
-                      '<form method="post" action="/admin/rep/'+r.id+'/delete" onsubmit="return confirm(\'Remover representante? (somente se não houver usuários)\')">'+
-                        '<button class="btn btn--ghost" type="submit">Remover</button>'+
-                      '</form>'+
+                      '<button class="btn btn--ghost" type="button" onclick="removerRep('+r.id+')">Remover</button>'+
                     '</td>'+
                   '</tr>';
         });
@@ -1425,6 +1419,7 @@ function criarRep(e) {
     });
   return false;
 }
+
 
 function criarUser(e) {
   e.preventDefault();
@@ -1455,9 +1450,7 @@ function criarUser(e) {
                     '<td><strong>'+u.username+'</strong></td>'+
                     '<td><span class="pill">'+repName+'</span></td>'+
                     '<td class="actions">'+
-                      '<form method="post" action="/admin/user/'+u.id+'/delete" onsubmit="return confirm(\'Remover usuário?\')">'+
-                        '<button class="btn btn--ghost" type="submit">Remover</button>'+
-                      '</form>'+
+                      '<button class="btn btn--ghost" type="button" onclick="removerUser('+u.id+')">Remover</button>'+
                     '</td>'+
                   '</tr>';
         });
@@ -1474,6 +1467,7 @@ function criarUser(e) {
     });
   return false;
 }
+
 
 // ====== Script da aba de Relatórios ======
 // Este script habilita/desabilita os campos de filtro adicionais conforme as checkboxes
@@ -1643,6 +1637,88 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btnXlsRel')?.addEventListener('click', ()=>baixar('xlsx').catch(e=>alert(e.message)));
 })();
 </script>
+
+<script>
+async function removerRep(id) {
+  if (!confirm("Ao deletar um representante, todos os usuários vinculados também serão deletados. Deseja continuar?")) {
+    return;
+  }
+  try {
+    const res = await fetch('/admin/rep/' + id + '/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ confirm: true })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      alert(data.message || 'Erro ao remover representante');
+      return;
+    }
+    // Atualiza a tabela de representantes
+    const tbody = document.querySelector('#t-reps tbody');
+    if (tbody) {
+      let html = '';
+      (data.reps || []).forEach(r => {
+        html += '<tr data-id="'+r.id+'">'+
+                  '<td><strong>'+r.nome+'</strong></td>'+
+                  '<td class="actions">'+
+                    '<button class="btn btn--ghost" type="button" onclick="removerRep('+r.id+')">Remover</button>'+
+                  '</td>'+
+                '</tr>';
+      });
+      if (!html) {
+        html = '<tr><td colspan="2" class="empty-state">Nenhum representante cadastrado</td></tr>';
+      }
+      tbody.innerHTML = html;
+    }
+    alert(data.message || 'Representante removido com sucesso');
+  } catch (e) {
+    alert('Erro: ' + e.message);
+  }
+}
+
+async function removerUser(id) {
+  if (!confirm("Tem certeza que deseja remover este usuário?")) {
+    return;
+  }
+  try {
+    const res = await fetch('/admin/user/' + id + '/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin'
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      alert(data.message || 'Erro ao remover usuário');
+      return;
+    }
+    // Atualiza a tabela de usuários
+    const tbody = document.querySelector('#t-users tbody');
+    if (tbody) {
+      let html = '';
+      (data.users || []).forEach(u => {
+        const repName = u.representante || '';
+        html += '<tr data-id="'+u.id+'">'+
+                  '<td><strong>'+u.username+'</strong></td>'+
+                  '<td><span class="pill">'+repName+'</span></td>'+
+                  '<td class="actions">'+
+                    '<button class="btn btn--ghost" type="button" onclick="removerUser('+u.id+')">Remover</button>'+
+                  '</td>'+
+                '</tr>';
+      });
+      if (!html) {
+        html = '<tr><td colspan="3" class="empty-state">Nenhum usuário cadastrado</td></tr>';
+      }
+      tbody.innerHTML = html;
+    }
+    alert(data.message || 'Usuário removido com sucesso');
+  } catch (e) {
+    alert('Erro: ' + e.message);
+  }
+}
+</script>
+
 
 
 

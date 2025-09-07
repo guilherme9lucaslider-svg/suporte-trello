@@ -1313,22 +1313,33 @@ def admin_rep_new():
 @app.route("/admin/rep/<int:rep_id>/delete", methods=["POST"])
 def admin_rep_del(rep_id):
     if not admin_logged():
-        return redirect(url_for("admin_login"))
+        return jsonify(ok=False, deleted=False, message="Sessão expirada, faça login novamente."), 401
+
     rep = Representative.query.get_or_404(rep_id)
-    deleted = False
-    if not rep.users:
-        db.session.delete(rep)
-        db.session.commit()
-        deleted = True
-    if wants_json():
-        reps = [
-            serialize_rep(r)
-            for r in Representative.query.order_by(Representative.nome.asc()).all()
-        ]
-        return jsonify(ok=True, deleted=deleted, reps=reps)
-    # Reset fresh_admin so that after deleting a representative the admin page can be reopened
-    session["fresh_admin"] = True
-    return redirect(url_for("admin_home"))
+
+    # Confirmação obrigatória vinda do front-end
+    confirm = request.form.get("confirm") or (request.json or {}).get("confirm")
+    if str(confirm).lower() not in ("1", "true", "sim", "yes"):
+        # Se não confirmou, retorna aviso
+        msg = "Ao deletar um representante, todos os usuários vinculados também serão deletados. Confirme para prosseguir."
+        return jsonify(ok=False, deleted=False, message=msg), 400
+
+    # Deletar representante e todos os usuários vinculados (cascade já cuida disso)
+    db.session.delete(rep)
+    db.session.commit()
+
+    reps = [
+        serialize_rep(r)
+        for r in Representative.query.order_by(Representative.nome.asc()).all()
+    ]
+    return jsonify(
+        ok=True,
+        deleted=True,
+        reps=reps,
+        message="Representante e todos os usuários vinculados foram removidos com sucesso."
+    )
+
+
 
 
 @app.route("/admin/user/new", methods=["POST"])
@@ -1362,16 +1373,22 @@ def admin_user_new():
 @app.route("/admin/user/<int:user_id>/delete", methods=["POST"])
 def admin_user_del(user_id):
     if not admin_logged():
-        return redirect(url_for("admin_login"))
+        return jsonify(ok=False, deleted=False, message="Sessão expirada, faça login novamente."), 401
+
     u = User.query.get_or_404(user_id)
     db.session.delete(u)
     db.session.commit()
-    if wants_json():
-        users = [
-            serialize_user(u) for u in User.query.order_by(User.username.asc()).all()
-        ]
-        return jsonify(ok=True, deleted=True, users=users)
-    return redirect(url_for("admin_home"))
+
+    users = [
+        serialize_user(u) for u in User.query.order_by(User.username.asc()).all()
+    ]
+    return jsonify(
+        ok=True,
+        deleted=True,
+        users=users,
+        message="Usuário removido com sucesso."
+    )
+
 
 
 # -----------------------------------------------------------------------------
