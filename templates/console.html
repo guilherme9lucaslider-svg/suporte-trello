@@ -222,158 +222,218 @@
          }
          #painel a[data-kind="trello-link"] .icon { width: 16px; height: 16px; display: inline-block; }
          #painel a[data-kind="trello-link"]:hover{ filter: brightness(.98); transform: translateY(-2px); box-shadow: var(--shadow); }
-
-        /* ==================== Relatórios ==================== */
-        /* Barra de ações do relatório */
-        #relatorios .report-actions {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 12px;
-          align-items: center;
-          background: #fff;
-          padding: 16px 24px;
-          border: 1px solid var(--stroke);
-          border-radius: 24px;
-          box-shadow: var(--shadow);
-          margin-bottom: 24px;
-        }
-        #relatorios .report-actions .separator {
-          width: 1px;
-          height: 32px;
-          background: var(--stroke);
-          margin: 0 8px;
-        }
-        #relatorios .report-actions .btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          height: 40px;
-          padding: 8px 16px;
-          border-radius: 12px;
-          font-size: 14px;
-          font-weight: 600;
-          border: 1px solid var(--stroke);
-          background: linear-gradient(135deg,var(--stroke-light) 0%,#f8fafc 100%);
-          color: var(--ink);
-          cursor: pointer;
-          transition: .2s;
-          box-shadow: var(--shadow-sm);
-        }
-        #relatorios .report-actions .btn:hover {
-          transform: translateY(-2px);
-          box-shadow: var(--shadow);
-        }
-        #relatorios .report-actions .btn img.icon {
-          width: 20px;
-          height: 20px;
-        }
-        /* Layout lateral do relatório */
-        #relatorios .report-layout {
-          display: flex;
-          gap: 24px;
-          align-items: flex-start;
-          margin-top: 24px;
-        }
-        #relatorios .report-sidebar {
-          width: 350px; /* Largura reduzida para acomodar todos filtros */
-          background: #fff;
-          padding: 24px 20px;
-          border: 1px solid var(--stroke);
-          border-radius: 24px;
-          box-shadow: var(--shadow);
-        }
-        #relatorios .report-main {
-          flex: 1;
-          background: #f8fafc;
-          border: 1px solid var(--stroke-light);
-          border-radius: 24px;
-          padding: 24px;
-          min-height: 500px;
-          overflow: auto;
-        }
-        #relatorios .sidebar-group {
-          margin-bottom: 20px;
-        }
-        #relatorios .sidebar-group label.title {
-          display: block;
-          font-weight: 700;
-          margin-bottom: 8px;
-        }
-        #relatorios .sidebar-group .radio-options {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 8px;
-          margin-top: 4px;
-          margin-bottom: 8px;
-          width: 100%;
-        }
-        #relatorios .sidebar-group .sub-field {
-          margin-top: 8px;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-        #relatorios .filter-adv {
-          margin-bottom: 12px;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-        #relatorios .filter-adv .checkbox-label {
-          display: flex;
-          align-items: center;
-          gap: 4px; /* Espaço menor entre checkbox e texto */
-          font-weight: 600;
-          font-size: 14px;
-        }
-        #relatorios .filter-adv .input,
-        #relatorios .filter-adv select {
-          width: 100%;
-        }
-
-        /* Reduz a largura mínima dos campos dentro da barra lateral de relatórios para caber */
-        #relatorios .report-sidebar input,
-        #relatorios .report-sidebar select {
-          min-width: 0;
-        }
-		
-		/* ===== Modal de confirmação ===== */
-		.confirm-modal{
-		  position: fixed;
-		  inset: 0;
-		  display: none;
-		  align-items: center;
-		  justify-content: center;
-		  background: rgba(15,31,28,0.40);
-		  backdrop-filter: blur(2px);
-		  z-index: 9999;
-		  padding: 16px;
-		}
-		.confirm__box{
-		  width: 100%;
-		  max-width: 520px;
-		  background: var(--surface);
-		  border: 1px solid var(--stroke);
-		  border-radius: 16px;
-		  box-shadow: 0 10px 40px rgba(0,0,0,.15);
-		  padding: 20px;
-		}
-		.confirm__title{
-		  font-weight: 700;
-		  font-size: 18px;
-		  margin-bottom: 8px;
-		  color: var(--ink);
-		}
-		.confirm__msg{
-		  color: var(--muted);
-		  line-height: 1.5;
-		  margin-bottom: 16px;
-		}
-		.confirm__actions{
-		  display: flex;
-		  gap: 10px;
-		  justify-content: flex-end;
-		}
+         /* ==================== Relatórios ==================== */
+         /* Barra de ações do relatório */
+         #relatorios .report-actions {
+         display: flex;
+         flex-wrap: wrap;
+         gap: 12px;
+         align-items: center;
+         background: #fff;
+         padding: 16px 24px;
+         border: 1px solid var(--stroke);
+         border-radius: 24px;
+         box-shadow: var(--shadow);
+         margin-bottom: 24px;
+         }
+         #relatorios .report-actions .separator {
+         width: 1px;
+         height: 32px;
+         background: var(--stroke);
+         margin: 0 8px;
+         }
+         #relatorios .report-actions .btn {
+         display: inline-flex;
+         align-items: center;
+         gap: 8px;
+         height: 40px;
+         padding: 8px 16px;
+         border-radius: 12px;
+         font-size: 14px;
+         font-weight: 600;
+         border: 1px solid var(--stroke);
+         background: linear-gradient(135deg,var(--stroke-light) 0%,#f8fafc 100%);
+         color: var(--ink);
+         cursor: pointer;
+         transition: .2s;
+         box-shadow: var(--shadow-sm);
+         }
+         #relatorios .report-actions .btn:hover {
+         transform: translateY(-2px);
+         box-shadow: var(--shadow);
+         }
+         #relatorios .report-actions .btn img.icon {
+         width: 20px;
+         height: 20px;
+         }
+         /* Layout lateral do relatório */
+         #relatorios .report-layout {
+         display: flex;
+         gap: 24px;
+         align-items: flex-start;
+         margin-top: 24px;
+         }
+         #relatorios .report-sidebar {
+         width: 350px; /* Largura reduzida para acomodar todos filtros */
+         background: #fff;
+         padding: 24px 20px;
+         border: 1px solid var(--stroke);
+         border-radius: 24px;
+         box-shadow: var(--shadow);
+         }
+         #relatorios .report-main {
+         flex: 1;
+         background: #f8fafc;
+         border: 1px solid var(--stroke-light);
+         border-radius: 24px;
+         padding: 24px;
+         min-height: 500px;
+         overflow: auto;
+         }
+         #relatorios .sidebar-group {
+         margin-bottom: 20px;
+         }
+         #relatorios .sidebar-group label.title {
+         display: block;
+         font-weight: 700;
+         margin-bottom: 8px;
+         }
+         #relatorios .sidebar-group .radio-options {
+         display: grid;
+         grid-template-columns: 1fr 1fr;
+         gap: 8px;
+         margin-top: 4px;
+         margin-bottom: 8px;
+         width: 100%;
+         }
+         #relatorios .sidebar-group .sub-field {
+         margin-top: 8px;
+         display: flex;
+         flex-direction: column;
+         gap: 4px;
+         }
+         #relatorios .filter-adv {
+         margin-bottom: 12px;
+         display: flex;
+         flex-direction: column;
+         gap: 4px;
+         }
+         #relatorios .filter-adv .checkbox-label {
+         display: flex;
+         align-items: center;
+         gap: 4px; /* Espaço menor entre checkbox e texto */
+         font-weight: 600;
+         font-size: 14px;
+         }
+         #relatorios .filter-adv .input,
+         #relatorios .filter-adv select {
+         width: 100%;
+         }
+         /* Reduz a largura mínima dos campos dentro da barra lateral de relatórios para caber */
+         #relatorios .report-sidebar input,
+         #relatorios .report-sidebar select {
+         min-width: 0;
+         }
+         /* ===== Modal de confirmação ===== */
+         .confirm-modal{
+         position: fixed;
+         inset: 0;
+         display: none;
+         align-items: center;
+         justify-content: center;
+         background: rgba(15,31,28,0.40);
+         backdrop-filter: blur(2px);
+         z-index: 9999;
+         padding: 16px;
+         }
+         .confirm__box{
+         width: 100%;
+         max-width: 520px;
+         background: var(--surface);
+         border: 1px solid var(--stroke);
+         border-radius: 16px;
+         box-shadow: 0 10px 40px rgba(0,0,0,.15);
+         padding: 20px;
+         }
+         .confirm__title{
+         font-weight: 700;
+         font-size: 18px;
+         margin-bottom: 8px;
+         color: var(--ink);
+         }
+         .confirm__msg{
+         color: var(--muted);
+         line-height: 1.5;
+         margin-bottom: 16px;
+         }
+         .confirm__actions{
+         display: flex;
+         gap: 10px;
+         justify-content: flex-end;
+         }
+         /* Linhas mais finas em reps/usuários */
+         #t-reps td, #t-users td {
+         vertical-align: middle !important;
+         padding: 6px 12px !important; /* menos espaço */
+         height: 36px !important;      /* altura menor */
+         font-size: 14px;              /* fonte levemente menor */
+         }
+         /* Botão Remover mais compacto */
+         #t-reps .btn, #t-users .btn {
+         padding: 4px 10px !important;
+         height: 26px !important;
+         font-size: 12px !important;
+         border-radius: 8px !important;
+         line-height: 1 !important;
+         }
+         /* ===== Senha (coluna com olhinho) ===== */
+         .pwd-cell{
+         display: inline-flex;
+         align-items: center;
+         gap: 8px;
+         }
+         .pwd-input{
+         width: 180px;
+         padding: 6px 10px;
+         border: 1px solid var(--stroke);
+         border-radius: 10px;
+         background: #fff;
+         font-size: 12px;
+         color: var(--ink);
+         }
+         .pwd-input[readonly]{
+         user-select: all;
+         cursor: default;
+         }
+         .btn-eye {
+         padding: 4px 8px !important;
+         height: 26px !important;
+         font-size: 12px !important;
+         border-radius: 8px !important;
+         line-height: 1 !important;
+         /* REMOVA essas linhas ou sobrescreva: */
+         border: none !important;
+         background: transparent !important;
+         cursor: pointer;
+         }
+         .btn-eye:hover {
+         background: var(--surface-hover) !important;
+         }
+         /* Ícones SVG */
+         .eye-icon {
+         width: 16px;
+         height: 16px;
+         display: inline-block;
+         }
+         .pwd-input {
+         width: 180px;
+         padding: 6px 10px;
+         border: none !important; /* Remove a borda */
+         border-radius: 10px;
+         background: transparent !important; /* Remove o fundo */
+         font-size: 12px;
+         color: var(--ink);
+         }
       </style>
    </head>
    <body>
@@ -508,6 +568,8 @@
                         <tr>
                            <th>Usuário</th>
                            <th>Representante</th>
+                           <th>Senha</th>
+                           <!-- NOVO -->
                            <th style="width:140px;">Ações</th>
                         </tr>
                      </thead>
@@ -516,13 +578,24 @@
                         <tr data-id="{{ u.id }}">
                            <td><strong>{{ u.username }}</strong></td>
                            <td><span class="pill">{{ u.representative.nome }}</span></td>
+                           <td>
+                              <div class="pwd-cell">
+                                 <input class="pwd-input" type="password" value="{{ u.password or '' }}" readonly>
+                                 <button class="btn-eye" type="button" onclick="togglePwd(this)">
+                                    <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                       <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                                       <circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                 </button>
+                              </div>
+                           </td>
                            <td class="actions">
                               <button class="btn btn--ghost" type="button" onclick="removerUser({{ u.id }})">Remover</button>
                            </td>
                         </tr>
                         {% else %}
                         <tr>
-                           <td colspan="3" class="empty-state">Nenhum usuário cadastrado</td>
+                           <td colspan="4" class="empty-state">Nenhum usuário cadastrado</td>
                         </tr>
                         {% endfor %}
                      </tbody>
@@ -530,114 +603,112 @@
                </div>
             </div>
          </section>
-
-        <!-- ===================== Aba de Relatórios ===================== -->
-        <section id="relatorios" class="view" role="tabpanel" aria-label="Relatórios">
-          <!-- Barra de ações do relatório -->
-          <div class="report-actions">
-            <button class="btn" id="btnPdfRel"><span class="icon">📄</span> PDF</button>
-			<button class="btn" id="btnCsvRel"><span class="icon">🧾</span> CSV</button>
-            <button class="btn" id="btnXlsRel"><span class="icon">📊</span> XLS</button>
-            <button class="btn" id="btnPrintRel"><span class="icon">🖨️</span> Imprimir</button>
-            <button class="btn" id="btnEmailRel"><span class="icon">✉️</span> E‑mail</button>
-            <div class="separator"></div>
-            <button class="btn" id="btnZoomInRel"><span class="icon">➕</span> Zoom +</button>
-            <button class="btn" id="btnZoomOutRel"><span class="icon">➖</span> Zoom −</button>
-            <div class="separator"></div>
-            <button class="btn" id="btnFirstPageRel"><span class="icon">⏮️</span></button>
-            <button class="btn" id="btnPrevPageRel"><span class="icon">⏪</span></button>
-            <button class="btn" id="btnNextPageRel"><span class="icon">⏩</span></button>
-            <button class="btn" id="btnLastPageRel"><span class="icon">⏭️</span></button>
-          </div>
-
-          <!-- Layout: painel de filtros lateral + área de visualização -->
-          <div class="report-layout">
-            <!-- Painel lateral de filtros -->
-            <div class="report-sidebar">
-              <!-- Cabeçalho opcional -->
-              <h3 style="margin-bottom:16px;font-weight:700;font-size:18px;">Curva ABC de Chamados</h3>
-              <!-- Período -->
-              <div class="sidebar-group">
-                <label class="title">Período</label>
-                <div class="sub-field">
-                  <label style="font-weight:600;font-size:13px;margin-bottom:2px;">Inicial</label>
-                  <input id="relInicio" type="date" class="input">
-                </div>
-                <div class="sub-field" style="margin-top:8px;">
-                  <label style="font-weight:600;font-size:13px;margin-bottom:2px;">Fim</label>
-                  <input id="relFim" type="date" class="input">
-                </div>
-              </div>
-              <!-- Tipo de Relatório -->
-              <div class="sidebar-group">
-                <label class="title">Tipo de Relatório:</label>
-                <div class="radio-options">
-                  <label><input type="radio" name="tipoRelatorio" value="sintetico" checked> Sintético</label>
-                  <label><input type="radio" name="tipoRelatorio" value="analitico"> Analítico</label>
-                </div>
-              </div>
-              <!-- Agrupar por -->
-              <div class="sidebar-group">
-                <label class="title">Agrupar por:</label>
-                <div class="radio-options">
-                  <label><input type="radio" name="agruparPor" value="cliente" checked> Cliente</label>
-                  <label><input type="radio" name="agruparPor" value="representante"> Representante</label>
-                </div>
-              </div>
-              <!-- Tipo de Chamado -->
-              <div class="sidebar-group">
-                <label class="title">Tipo de Chamado:</label>
-                <div class="radio-options">
-                  <label><input type="radio" name="tipoChamado" value="todos" checked> Todos</label>
-                  <label><input type="radio" name="tipoChamado" value="duvida"> Dúvida</label>
-                  <label><input type="radio" name="tipoChamado" value="melhoria"> Melhoria</label>
-                  <label><input type="radio" name="tipoChamado" value="bug"> Bug</label>
-                </div>
-              </div>
-              <!-- Filtros adicionais -->
-              <div class="sidebar-group">
-                <div class="filter-adv">
-                  <label class="checkbox-label"><input type="checkbox" id="chkClienteRel"> Cliente</label>
-                  <input id="fClienteRel" type="text" class="input" placeholder="Nome do cliente" disabled>
-                </div>
-                <div class="filter-adv">
-                  <label class="checkbox-label"><input type="checkbox" id="chkRepresentanteRel"> Representante</label>
-                  <select id="fRepresentanteRel" class="input" disabled>
-                    <option value="">Selecione...</option>
-                  </select>
-                </div>
-                <div class="filter-adv">
-                  <label class="checkbox-label"><input type="checkbox" id="chkSistemaRel"> Sistema</label>
-                  <select id="fSistemaRel" class="input" disabled>
-                    <option value="">Selecione...</option>
-                  </select>
-                </div>
-                <div class="filter-adv">
-                  <label class="checkbox-label"><input type="checkbox" id="chkModuloRel"> Módulo</label>
-                  <select id="fModuloRel" class="input" disabled>
-                    <option value="">Selecione...</option>
-                  </select>
-                </div>
-                <div class="filter-adv">
-                  <label class="checkbox-label"><input type="checkbox" id="chkOcorrenciaRel"> Ocorrência</label>
-                  <select id="fOcorrenciaRel" class="input" disabled>
-                    <option value="">Selecione...</option>
-                  </select>
-                </div>
-              </div>
-              <div style="margin-top:24px; text-align:right;">
-                <button class="btn btn--primary" id="btnConfirmarRel">Confirmar</button>
-              </div>
+         <!-- ===================== Aba de Relatórios ===================== -->
+         <section id="relatorios" class="view" role="tabpanel" aria-label="Relatórios">
+            <!-- Barra de ações do relatório -->
+            <div class="report-actions">
+               <button class="btn" id="btnPdfRel"><span class="icon">📄</span> PDF</button>
+               <button class="btn" id="btnCsvRel"><span class="icon">🧾</span> CSV</button>
+               <button class="btn" id="btnXlsRel"><span class="icon">📊</span> XLS</button>
+               <button class="btn" id="btnPrintRel"><span class="icon">🖨️</span> Imprimir</button>
+               <button class="btn" id="btnEmailRel"><span class="icon">✉️</span> E‑mail</button>
+               <div class="separator"></div>
+               <button class="btn" id="btnZoomInRel"><span class="icon">➕</span> Zoom +</button>
+               <button class="btn" id="btnZoomOutRel"><span class="icon">➖</span> Zoom −</button>
+               <div class="separator"></div>
+               <button class="btn" id="btnFirstPageRel"><span class="icon">⏮️</span></button>
+               <button class="btn" id="btnPrevPageRel"><span class="icon">⏪</span></button>
+               <button class="btn" id="btnNextPageRel"><span class="icon">⏩</span></button>
+               <button class="btn" id="btnLastPageRel"><span class="icon">⏭️</span></button>
             </div>
-            <!-- Área principal onde o relatório será exibido -->
-            <div class="report-main">
-              <!-- Espaço reservado para a visualização do relatório -->
-              <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);">
-                <p>Visualização do relatório virá aqui</p>
-              </div>
+            <!-- Layout: painel de filtros lateral + área de visualização -->
+            <div class="report-layout">
+               <!-- Painel lateral de filtros -->
+               <div class="report-sidebar">
+                  <!-- Cabeçalho opcional -->
+                  <h3 style="margin-bottom:16px;font-weight:700;font-size:18px;">Curva ABC de Chamados</h3>
+                  <!-- Período -->
+                  <div class="sidebar-group">
+                     <label class="title">Período</label>
+                     <div class="sub-field">
+                        <label style="font-weight:600;font-size:13px;margin-bottom:2px;">Inicial</label>
+                        <input id="relInicio" type="date" class="input">
+                     </div>
+                     <div class="sub-field" style="margin-top:8px;">
+                        <label style="font-weight:600;font-size:13px;margin-bottom:2px;">Fim</label>
+                        <input id="relFim" type="date" class="input">
+                     </div>
+                  </div>
+                  <!-- Tipo de Relatório -->
+                  <div class="sidebar-group">
+                     <label class="title">Tipo de Relatório:</label>
+                     <div class="radio-options">
+                        <label><input type="radio" name="tipoRelatorio" value="sintetico" checked> Sintético</label>
+                        <label><input type="radio" name="tipoRelatorio" value="analitico"> Analítico</label>
+                     </div>
+                  </div>
+                  <!-- Agrupar por -->
+                  <div class="sidebar-group">
+                     <label class="title">Agrupar por:</label>
+                     <div class="radio-options">
+                        <label><input type="radio" name="agruparPor" value="cliente" checked> Cliente</label>
+                        <label><input type="radio" name="agruparPor" value="representante"> Representante</label>
+                     </div>
+                  </div>
+                  <!-- Tipo de Chamado -->
+                  <div class="sidebar-group">
+                     <label class="title">Tipo de Chamado:</label>
+                     <div class="radio-options">
+                        <label><input type="radio" name="tipoChamado" value="todos" checked> Todos</label>
+                        <label><input type="radio" name="tipoChamado" value="duvida"> Dúvida</label>
+                        <label><input type="radio" name="tipoChamado" value="melhoria"> Melhoria</label>
+                        <label><input type="radio" name="tipoChamado" value="bug"> Bug</label>
+                     </div>
+                  </div>
+                  <!-- Filtros adicionais -->
+                  <div class="sidebar-group">
+                     <div class="filter-adv">
+                        <label class="checkbox-label"><input type="checkbox" id="chkClienteRel"> Cliente</label>
+                        <input id="fClienteRel" type="text" class="input" placeholder="Nome do cliente" disabled>
+                     </div>
+                     <div class="filter-adv">
+                        <label class="checkbox-label"><input type="checkbox" id="chkRepresentanteRel"> Representante</label>
+                        <select id="fRepresentanteRel" class="input" disabled>
+                           <option value="">Selecione...</option>
+                        </select>
+                     </div>
+                     <div class="filter-adv">
+                        <label class="checkbox-label"><input type="checkbox" id="chkSistemaRel"> Sistema</label>
+                        <select id="fSistemaRel" class="input" disabled>
+                           <option value="">Selecione...</option>
+                        </select>
+                     </div>
+                     <div class="filter-adv">
+                        <label class="checkbox-label"><input type="checkbox" id="chkModuloRel"> Módulo</label>
+                        <select id="fModuloRel" class="input" disabled>
+                           <option value="">Selecione...</option>
+                        </select>
+                     </div>
+                     <div class="filter-adv">
+                        <label class="checkbox-label"><input type="checkbox" id="chkOcorrenciaRel"> Ocorrência</label>
+                        <select id="fOcorrenciaRel" class="input" disabled>
+                           <option value="">Selecione...</option>
+                        </select>
+                     </div>
+                  </div>
+                  <div style="margin-top:24px; text-align:right;">
+                     <button class="btn btn--primary" id="btnConfirmarRel">Confirmar</button>
+                  </div>
+               </div>
+               <!-- Área principal onde o relatório será exibido -->
+               <div class="report-main">
+                  <!-- Espaço reservado para a visualização do relatório -->
+                  <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);">
+                     <p>Visualização do relatório virá aqui</p>
+                  </div>
+               </div>
             </div>
-          </div>
-        </section>
+         </section>
       </main>
       <!-- ===== Helpers separados (fora de qualquer <script> aninhado) ===== -->
       <script>
@@ -693,15 +764,15 @@
            n = n.replace(/^55+/, '');
            return '55' + n;
          }
-function openWhatsApp(rawPhone, text){
-  // Normalize to Brazilian format and build a WhatsApp web URL (fallback to https instead of custom protocol).
-  const phone = normalizeBRPhone(rawPhone);
-  const q = text ? ('&text=' + encodeURIComponent(text)) : '';
-  // Use the universal API URL to avoid browser/OS restrictions on the whatsapp:// protocol.
-  const url = 'https://api.whatsapp.com/send?phone=' + phone + q;
-  // Open in a new tab or the same tab depending on browser preference.
-  try { window.open(url, '_blank'); } catch { window.location.href = url; }
-}
+         function openWhatsApp(rawPhone, text){
+         // Normalize to Brazilian format and build a WhatsApp web URL (fallback to https instead of custom protocol).
+         const phone = normalizeBRPhone(rawPhone);
+         const q = text ? ('&text=' + encodeURIComponent(text)) : '';
+         // Use the universal API URL to avoid browser/OS restrictions on the whatsapp:// protocol.
+         const url = 'https://api.whatsapp.com/send?phone=' + phone + q;
+         // Open in a new tab or the same tab depending on browser preference.
+         try { window.open(url, '_blank'); } catch { window.location.href = url; }
+         }
          window.openWhatsApp = openWhatsApp;
       </script>
       <!-- ===== App principal ===== -->
@@ -782,7 +853,7 @@ function openWhatsApp(rawPhone, text){
                // padrão: cor principal
                return 'var(--ink)';
              };
-
+         
             // Cor de cada prioridade. Utilizado para colorir a coluna de prioridade.
             const priorityColor = (p) => {
               const m = (p || '').toLowerCase();
@@ -814,14 +885,14 @@ function openWhatsApp(rawPhone, text){
          
              // Fonte para conexões SSE
              let realtimeSource = null;
-
+         
             // -- Integração Trello --
             // Mantém o timestamp da última verificação de cartões no Trello.  Esse valor será
             // enviado como parâmetro `since` para que o servidor retorne apenas os cartões
             // criados após esse horário. Ajuste o endpoint `/api/trello/new-cards` no backend
             // para lidar com esse parâmetro e retornar um array de cartões novos.
             let lastTrelloCheck = new Date().toISOString();
-
+         
             /**
              * Busca cartões recém‑criados no Trello desde o momento em que lastTrelloCheck foi
              * atualizado. Essa função envia um fetch para `/api/trello/new-cards?since=...`
@@ -891,12 +962,12 @@ function openWhatsApp(rawPhone, text){
              * encerra o intervalo e recarrega os dados com os filtros atuais.
              */
             function toggleRealTime(){
-        console.log('🔄 Toggle realtime:', !isRealTimeActive);
-
-        if(!isRealTimeActive){
+         console.log('🔄 Toggle realtime:', !isRealTimeActive);
+         
+         if(!isRealTimeActive){
           // ATIVANDO monitoramento
           isRealTimeActive = true;
-
+         
           // Força filtro "Em aberto" e limpa outros filtros
           try {
             statusSelect.value = 'Em aberto';
@@ -905,17 +976,17 @@ function openWhatsApp(rawPhone, text){
             qInput.value = '';
             if(typeof applyStatusSelectColors === 'function') applyStatusSelectColors();
           } catch(e){}
-
+         
           // Visual do botão
           btnRealtime.classList.add('is-on');
           btnRealtime.textContent = 'Parar Monitoramento';
-
+         
           // Limpa quaisquer conexões anteriores (SSE ou polling)
           cleanupRealTime();
-
+         
           // Reinicia paginação
           page = 0;
-
+         
           // Carrega dados e, após finalizado, inicia o polling de 6s
           load({silent:false}).then(() => {
             if(!isRealTimeActive) return; // Se foi desativado enquanto carregava
@@ -930,28 +1001,28 @@ function openWhatsApp(rawPhone, text){
           }).catch(err => {
             console.error('Erro ao carregar para monitoramento:', err);
           });
-
-        } else {
+         
+         } else {
           // DESATIVANDO monitoramento
           isRealTimeActive = false;
-
+         
           // Visual do botão
           btnRealtime.classList.remove('is-on');
           btnRealtime.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
-
+         
           // Encerra polling/SSE e aborta fetch pendente
           cleanupRealTime();
-
+         
           // Reinicia paginação
           page = 0;
-
+         
           // Aguarda um pequeno atraso e recarrega com filtros atuais
           setTimeout(() => {
             load({ silent:false })
               .then(() => { console.log('✅ Monitoramento desativado e dados recarregados'); })
               .catch(err => { console.error('Erro ao recarregar após desativar:', err); });
           }, 120);
-        }
+         }
             }
          
          function startSSEConnection(){
@@ -1185,18 +1256,18 @@ function openWhatsApp(rawPhone, text){
          
              // Fetch com timeout e tratamento de retorno não-JSON
              function withTimeout(promise, ms, controller){
-  let to;
-  const timeout = new Promise((_, rej) => {
-    to = setTimeout(() => {
-      try { controller?.abort(); } catch(e){}
-      rej(new Error('Timeout após ' + ms + 'ms'));
-    }, ms);
-  });
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(to));
-}
-function load({silent=false, append=false}={}){
-  abortController = new AbortController();
-
+         let to;
+         const timeout = new Promise((_, rej) => {
+         to = setTimeout(() => {
+         try { controller?.abort(); } catch(e){}
+         rej(new Error('Timeout após ' + ms + 'ms'));
+         }, ms);
+         });
+         return Promise.race([promise, timeout]).finally(() => clearTimeout(to));
+         }
+         function load({silent=false, append=false}={}){
+         abortController = new AbortController();
+         
          console.log('📥 Load chamado:', {silent, append, page, isRealTimeActive});
          
          const currentId = ++latestLoadId;
@@ -1379,465 +1450,446 @@ function load({silent=false, append=false}={}){
          });
            })();
       </script>
-   
-<script>
-// Fecha monitoramento se sair do Painel (previne SSE/poll rodando em background)
-(function(){
-  try {
-    const tabs = document.querySelectorAll('.tab');
-    tabs.forEach(btn => btn.addEventListener('click', () => {
-      const target = btn.getAttribute('data-target') || '';
-      if (target !== '#painel' && typeof window.cleanupRealTime === 'function') {
-        try { window.cleanupRealTime(); } catch(e){}
-        if (typeof window.isRealTimeActive !== 'undefined') window.isRealTimeActive = false;
-        const liveBtn = document.getElementById('btnRealtime');
-        if (liveBtn) {
-          liveBtn.classList.remove('is-on');
-          liveBtn.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
-        }
-      }
-    }));
-  } catch(e){}
-})();
-</script>
-
-<!-- Admin helper functions: create representative and user via fetch -->
-<script>
-// ====== Funções do CADASTRO ======
-function criarRep(e) {
-  e.preventDefault();
-  const formData = new FormData(e.target);
-  fetch('/admin/rep/new', {
-    method: 'POST',
-    body: formData,
-    headers: { 'X-Requested-With': 'XMLHttpRequest' },
-    credentials: 'same-origin'
-  })
-    .then(res => {
-      if(res.ok) return res.json();
-      throw new Error('HTTP ' + res.status);
-    })
-    .then(data => {
-      if(!data || !data.ok){
-        alert('Erro ao adicionar representante');
-        return;
-      }
-      const reps = data.reps || [];
-      // Atualiza a tabela de representantes
-      const tbody = document.querySelector('#t-reps tbody');
-      if(tbody){
-        let html = '';
-        reps.forEach(r => {
-          html += '<tr data-id="'+r.id+'">'+
-                    '<td><strong>'+r.nome+'</strong></td>'+
-                    '<td class="actions">'+
-                      '<button class="btn btn--ghost" type="button" onclick="removerRep('+r.id+')">Remover</button>'+
-                    '</td>'+
-                  '</tr>';
-        });
-        if(!html){
-          html = '<tr><td colspan="2" class="empty-state">Nenhum representante cadastrado</td></tr>';
-        }
-        tbody.innerHTML = html;
-      }
-      // Atualiza o select de representantes no cadastro de usuários
-      const repSel = document.querySelector('select[name="representative_id"]');
-      if(repSel){
-        const opts = ['<option value="">Selecione o representante</option>'];
-        reps.forEach(r => {
-          opts.push('<option value="'+r.id+'">'+r.nome+'</option>');
-        });
-        repSel.innerHTML = opts.join('');
-      }
-      // Reseta o formulário
-      e.target.reset();
-    })
-    .catch(err => {
-      alert('Erro: ' + err.message);
-    });
-  return false;
-}
-
-
-function criarUser(e) {
-  e.preventDefault();
-  const formData = new FormData(e.target);
-  fetch('/admin/user/new', {
-    method: 'POST',
-    body: formData,
-    headers: { 'X-Requested-With': 'XMLHttpRequest' },
-    credentials: 'same-origin'
-  })
-    .then(res => {
-      if(res.ok) return res.json();
-      throw new Error('HTTP ' + res.status);
-    })
-    .then(data => {
-      if(!data || !data.ok){
-        alert('Erro ao adicionar usuário');
-        return;
-      }
-      const users = data.users || [];
-      // Atualiza a tabela de usuários
-      const tbody = document.querySelector('#t-users tbody');
-      if(tbody){
-        let html = '';
-        users.forEach(u => {
-          const repName = u.representante || '';
-          html += '<tr data-id="'+u.id+'">'+
-                    '<td><strong>'+u.username+'</strong></td>'+
-                    '<td><span class="pill">'+repName+'</span></td>'+
-                    '<td class="actions">'+
-                      '<button class="btn btn--ghost" type="button" onclick="removerUser('+u.id+')">Remover</button>'+
-                    '</td>'+
-                  '</tr>';
-        });
-        if(!html){
-          html = '<tr><td colspan="3" class="empty-state">Nenhum usuário cadastrado</td></tr>';
-        }
-        tbody.innerHTML = html;
-      }
-      // Reseta o formulário
-      e.target.reset();
-    })
-    .catch(err => {
-      alert('Erro: ' + err.message);
-    });
-  return false;
-}
-
-
-// ====== Script da aba de Relatórios ======
-// Este script habilita/desabilita os campos de filtro adicionais conforme as checkboxes
-// são marcadas ou desmarcadas.
-(() => {
-  // Aguarda o carregamento do DOM para garantir que os elementos existam
-  document.addEventListener('DOMContentLoaded', () => {
-    const advFilters = [
-      { chk: 'chkClienteRel', field: 'fClienteRel' },
-      { chk: 'chkRepresentanteRel', field: 'fRepresentanteRel' },
-      { chk: 'chkSistemaRel', field: 'fSistemaRel' },
-      { chk: 'chkModuloRel', field: 'fModuloRel' },
-      { chk: 'chkOcorrenciaRel', field: 'fOcorrenciaRel' }
-    ];
-    advFilters.forEach(({ chk, field }) => {
-      const c = document.getElementById(chk);
-      const f = document.getElementById(field);
-      if (!c || !f) return;
-      // Define estado inicial
-      f.disabled = !c.checked;
-      c.addEventListener('change', () => {
-        f.disabled = !c.checked;
-        if (!c.checked) {
-          // Limpa o valor quando desabilitar
-          if (f.tagName === 'SELECT') f.selectedIndex = 0;
-          else f.value = '';
-        }
-      });
-    });
-  });
-})();
-</script>
-
-<script>
-document.addEventListener('DOMContentLoaded', async () => {
-  async function carregarRepresentantes() {
-    try {
-      const res = await fetch('/api/representantes', { headers: { 'Accept':'application/json' }, cache:'no-store' });
-      const lista = await res.json();
-      preencherSelect('fRepresentanteRel', lista, /*placeholder*/'');
-      // Se existir um select no Painel:
-      preencherSelect('fRep', lista, /*placeholder*/'');
-    } catch (e) {
-      console.error('Falha ao carregar representantes:', e);
-    }
-  }
-
-  function preencherSelect(id, nomes, placeholder) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.innerHTML = '';
-    // Se quiser uma opção "todas", use value vazio
-    if (placeholder !== null) {
-      const optAll = document.createElement('option');
-      optAll.value = ''; optAll.textContent = placeholder || 'Todos';
-      el.appendChild(optAll);
-    }
-    (nomes || []).forEach(n => {
-      const o = document.createElement('option');
-      o.value = n; o.textContent = n;
-      el.appendChild(o);
-    });
-  }
-
-  await carregarRepresentantes();
-});
-</script>
-
-
-<script>
-(() => {
-  const btn = document.getElementById('btnConfirmarRel');
-  const mainEl = document.querySelector('#relatorios .report-main');
-  const dtIni  = document.getElementById('relInicio');
-  const dtFim  = document.getElementById('relFim');
-  const inpCliente = document.getElementById('fClienteRel');
-  const selRepRel  = document.getElementById('fRepresentanteRel');
-
-  function esc(s){ return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-
-  btn?.addEventListener('click', async () => {
-    const de  = (dtIni?.value || '').trim();
-    const ate = (dtFim?.value || '').trim();
-    const cli = (inpCliente?.value || '').trim();
-	const rep = (selRepRel?.value || '').trim();
-
-    // >>> OBRIGATÓRIO: exigir as DUAS datas
-    if (!de || !ate) {
-      mainEl.innerHTML = `
-        <div style="display:flex;align-items:center;justify-content:center;height:100%;">
-          <div style="color:#7f1d1d;background:#fff3f3;border:1px solid #fecaca;padding:16px;border-radius:12px;max-width:720px;">
-            <strong>Informe a data inicial e a data final</strong> para gerar o relatório.
-          </div>
-        </div>`;
-      return;
-    }
-    // <<< FIM obrigatório
-
-    mainEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b;">Carregando cartões abertos no período…</div>';
-
-    const qs = new URLSearchParams();
-    qs.set('de_criacao', de);
-    qs.set('ate_criacao', ate);
-    if (cli) qs.set('cliente', cli);
-	if (rep) qs.set('representante', rep);
-
-    const res = await fetch('/api/chamados?' + qs.toString(), { headers: { 'Accept':'application/json' }, cache:'no-store' });
-    const data = await res.json();
-    const items = Array.isArray(data) ? data : (data.items || []);
-
-    if (!items.length) {
-      mainEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b;">Nenhum cartão encontrado no período.</div>';
-      return;
-    }
-
-    const rows = items.map(it=>{
-      const dt = it.created_at ? new Date(it.created_at) : null;
-      const d  = dt ? dt.toLocaleString('pt-BR') : '—';
-      return `<tr><td>${esc(it.titulo)}</td><td>${esc(it.representante||'-')}</td><td>${esc(it.status||'-')}</td><td>${esc(d)}</td></tr>`;
-    }).join('');
-
-    mainEl.innerHTML = `
-      <div style="background:#fff;border:1px solid var(--stroke);border-radius:16px;overflow:auto;">
-        <table style="width:100%;min-width:720px;border-collapse:separate;border-spacing:0">
-          <thead><tr>
-            <th style="text-align:left;padding:12px 16px;border-bottom:1px solid var(--stroke);">Título</th>
-            <th style="text-align:left;padding:12px 16px;border-bottom:1px solid var(--stroke);">Representante</th>
-            <th style="text-align:left;padding:12px 16px;border-bottom:1px solid var(--stroke);">Status</th>
-            <th style="text-align:left;padding:12px 16px;border-bottom:1px solid var(--stroke);">Criado em</th>
-          </tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
+      <script>
+         // Fecha monitoramento se sair do Painel (previne SSE/poll rodando em background)
+         (function(){
+           try {
+             const tabs = document.querySelectorAll('.tab');
+             tabs.forEach(btn => btn.addEventListener('click', () => {
+               const target = btn.getAttribute('data-target') || '';
+               if (target !== '#painel' && typeof window.cleanupRealTime === 'function') {
+                 try { window.cleanupRealTime(); } catch(e){}
+                 if (typeof window.isRealTimeActive !== 'undefined') window.isRealTimeActive = false;
+                 const liveBtn = document.getElementById('btnRealtime');
+                 if (liveBtn) {
+                   liveBtn.classList.remove('is-on');
+                   liveBtn.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
+                 }
+               }
+             }));
+           } catch(e){}
+         })();
+      </script>
+      <!-- Admin helper functions: create representative and user via fetch -->
+      <script>
+         // ====== Funções do CADASTRO ======
+         function criarRep(e) {
+           e.preventDefault();
+           const formData = new FormData(e.target);
+           fetch('/admin/rep/new', {
+             method: 'POST',
+             body: formData,
+             headers: { 'X-Requested-With': 'XMLHttpRequest' },
+             credentials: 'same-origin'
+           })
+             .then(res => {
+               if(res.ok) return res.json();
+               throw new Error('HTTP ' + res.status);
+             })
+             .then(data => {
+               if(!data || !data.ok){
+                 alert('Erro ao adicionar representante');
+                 return;
+               }
+               const reps = data.reps || [];
+               // Atualiza a tabela de representantes
+               const tbody = document.querySelector('#t-reps tbody');
+               if(tbody){
+                 let html = '';
+                 reps.forEach(r => {
+                   html += '<tr data-id="'+r.id+'">'+
+                             '<td><strong>'+r.nome+'</strong></td>'+
+                             '<td class="actions">'+
+                               '<button class="btn btn--ghost" type="button" onclick="removerRep('+r.id+')">Remover</button>'+
+                             '</td>'+
+                           '</tr>';
+                 });
+                 if(!html){
+                   html = '<tr><td colspan="2" class="empty-state">Nenhum representante cadastrado</td></tr>';
+                 }
+                 tbody.innerHTML = html;
+               }
+               // Atualiza o select de representantes no cadastro de usuários
+               const repSel = document.querySelector('select[name="representative_id"]');
+               if(repSel){
+                 const opts = ['<option value="">Selecione o representante</option>'];
+                 reps.forEach(r => {
+                   opts.push('<option value="'+r.id+'">'+r.nome+'</option>');
+                 });
+                 repSel.innerHTML = opts.join('');
+               }
+               // Reseta o formulário
+               e.target.reset();
+             })
+             .catch(err => {
+               alert('Erro: ' + err.message);
+             });
+           return false;
+         }
+         
+         
+         function criarUser(e) {
+           e.preventDefault();
+           const formData = new FormData(e.target);
+           fetch('/admin/user/new', {
+             method: 'POST',
+             body: formData,
+             headers: { 'X-Requested-With': 'XMLHttpRequest' },
+             credentials: 'same-origin'
+           })
+             .then(res => {
+               if (res.ok) return res.json();
+               throw new Error('HTTP ' + res.status);
+             })
+             .then(data => {
+               if (!data || !data.ok) {
+                 alert('Erro ao adicionar usuário');
+                 return;
+               }
+               const users = data.users || [];
+               // 👉 Atualiza a tabela de usuários com a coluna "Senha" + olhinho
+               renderUsers(users);
+         
+               // Reseta o formulário
+               e.target.reset();
+             })
+             .catch(err => {
+               alert('Erro: ' + err.message);
+             });
+           return false;
+         }
+         
+         
+         function renderUsers(users){
+           const tbody = document.querySelector('#t-users tbody');
+           if(!tbody) return;
+           let html = '';
+           (users || []).forEach(u => {
+             const repName = u.representante || '';
+             const pwd = u.password || '';
+             html += '<tr data-id="'+u.id+'">'+
+                       '<td><strong>'+u.username+'</strong></td>'+
+                       '<td><span class="pill">'+repName+'</span></td>'+
+                       '<td>'+
+                         '<div class="pwd-cell">'+
+                           '<input class="pwd-input" type="password" value="'+pwd.replaceAll('"','&quot;')+'" readonly>'+
+         '<button class="btn-eye" type="button" onclick="togglePwd(this)"><svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
+                         '</div>'+
+                       '</td>'+
+                       '<td class="actions">'+
+                         '<button class="btn btn--ghost" type="button" onclick="removerUser('+u.id+')">Remover</button>'+
+                       '</td>'+
+                     '</tr>';
+           });
+           if(!html){
+             html = '<tr><td colspan="4" class="empty-state">Nenhum usuário cadastrado</td></tr>';
+           }
+           tbody.innerHTML = html;
+         }
+         
+         
+         function togglePwd(btn){
+           const input = btn && btn.parentElement ? btn.parentElement.querySelector('.pwd-input') : null;
+           if(!input) return;
+           
+           if(input.type === 'password'){
+             input.type = 'text';
+             // Mesmo olho, mas com linha diagonal
+             btn.innerHTML = '<svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/><line x1="3" y1="3" x2="21" y2="21"/></svg>';
+           } else {
+             input.type = 'password';
+             // Olho normal (sem linha)
+             btn.innerHTML = '<svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+           }
+         }
+         
+         
+         // ====== Script da aba de Relatórios ======
+         // Este script habilita/desabilita os campos de filtro adicionais conforme as checkboxes
+         // são marcadas ou desmarcadas.
+         (() => {
+           // Aguarda o carregamento do DOM para garantir que os elementos existam
+           document.addEventListener('DOMContentLoaded', () => {
+             const advFilters = [
+               { chk: 'chkClienteRel', field: 'fClienteRel' },
+               { chk: 'chkRepresentanteRel', field: 'fRepresentanteRel' },
+               { chk: 'chkSistemaRel', field: 'fSistemaRel' },
+               { chk: 'chkModuloRel', field: 'fModuloRel' },
+               { chk: 'chkOcorrenciaRel', field: 'fOcorrenciaRel' }
+             ];
+             advFilters.forEach(({ chk, field }) => {
+               const c = document.getElementById(chk);
+               const f = document.getElementById(field);
+               if (!c || !f) return;
+               // Define estado inicial
+               f.disabled = !c.checked;
+               c.addEventListener('change', () => {
+                 f.disabled = !c.checked;
+                 if (!c.checked) {
+                   // Limpa o valor quando desabilitar
+                   if (f.tagName === 'SELECT') f.selectedIndex = 0;
+                   else f.value = '';
+                 }
+               });
+             });
+           });
+         })();
+      </script>
+      <script>
+         document.addEventListener('DOMContentLoaded', async () => {
+           async function carregarRepresentantes() {
+             try {
+               const res = await fetch('/api/representantes', { headers: { 'Accept':'application/json' }, cache:'no-store' });
+               const lista = await res.json();
+               preencherSelect('fRepresentanteRel', lista, /*placeholder*/'');
+               // Se existir um select no Painel:
+               preencherSelect('fRep', lista, /*placeholder*/'');
+             } catch (e) {
+               console.error('Falha ao carregar representantes:', e);
+             }
+           }
+         
+           function preencherSelect(id, nomes, placeholder) {
+             const el = document.getElementById(id);
+             if (!el) return;
+             el.innerHTML = '';
+             // Se quiser uma opção "todas", use value vazio
+             if (placeholder !== null) {
+               const optAll = document.createElement('option');
+               optAll.value = ''; optAll.textContent = placeholder || 'Todos';
+               el.appendChild(optAll);
+             }
+             (nomes || []).forEach(n => {
+               const o = document.createElement('option');
+               o.value = n; o.textContent = n;
+               el.appendChild(o);
+             });
+           }
+         
+           await carregarRepresentantes();
+         });
+      </script>
+      <script>
+         (() => {
+           const btn = document.getElementById('btnConfirmarRel');
+           const mainEl = document.querySelector('#relatorios .report-main');
+           const dtIni  = document.getElementById('relInicio');
+           const dtFim  = document.getElementById('relFim');
+           const inpCliente = document.getElementById('fClienteRel');
+           const selRepRel  = document.getElementById('fRepresentanteRel');
+         
+           function esc(s){ return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+         
+           btn?.addEventListener('click', async () => {
+             const de  = (dtIni?.value || '').trim();
+             const ate = (dtFim?.value || '').trim();
+             const cli = (inpCliente?.value || '').trim();
+         	const rep = (selRepRel?.value || '').trim();
+         
+             // >>> OBRIGATÓRIO: exigir as DUAS datas
+             if (!de || !ate) {
+               mainEl.innerHTML = `
+                 <div style="display:flex;align-items:center;justify-content:center;height:100%;">
+                   <div style="color:#7f1d1d;background:#fff3f3;border:1px solid #fecaca;padding:16px;border-radius:12px;max-width:720px;">
+                     <strong>Informe a data inicial e a data final</strong> para gerar o relatório.
+                   </div>
+                 </div>`;
+               return;
+             }
+             // <<< FIM obrigatório
+         
+             mainEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b;">Carregando cartões abertos no período…</div>';
+         
+             const qs = new URLSearchParams();
+             qs.set('de_criacao', de);
+             qs.set('ate_criacao', ate);
+             if (cli) qs.set('cliente', cli);
+         	if (rep) qs.set('representante', rep);
+         
+             const res = await fetch('/api/chamados?' + qs.toString(), { headers: { 'Accept':'application/json' }, cache:'no-store' });
+             const data = await res.json();
+             const items = Array.isArray(data) ? data : (data.items || []);
+         
+             if (!items.length) {
+               mainEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b;">Nenhum cartão encontrado no período.</div>';
+               return;
+             }
+         
+             const rows = items.map(it=>{
+               const dt = it.created_at ? new Date(it.created_at) : null;
+               const d  = dt ? dt.toLocaleString('pt-BR') : '—';
+               return `<tr><td>${esc(it.titulo)}</td><td>${esc(it.representante||'-')}</td><td>${esc(it.status||'-')}</td><td>${esc(d)}</td></tr>`;
+             }).join('');
+         
+             mainEl.innerHTML = `
+               <div style="background:#fff;border:1px solid var(--stroke);border-radius:16px;overflow:auto;">
+                 <table style="width:100%;min-width:720px;border-collapse:separate;border-spacing:0">
+                   <thead><tr>
+                     <th style="text-align:left;padding:12px 16px;border-bottom:1px solid var(--stroke);">Título</th>
+                     <th style="text-align:left;padding:12px 16px;border-bottom:1px solid var(--stroke);">Representante</th>
+                     <th style="text-align:left;padding:12px 16px;border-bottom:1px solid var(--stroke);">Status</th>
+                     <th style="text-align:left;padding:12px 16px;border-bottom:1px solid var(--stroke);">Criado em</th>
+                   </tr></thead>
+                   <tbody>${rows}</tbody>
+                 </table>
+               </div>
+               <div style="margin-top:12px;color:var(--muted);font-size:14px;">📊 <strong>${items.length}</strong> cartão(is) aberto(s) no período.</div>`;
+           });
+         
+         
+             // Export CSV/XLS do Relatório
+           async function baixar(formato){
+             const de  = (dtIni?.value || '').trim();
+             const ate = (dtFim?.value || '').trim();
+             const cli = (inpCliente?.value || '').trim();
+         
+             // >>> OBRIGATÓRIO: exigir as DUAS datas
+             if (!de || !ate) {
+               alert('Para exportar, informe a data inicial e a data final.');
+               return;
+             }
+             // <<< FIM obrigatório
+         
+             const qs  = new URLSearchParams({ format: formato });
+             qs.set('de_criacao', de);
+             qs.set('ate_criacao', ate);
+             if (cli) qs.set('cliente', cli);
+         
+             const res = await fetch('/api/chamados/export?' + qs.toString(), { cache:'no-store' });
+             if (!res.ok) throw new Error('HTTP ' + res.status);
+             let filename = `chamados.${formato==='xlsx'?'xlsx':'csv'}`;
+             const dispo = res.headers.get('Content-Disposition') || '';
+             const m = /filename="?([^";]+)"?/i.exec(dispo); if (m) filename = m[1];
+             const blob = await res.blob();
+             const url = URL.createObjectURL(blob);
+             const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+             URL.revokeObjectURL(url);
+           }
+           document.getElementById('btnCsvRel')?.addEventListener('click', ()=>baixar('csv').catch(e=>alert(e.message)));
+           document.getElementById('btnXlsRel')?.addEventListener('click', ()=>baixar('xlsx').catch(e=>alert(e.message)));
+         })();
+      </script>
+      <script>
+         async function removerRep(id) {
+           // Abre o modal
+           const modal = document.getElementById("confirmDeleteModal");
+           modal.style.display = "flex";
+         
+           // Botão "Sim, quero remover"
+           document.getElementById("btnConfirmDelete").onclick = async () => {
+             modal.style.display = "none";
+             try {
+               const res = await fetch('/admin/rep/' + id + '/delete', {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 credentials: 'same-origin',
+                 body: JSON.stringify({ confirm: true })
+               });
+               const data = await res.json();
+               if (!res.ok || !data.ok) {
+                 alert(data.message || 'Erro ao remover representante');
+                 return;
+               }
+         
+               // Atualiza a tabela de representantes
+               const repTbody = document.querySelector('#t-reps tbody');
+               if (repTbody) {
+                 let html = '';
+                 (data.reps || []).forEach(r => {
+                   html += '<tr data-id="'+r.id+'">'+
+                             '<td><strong>'+r.nome+'</strong></td>'+
+                             '<td class="actions">'+
+                               '<button class="btn btn--ghost" type="button" onclick="removerRep('+r.id+')">Remover</button>'+
+                             '</td>'+
+                           '</tr>';
+                 });
+                 if (!html) {
+                   html = '<tr><td colspan="2" class="empty-state">Nenhum representante cadastrado</td></tr>';
+                 }
+                 repTbody.innerHTML = html;
+               }
+         
+               // Atualiza a tabela de usuários
+               if (data.users) renderUsers(data.users);
+         
+         
+               alert(data.message || 'Representante removido com sucesso');
+             } catch (e) {
+               alert('Erro: ' + e.message);
+             }
+           };
+         
+           // Botão "Cancelar"
+           document.getElementById("btnCancelDelete").onclick = () => {
+             modal.style.display = "none";
+           };
+         }
+         
+         
+         
+         async function removerUser(id) {
+           // Abre o modal
+           const modal = document.getElementById("confirmDeleteUserModal");
+           modal.style.display = "flex";
+         
+           // Botão "Sim, quero remover"
+           document.getElementById("btnConfirmDeleteUser").onclick = async () => {
+             modal.style.display = "none";
+             try {
+               const res = await fetch('/admin/user/' + id + '/delete', {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 credentials: 'same-origin'
+               });
+               const data = await res.json();
+               if (!res.ok || !data.ok) {
+                 alert(data.message || 'Erro ao remover usuário');
+                 return;
+               }
+         
+               // Atualiza a tabela de usuários
+               renderUsers(data.users || []);
+         
+         
+               alert(data.message || 'Usuário removido com sucesso');
+             } catch (e) {
+               alert('Erro: ' + e.message);
+             }
+           };
+         
+           // Botão "Cancelar"
+           document.getElementById("btnCancelDeleteUser").onclick = () => {
+             modal.style.display = "none";
+           };
+         }
+         
+      </script>
+      <!-- Modal: Remover representante -->
+      <div class="confirm-modal" id="confirmDeleteModal" style="display:none;">
+         <div class="confirm__box">
+            <div class="confirm__title">Remover representante</div>
+            <div class="confirm__msg">
+               Ao deletar um representante, todos os usuários vinculados a ele também serão deletados.<br>
+               Deseja continuar?
+            </div>
+            <div class="confirm__actions">
+               <button class="btn btn--secondary" id="btnConfirmDelete">Sim, quero remover</button>
+               <button class="btn btn--ghost" id="btnCancelDelete">Cancelar</button>
+            </div>
+         </div>
       </div>
-      <div style="margin-top:12px;color:var(--muted);font-size:14px;">📊 <strong>${items.length}</strong> cartão(is) aberto(s) no período.</div>`;
-  });
-
-
-    // Export CSV/XLS do Relatório
-  async function baixar(formato){
-    const de  = (dtIni?.value || '').trim();
-    const ate = (dtFim?.value || '').trim();
-    const cli = (inpCliente?.value || '').trim();
-
-    // >>> OBRIGATÓRIO: exigir as DUAS datas
-    if (!de || !ate) {
-      alert('Para exportar, informe a data inicial e a data final.');
-      return;
-    }
-    // <<< FIM obrigatório
-
-    const qs  = new URLSearchParams({ format: formato });
-    qs.set('de_criacao', de);
-    qs.set('ate_criacao', ate);
-    if (cli) qs.set('cliente', cli);
-
-    const res = await fetch('/api/chamados/export?' + qs.toString(), { cache:'no-store' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    let filename = `chamados.${formato==='xlsx'?'xlsx':'csv'}`;
-    const dispo = res.headers.get('Content-Disposition') || '';
-    const m = /filename="?([^";]+)"?/i.exec(dispo); if (m) filename = m[1];
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
-    URL.revokeObjectURL(url);
-  }
-  document.getElementById('btnCsvRel')?.addEventListener('click', ()=>baixar('csv').catch(e=>alert(e.message)));
-  document.getElementById('btnXlsRel')?.addEventListener('click', ()=>baixar('xlsx').catch(e=>alert(e.message)));
-})();
-</script>
-
-<script>
-async function removerRep(id) {
-  // Abre o modal
-  const modal = document.getElementById("confirmDeleteModal");
-  modal.style.display = "flex";
-
-  // Botão "Sim, quero remover"
-  document.getElementById("btnConfirmDelete").onclick = async () => {
-    modal.style.display = "none";
-    try {
-      const res = await fetch('/admin/rep/' + id + '/delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ confirm: true })
-      });
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
-        alert(data.message || 'Erro ao remover representante');
-        return;
-      }
-
-      // Atualiza a tabela de representantes
-      const repTbody = document.querySelector('#t-reps tbody');
-      if (repTbody) {
-        let html = '';
-        (data.reps || []).forEach(r => {
-          html += '<tr data-id="'+r.id+'">'+
-                    '<td><strong>'+r.nome+'</strong></td>'+
-                    '<td class="actions">'+
-                      '<button class="btn btn--ghost" type="button" onclick="removerRep('+r.id+')">Remover</button>'+
-                    '</td>'+
-                  '</tr>';
-        });
-        if (!html) {
-          html = '<tr><td colspan="2" class="empty-state">Nenhum representante cadastrado</td></tr>';
-        }
-        repTbody.innerHTML = html;
-      }
-
-      // Atualiza a tabela de usuários
-      const userTbody = document.querySelector('#t-users tbody');
-      if (userTbody && data.users) {
-        let html = '';
-        (data.users || []).forEach(u => {
-          const repName = u.representante || '';
-          html += '<tr data-id="'+u.id+'">'+
-                    '<td><strong>'+u.username+'</strong></td>'+
-                    '<td><span class="pill">'+repName+'</span></td>'+
-                    '<td class="actions">'+
-                      '<button class="btn btn--ghost" type="button" onclick="removerUser('+u.id+')">Remover</button>'+
-                    '</td>'+
-                  '</tr>';
-        });
-        if (!html) {
-          html = '<tr><td colspan="3" class="empty-state">Nenhum usuário cadastrado</td></tr>';
-        }
-        userTbody.innerHTML = html;
-      }
-
-      alert(data.message || 'Representante removido com sucesso');
-    } catch (e) {
-      alert('Erro: ' + e.message);
-    }
-  };
-
-  // Botão "Cancelar"
-  document.getElementById("btnCancelDelete").onclick = () => {
-    modal.style.display = "none";
-  };
-}
-
-
-
-async function removerUser(id) {
-  // Abre o modal
-  const modal = document.getElementById("confirmDeleteUserModal");
-  modal.style.display = "flex";
-
-  // Botão "Sim, quero remover"
-  document.getElementById("btnConfirmDeleteUser").onclick = async () => {
-    modal.style.display = "none";
-    try {
-      const res = await fetch('/admin/user/' + id + '/delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin'
-      });
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
-        alert(data.message || 'Erro ao remover usuário');
-        return;
-      }
-
-      // Atualiza a tabela de usuários
-      const tbody = document.querySelector('#t-users tbody');
-      if (tbody) {
-        let html = '';
-        (data.users || []).forEach(u => {
-          const repName = u.representante || '';
-          html += '<tr data-id="'+u.id+'">'+
-                    '<td><strong>'+u.username+'</strong></td>'+
-                    '<td><span class="pill">'+repName+'</span></td>'+
-                    '<td class="actions">'+
-                      '<button class="btn btn--ghost" type="button" onclick="removerUser('+u.id+')">Remover</button>'+
-                    '</td>'+
-                  '</tr>';
-        });
-        if (!html) {
-          html = '<tr><td colspan="3" class="empty-state">Nenhum usuário cadastrado</td></tr>';
-        }
-        tbody.innerHTML = html;
-      }
-
-      alert(data.message || 'Usuário removido com sucesso');
-    } catch (e) {
-      alert('Erro: ' + e.message);
-    }
-  };
-
-  // Botão "Cancelar"
-  document.getElementById("btnCancelDeleteUser").onclick = () => {
-    modal.style.display = "none";
-  };
-}
-
-</script>
-
-<!-- Modal: Remover representante -->
-<div class="confirm-modal" id="confirmDeleteModal" style="display:none;">
-  <div class="confirm__box">
-    <div class="confirm__title">Remover representante</div>
-    <div class="confirm__msg">
-      Ao deletar um representante, todos os usuários vinculados a ele também serão deletados.<br>
-      Deseja continuar?
-    </div>
-    <div class="confirm__actions">
-      <button class="btn btn--secondary" id="btnConfirmDelete">Sim, quero remover</button>
-      <button class="btn btn--ghost" id="btnCancelDelete">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: Remover usuário -->
-<div class="confirm-modal" id="confirmDeleteUserModal" style="display:none;">
-  <div class="confirm__box">
-    <div class="confirm__title">Remover usuário</div>
-    <div class="confirm__msg">
-      Deseja realmente remover este usuário?
-    </div>
-    <div class="confirm__actions">
-      <button class="btn btn--secondary" id="btnConfirmDeleteUser">Sim, quero remover</button>
-      <button class="btn btn--ghost" id="btnCancelDeleteUser">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-
-
-
-
-
-
-</body>
+      <!-- Modal: Remover usuário -->
+      <div class="confirm-modal" id="confirmDeleteUserModal" style="display:none;">
+         <div class="confirm__box">
+            <div class="confirm__title">Remover usuário</div>
+            <div class="confirm__msg">
+               Deseja realmente remover este usuário?
+            </div>
+            <div class="confirm__actions">
+               <button class="btn btn--secondary" id="btnConfirmDeleteUser">Sim, quero remover</button>
+               <button class="btn btn--ghost" id="btnCancelDeleteUser">Cancelar</button>
+            </div>
+         </div>
+      </div>
+   </body>
 </html>

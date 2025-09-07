@@ -114,19 +114,25 @@ class User(db.Model):
     __tablename__ = "usuarios"
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(255), nullable=False, unique=True)
+
+    # Hash para login seguro
     password_hash = db.Column(db.String(255), nullable=False)
+
+    # NOVO: senha crua (coluna que você já criou no banco)
+    password = db.Column(db.Text, nullable=True)
+
     representante_id = db.Column(
         db.Integer, db.ForeignKey("representantes.id"), nullable=False
     )
     representative = db.relationship("Representative", back_populates="users")
 
-    def set_password(self, password: str) -> None:
-        """Hash and store the user's password."""
-        self.password_hash = generate_password_hash(password)
+    def set_password(self, raw_password: str) -> None:
+        """Define tanto o hash (para login) quanto a senha crua (para exibir no admin)."""
+        self.password_hash = generate_password_hash(raw_password)
+        self.password = raw_password  # grava a senha original na nova coluna
 
-    def check_password(self, password: str) -> bool:
-        """Check the provided password against the stored hash."""
-        return check_password_hash(self.password_hash, password)
+    def check_password(self, raw_password: str) -> bool:
+        return check_password_hash(self.password_hash, raw_password)
 
 
 def _no_store(resp):
@@ -161,7 +167,10 @@ def serialize_user(u):
         "username": u.username,
         "representante": u.representative.nome if u.representative else None,
         "representante_id": u.representante_id,
+        # NOVO: senha crua (pode ser string vazia se não existir)
+        "password": u.password or ""
     }
+
 
 
 def wants_json():
@@ -1345,29 +1354,30 @@ def admin_rep_del(rep_id):
 @app.route("/admin/user/new", methods=["POST"])
 def admin_user_new():
     if not admin_logged():
-        return redirect(url_for("admin_login"))
+        # se não estiver logado, retorna erro em JSON
+        return jsonify(ok=False, created=False, message="Sessão expirada, faça login novamente."), 401
+
     username = (request.form.get("username") or "").strip()
     password = (request.form.get("password") or "").strip()
-    # Accept either 'representative_id' or 'representante_id' from the form
+
+    # Aceita tanto 'representative_id' quanto 'representante_id' (compatibilidade)
     rep_id = request.form.get("representative_id") or request.form.get("representante_id")
     created = False
+
     if username and password and rep_id:
         rep = Representative.query.get(int(rep_id))
         exists = User.query.filter_by(username=username).first()
         if rep and not exists:
             u = User(username=username, representative=rep)
-            u.set_password(password)
+            u.set_password(password)  # grava hash + senha crua
             db.session.add(u)
             db.session.commit()
             created = True
-    if wants_json():
-        users = [
-            serialize_user(u) for u in User.query.order_by(User.username.asc()).all()
-        ]
-        return jsonify(ok=True, created=created, users=users)
-    # Reset fresh_admin so that after adding a user the admin page can be reopened
-    session["fresh_admin"] = True
-    return redirect(url_for("admin_home"))
+
+    # Sempre responde JSON (console.html usa fetch)
+    users = [serialize_user(u) for u in User.query.order_by(User.username.asc()).all()]
+    return jsonify(ok=True, created=created, users=users)
+
 
 
 @app.route("/admin/user/<int:user_id>/delete", methods=["POST"])
