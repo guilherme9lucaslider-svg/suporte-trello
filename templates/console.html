@@ -31,8 +31,12 @@
          --gradient-accent: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
          }
          *{box-sizing:border-box;margin:0;padding:0}
-         body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:var(--ink);
-         background:linear-gradient(135deg,#f8fcff 0%,#f1f2f8 100%);min-height:100vh}
+         body{
+         font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+         line-height:1.6;color:var(--ink);
+         background:linear-gradient(135deg,#f8fcff 0%,#f1f2f8 100%);
+         min-height:100vh
+         }
          @font-face {
          font-family: 'MinhaFonte';
          src: url('/static/Nulshock.woff2') format('woff2');
@@ -40,25 +44,13 @@
          font-display: swap;
          }
          .header{background:var(--gradient-primary);color:#fff;padding:32px 40px}
-         .header h1{ font-family: 'MinhaFonte', 'Inter', sans-serif; font-size:36px; font-weight:900;
-         margin-bottom:12px;
-         color:#ffffff;
-         letter-spacing:0.025em;
+         .header h1{
+         font-family:'MinhaFonte','Inter',sans-serif;font-size:36px;font-weight:900;
+         margin-bottom:12px;color:#ffffff;letter-spacing:0.025em;
          }
-         .header h1 .first-letter {
-         color:var(--accent);
-         font-size:50px;
-         }
-         .header h1 .first-letter-admin {
-         color:var(--accent);
-         font-size:50px;
-         }
-         .header .subtitle{
-         font-size:16px;
-         opacity:0.9;
-         font-weight:400;
-         letter-spacing:0.025em;
-         }
+         .header h1 .first-letter,
+         .header h1 .first-letter-admin{ color:var(--accent); font-size:50px; }
+         .header .subtitle{ font-size:16px; opacity:0.9; font-weight:400; letter-spacing:0.025em; }
          .tabs{display:flex;gap:4px;background:#fff;padding:8px;border-bottom:1px solid var(--stroke);box-shadow:var(--shadow-sm)}
          .tab{border:none;background:transparent;padding:16px 24px;border-radius:16px;cursor:pointer;font-weight:600;font-size:14px;color:var(--muted);transition:.2s}
          .tab[aria-selected="true"]{background:var(--gradient-primary);color:#fff;box-shadow:var(--shadow)}
@@ -70,81 +62,85 @@
          .table-container{background:#fff;border:1px solid var(--stroke);border-radius:24px;overflow:hidden;box-shadow:var(--shadow)}
          table{width:100%;border-collapse:separate;border-spacing:0}
          th,td{padding:16px 20px;text-align:left;border-bottom:1px solid var(--stroke);font-size:14px}
-         th{background:linear-gradient(135deg,var(--stroke-light) 0%,#f8fafc 100%);font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.025em;position:sticky;top:0;z-index:1}
-         tbody tr{transition:.2s} tbody tr:hover{background:linear-gradient(135deg,rgba(0,96,86,.03) 0%, rgba(16,185,129,.02) 100%)}
+         th{
+         background:linear-gradient(135deg,var(--stroke-light) 0%,#f8fafc 100%);
+         font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.025em;
+         position:sticky;top:0;z-index:1
+         }
+         tbody tr{transition:.2s}
+         tbody tr:hover{background:linear-gradient(135deg,rgba(0,96,86,.03) 0%, rgba(16,185,129,.02) 100%)}
          .pill{display:inline-flex;align-items:center;padding:6px 12px;border-radius:20px;background:var(--stroke-light);font-weight:600;font-size:12px;color:var(--ink)}
          .row{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
-         input,select{padding:12px 16px;border:2px solid var(--stroke);border-radius:16px;background:#fff;font-size:14px;font-weight:500;color:var(--ink);transition:.2s;min-width:180px}
+         input,select{
+         padding:12px 16px;border:2px solid var(--stroke);border-radius:16px;background:#fff;
+         font-size:14px;font-weight:500;color:var(--ink);transition:.2s;min-width:180px
+         }
          input:focus,select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 4px rgba(0,96,86,.1)}
-         .btn{border:none;background:var(--gradient-primary);color:#fff;padding:12px 20px;border-radius:16px;cursor:pointer;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:10px;transition:.2s;box-shadow:var(--shadow-sm)}
+         .btn{
+         border:none;background:var(--gradient-primary);color:#fff;padding:12px 20px;border-radius:16px;
+         cursor:pointer;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:10px;
+         transition:.2s;box-shadow:var(--shadow-sm)
+         }
          .btn:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
          .btn--ghost{background:#fff;color:var(--primary);border:1px solid var(--stroke);box-shadow:none}
          .actions{display:flex;gap:8px;align-items:center}
-         /* Painel */
-         #painel .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;background:#fff;padding:24px;border:1px solid var(--stroke);border-radius:24px;box-shadow:var(--shadow);margin-bottom:24px}
+         /* ================== Painel ================== */
+         #painel .filters{
+         display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+         gap:20px;background:#fff;padding:24px;border:1px solid var(--stroke);
+         border-radius:24px;box-shadow:var(--shadow);margin-bottom:24px
+         }
          #painel .actions{display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap;align-items:center}
          #painel .actions .push-right{margin-left:auto}
          #painel .btn{border:1px solid var(--stroke);background:#fff;border-radius:16px;padding:12px 20px;color:var(--ink)}
-         #painel .btn--primary{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%);color:#fff;border-color:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%)}
+         #painel .btn--primary{
+         background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%);
+         color:#fff;border-color:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%)
+         }
          /* Monitoramento */
          #painel .btn--live{background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:#fff;border-color:linear-gradient(135deg,#10b981 0%,#059669 100%)}
          #painel .btn--live .dot{width:12px;height:12px;border-radius:999px;background:#ef4444;display:inline-block}
          #painel .btn--live.is-on{background:linear-gradient(135deg,#fecaca 0%, #fca5a5 100%);color:#7f1d1d;border-color:#f87171;box-shadow:0 0 0 4px rgba(248,113,113,.25)}
          #painel .btn--live.is-on .dot{display:none}
-         /* Status somente texto */
+         /* Status texto */
          #painel .status{background:transparent!important;border:0!important;padding:0!important;min-width:unset;font-weight:600;font-size:14px;color:var(--ink)}
          #painel .count{font-size:14px;color:var(--muted);font-weight:500;margin-bottom:16px;padding:12px 16px;background:#fff;border-radius:16px;border:1px solid var(--stroke)}
          #painel .table-wrap{overflow-x:auto}
          #painel table{min-width:1000px}
          #painel .title{max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;color:var(--ink)}
+         /* Modal genérico */
          #painel .modal{position:fixed;inset:0;background:rgba(15,23,42,.7);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:9999}
          #painel .modal__box{width:min(800px,95vw);max-height:85vh;overflow:auto;background:#fff;border:1px solid var(--stroke);border-radius:16px;padding:32px;box-shadow:var(--shadow)}
          #painel .modal__title{font-weight:800;font-size:24px;margin-bottom:20px}
-         #painel .modal__body{white-space:pre-wrap;border:1px solid var(--stroke);background:linear-gradient(135deg,#f8fafc 0%,#f1f5f9 100%);border-radius:12px;padding:20px;font-family:ui-monospace,Consolas,Menlo,monospace;font-size:14px;line-height:1.6;color:var(--ink);max-height:400px;overflow-y:auto}
+         #painel .modal__body{
+         white-space:pre-wrap;border:1px solid var(--stroke);
+         background:linear-gradient(135deg,#f8fafc 0%,#f1f5f9 100%);
+         border-radius:12px;padding:20px;font-family:ui-monospace,Consolas,Menlo,monospace;
+         font-size:14px;line-height:1.6;color:var(--ink);max-height:400px;overflow-y:auto
+         }
          #painel .loading{display:inline-block;width:16px;height:16px;border:2px solid var(--stroke);border-radius:50%;border-top-color:var(--primary);animation:spin 1s ease-in-out infinite}
          @keyframes spin{to{transform:rotate(360deg)}}
          /* === BOTÕES COMPACTOS NA TABELA === */
          #painel table .btn,
          #painel table [data-kind="whatsapp-link"],
-         #painel table [data-kind="trello-link"] {
-         padding: 6px 10px !important;
-         line-height: 1 !important;
-         border-radius: 10px !important;
-         font-size: 12px !important;
-         display: inline-flex !important;
-         align-items: center !important;
-         font-weight: 700 !important;
-         gap: 6px !important;
-         min-width: unset !important;
-         height: 28px !important;
-         box-sizing: border-box !important;
-         text-decoration: none;
-         vertical-align: middle !important;  /* ADICIONE ESTA LINHA */
+         #painel table [data-kind="trello-link"]{
+         padding:6px 10px !important; line-height:1 !important; border-radius:10px !important;
+         font-size:12px !important; display:inline-flex !important; align-items:center !important;
+         font-weight:700 !important; gap:6px !important; min-width:unset !important; height:28px !important;
+         box-sizing:border-box !important; text-decoration:none; vertical-align:middle !important;
          }
-         #painel table .actions {
-         display: flex !important;
-         justify-content: center !important;
-         align-items: center !important;
-         height: 28px !important;
-         margin: 0 !important;
-         padding: 0 !important;
+         /* conteúdo da coluna AÇÕES dentro da tabela */
+         #painel table .actions{
+         display:flex !important; justify-content:center !important; align-items:center !important;
+         height:28px !important; margin:0 !important; padding:0 !important;
          }
-         /* === Botões Ver/Detalhes ghost compactos === */
-         #painel table .btn--ghost {
-         background: #fff !important;
-         color: var(--primary) !important;
-         border: 1px solid var(--stroke) !important;
-         box-shadow: none !important;
+         /* Ghost compacto */
+         #painel table .btn--ghost{
+         background:#fff !important; color:var(--primary) !important; border:1px solid var(--stroke) !important; box-shadow:none !important;
          }
-         #painel table .btn--ghost:hover { background: var(--surface-hover) !important; transform: none !important; }
-         /* === Linhas compactas === */
-         #painel table td { padding: 12px 16px !important; }
-         /* Alinha o conteúdo verticalmente e mantém linhas mais finas */
-         #painel table td {
-         vertical-align: middle !important;
-         padding: 8px 16px !important;
-         height: 40px !important;
-         }
+         #painel table .btn--ghost:hover{ background:var(--surface-hover) !important; transform:none !important; }
+         /* Linhas compactas */
+         #painel table td{ vertical-align:middle !important; padding:8px 16px !important; height:40px !important; }
          /* === Status cores === */
          #painel .status.s-open{color:#22c55e}
          #painel .status.s-analise{color:#eab308}
@@ -152,287 +148,108 @@
          #painel .status.s-req{color:#3b82f6}
          #painel .status.s-ok{color:#166534}
          #painel .status.s-drop{color:#ef4444}
-         /* === Select de status dentro da coluna === */
-         #painel select.status-select {
-         border: 0;
-         background: transparent;
-         font-weight: 600;
-         font-size: 14px;
-         padding: 0;
-         margin: 0;
-         cursor: pointer;
-         color: var(--ink);
-         appearance: none;
-         -moz-appearance: none;
-         -webkit-appearance: none;
-         outline: none;
-         height: 28px;
-         line-height: 28px;
+         /* Select de status inline */
+         #painel select.status-select{
+         border:0;background:transparent;font-weight:600;font-size:14px;padding:0;margin:0;cursor:pointer;color:var(--ink);
+         appearance:none;-moz-appearance:none;-webkit-appearance:none;outline:none;height:28px;line-height:28px;
          }
-         #painel select.status-select option {
-         color: var(--ink);
-         }
-         /* === WhatsApp === */
+         #painel select.status-select option{ color:var(--ink); }
+         /* WhatsApp */
          #painel [data-kind="whatsapp-link"]{
-         background: linear-gradient(135deg,#25d366 0%, #128c7e 100%) !important;
-         border: 1px solid transparent !important;
-         color: #ffffff !important;
-         display: inline-flex;
-         align-items: center;
-         gap: 6px;
-         border-radius: 10px;
-         font-weight: 700;
-         font-size: 12px;
-         padding: 6px 10px;
-         line-height: 1;
+         background:linear-gradient(135deg,#25d366 0%, #128c7e 100%) !important;
+         border:1px solid transparent !important; color:#ffffff !important; display:inline-flex; align-items:center; gap:6px;
+         border-radius:10px; font-weight:700; font-size:12px; padding:6px 10px; line-height:1;
          }
-         #painel [data-kind="whatsapp-link"] .icon { width: 16px; height: 16px; display: inline-block; }
-         #painel [data-kind="whatsapp-link"]:hover{ filter: brightness(1.05); transform: translateY(-2px); box-shadow: var(--shadow); }
-         #painel .btn .icon {
-         width: 16px;
-         height: 16px;
-         display: inline-block;
-         }
-         /* Ícones dos botões CSV e Excel */
+         #painel [data-kind="whatsapp-link"] .icon{width:16px;height:16px;display:inline-block}
+         #painel [data-kind="whatsapp-link"]:hover{filter:brightness(1.05);transform:translateY(-2px);box-shadow:var(--shadow)}
+         #painel .btn .icon{width:16px;height:16px;display:inline-block}
+         /* Ícones dos botões CSV/Excel */
          #painel .actions #btnExportCsv .icon,
-         #painel .actions #btnExportExcel .icon {
-         width: 26px !important;
-         height: 26px !important;
-         }
-         /* Mantém o tamanho dos botões fixo */
+         #painel .actions #btnExportExcel .icon{ width:26px !important; height:26px !important; }
+         /* Tamanho fixo nos botões de exportação */
          #painel .actions #btnExportCsv,
-         #painel .actions #btnExportExcel {
-         height: 45px !important;
-         padding: 8px 16px !important;
-         overflow: hidden !important;
-         }
-         /* === Trello === */
+         #painel .actions #btnExportExcel{ height:45px !important; padding:8px 16px !important; overflow:hidden !important; }
+         /* Trello */
          #painel a[data-kind="trello-link"]{
-         background: linear-gradient(135deg,#93c5fd 0%, #60a5fa 100%) !important;
-         border: 1px solid transparent !important;
-         color: #ffffff !important;
-         display: inline-flex;
-         align-items: center;
-         gap: 6px;
-         border-radius: 10px;
-         font-weight: 700;
-         font-size: 12px;
-         padding: 6px 10px;
-         line-height: 1;
+         background:linear-gradient(135deg,#93c5fd 0%, #60a5fa 100%) !important;
+         border:1px solid transparent !important;color:#ffffff !important;display:inline-flex;align-items:center;gap:6px;
+         border-radius:10px;font-weight:700;font-size:12px;padding:6px 10px;line-height:1;
          }
-         #painel a[data-kind="trello-link"] .icon { width: 16px; height: 16px; display: inline-block; }
-         #painel a[data-kind="trello-link"]:hover{ filter: brightness(.98); transform: translateY(-2px); box-shadow: var(--shadow); }
+         #painel a[data-kind="trello-link"] .icon{width:16px;height:16px;display:inline-block}
+         #painel a[data-kind="trello-link"]:hover{filter:brightness(.98);transform:translateY(-2px);box-shadow:var(--shadow)}
          /* ==================== Relatórios ==================== */
-         /* Barra de ações do relatório */
-         #relatorios .report-actions {
-         display: flex;
-         flex-wrap: wrap;
-         gap: 12px;
-         align-items: center;
-         background: #fff;
-         padding: 16px 24px;
-         border: 1px solid var(--stroke);
-         border-radius: 24px;
-         box-shadow: var(--shadow);
-         margin-bottom: 24px;
+         #relatorios .report-actions{
+         display:flex;flex-wrap:wrap;gap:12px;align-items:center;background:#fff;padding:16px 24px;
+         border:1px solid var(--stroke);border-radius:24px;box-shadow:var(--shadow);margin-bottom:24px
          }
-         #relatorios .report-actions .separator {
-         width: 1px;
-         height: 32px;
-         background: var(--stroke);
-         margin: 0 8px;
+         #relatorios .report-actions .separator{width:1px;height:32px;background:var(--stroke);margin:0 8px}
+         #relatorios .report-actions .btn{
+         display:inline-flex;align-items:center;gap:8px;height:40px;padding:8px 16px;border-radius:12px;
+         font-size:14px;font-weight:600;border:1px solid var(--stroke);
+         background:linear-gradient(135deg,var(--stroke-light) 0%,#f8fafc 100%);color:var(--ink);
+         cursor:pointer;transition:.2s;box-shadow:var(--shadow-sm);
          }
-         #relatorios .report-actions .btn {
-         display: inline-flex;
-         align-items: center;
-         gap: 8px;
-         height: 40px;
-         padding: 8px 16px;
-         border-radius: 12px;
-         font-size: 14px;
-         font-weight: 600;
-         border: 1px solid var(--stroke);
-         background: linear-gradient(135deg,var(--stroke-light) 0%,#f8fafc 100%);
-         color: var(--ink);
-         cursor: pointer;
-         transition: .2s;
-         box-shadow: var(--shadow-sm);
+         #relatorios .report-actions .btn:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+         #relatorios .report-actions .btn img.icon{width:20px;height:20px}
+         #relatorios .report-layout{display:flex;gap:24px;align-items:flex-start;margin-top:24px}
+         #relatorios .report-sidebar{
+         width:350px;background:#fff;padding:24px 20px;border:1px solid var(--stroke);border-radius:24px;box-shadow:var(--shadow);
          }
-         #relatorios .report-actions .btn:hover {
-         transform: translateY(-2px);
-         box-shadow: var(--shadow);
+         #relatorios .report-main{
+         flex:1;background:#f8fafc;border:1px solid var(--stroke-light);border-radius:24px;padding:24px;min-height:500px;overflow:auto;
          }
-         #relatorios .report-actions .btn img.icon {
-         width: 20px;
-         height: 20px;
+         #relatorios .sidebar-group{margin-bottom:20px}
+         #relatorios .sidebar-group label.title{display:block;font-weight:700;margin-bottom:8px}
+         #relatorios .sidebar-group .radio-options{
+         display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;margin-bottom:8px;width:100%;
          }
-         /* Layout lateral do relatório */
-         #relatorios .report-layout {
-         display: flex;
-         gap: 24px;
-         align-items: flex-start;
-         margin-top: 24px;
-         }
-         #relatorios .report-sidebar {
-         width: 350px; /* Largura reduzida para acomodar todos filtros */
-         background: #fff;
-         padding: 24px 20px;
-         border: 1px solid var(--stroke);
-         border-radius: 24px;
-         box-shadow: var(--shadow);
-         }
-         #relatorios .report-main {
-         flex: 1;
-         background: #f8fafc;
-         border: 1px solid var(--stroke-light);
-         border-radius: 24px;
-         padding: 24px;
-         min-height: 500px;
-         overflow: auto;
-         }
-         #relatorios .sidebar-group {
-         margin-bottom: 20px;
-         }
-         #relatorios .sidebar-group label.title {
-         display: block;
-         font-weight: 700;
-         margin-bottom: 8px;
-         }
-         #relatorios .sidebar-group .radio-options {
-         display: grid;
-         grid-template-columns: 1fr 1fr;
-         gap: 8px;
-         margin-top: 4px;
-         margin-bottom: 8px;
-         width: 100%;
-         }
-         #relatorios .sidebar-group .sub-field {
-         margin-top: 8px;
-         display: flex;
-         flex-direction: column;
-         gap: 4px;
-         }
-         #relatorios .filter-adv {
-         margin-bottom: 12px;
-         display: flex;
-         flex-direction: column;
-         gap: 4px;
-         }
-         #relatorios .filter-adv .checkbox-label {
-         display: flex;
-         align-items: center;
-         gap: 4px; /* Espaço menor entre checkbox e texto */
-         font-weight: 600;
-         font-size: 14px;
-         }
-         #relatorios .filter-adv .input,
-         #relatorios .filter-adv select {
-         width: 100%;
-         }
-         /* Reduz a largura mínima dos campos dentro da barra lateral de relatórios para caber */
-         #relatorios .report-sidebar input,
-         #relatorios .report-sidebar select {
-         min-width: 0;
-         }
+         #relatorios .sidebar-group .sub-field{margin-top:8px;display:flex;flex-direction:column;gap:4px}
+         #relatorios .filter-adv{margin-bottom:12px;display:flex;flex-direction:column;gap:4px}
+         #relatorios .filter-adv .checkbox-label{display:flex;align-items:center;gap:4px;font-weight:600;font-size:14px}
+         #relatorios .filter-adv .input, #relatorios .filter-adv select{width:100%}
+         #relatorios .report-sidebar input, #relatorios .report-sidebar select{min-width:0}
          /* ===== Modal de confirmação ===== */
          .confirm-modal{
-         position: fixed;
-         inset: 0;
-         display: none;
-         align-items: center;
-         justify-content: center;
-         background: rgba(15,31,28,0.40);
-         backdrop-filter: blur(2px);
-         z-index: 9999;
-         padding: 16px;
+         position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+         background:rgba(15,31,28,0.40);backdrop-filter:blur(2px);z-index:9999;padding:16px;
          }
          .confirm__box{
-         width: 100%;
-         max-width: 520px;
-         background: var(--surface);
-         border: 1px solid var(--stroke);
-         border-radius: 16px;
-         box-shadow: 0 10px 40px rgba(0,0,0,.15);
-         padding: 20px;
+         width:100%;max-width:520px;background:var(--surface);border:1px solid var(--stroke);
+         border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.15);padding:20px;
          }
-         .confirm__title{
-         font-weight: 700;
-         font-size: 18px;
-         margin-bottom: 8px;
-         color: var(--ink);
-         }
-         .confirm__msg{
-         color: var(--muted);
-         line-height: 1.5;
-         margin-bottom: 16px;
-         }
-         .confirm__actions{
-         display: flex;
-         gap: 10px;
-         justify-content: flex-end;
-         }
+         .confirm__title{font-weight:700;font-size:18px;margin-bottom:8px;color:var(--ink)}
+         .confirm__msg{color:var(--muted);line-height:1.5;margin-bottom:16px}
+         .confirm__actions{display:flex;gap:10px;justify-content:flex-end}
          /* Linhas mais finas em reps/usuários */
-         #t-reps td, #t-users td {
-         vertical-align: middle !important;
-         padding: 6px 12px !important; /* menos espaço */
-         height: 36px !important;      /* altura menor */
-         font-size: 14px;              /* fonte levemente menor */
+         #t-reps td, #t-users td{
+         vertical-align:middle !important; padding:6px 12px !important; height:36px !important; font-size:14px;
          }
          /* Botão Remover mais compacto */
-         #t-reps .btn, #t-users .btn {
-         padding: 4px 10px !important;
-         height: 26px !important;
-         font-size: 12px !important;
-         border-radius: 8px !important;
-         line-height: 1 !important;
+         #t-reps .btn, #t-users .btn{
+         padding:4px 10px !important; height:26px !important; font-size:12px !important; border-radius:8px !important; line-height:1 !important;
          }
          /* ===== Senha (coluna com olhinho) ===== */
-         .pwd-cell{
-         display: inline-flex;
-         align-items: center;
-         gap: 8px;
-         }
+         .pwd-cell{ display:inline-flex; align-items:center; gap:8px; }
          .pwd-input{
-         width: 180px;
-         padding: 6px 10px;
-         border: 1px solid var(--stroke);
-         border-radius: 10px;
-         background: #fff;
-         font-size: 12px;
-         color: var(--ink);
+         width:180px; padding:6px 10px; border:none !important; border-radius:10px;
+         background:transparent !important; font-size:12px; color:var(--ink);
          }
-         .pwd-input[readonly]{
-         user-select: all;
-         cursor: default;
+         .pwd-input[readonly]{ user-select:all; cursor:default; }
+         .btn-eye{
+         padding:4px 8px !important; height:26px !important; font-size:12px !important; border-radius:8px !important; line-height:1 !important;
+         border:none !important; background:transparent !important; cursor:pointer;
+         display:inline-flex; align-items:center; justify-content:center;
          }
-         .btn-eye {
-         padding: 4px 8px !important;
-         height: 26px !important;
-         font-size: 12px !important;
-         border-radius: 8px !important;
-         line-height: 1 !important;
-         /* REMOVA essas linhas ou sobrescreva: */
-         border: none !important;
-         background: transparent !important;
-         cursor: pointer;
+         .btn-eye:hover{ background:var(--surface-hover) !important; }
+         .eye-icon{ width:16px; height:16px; display:inline-block; }
+         /* Célula de ações deve continuar como célula de tabela (evita “risquinho” torto) */
+         table td.actions{
+         display:table-cell !important;
+         vertical-align:middle !important;
          }
-         .btn-eye:hover {
-         background: var(--surface-hover) !important;
-         }
-         /* Ícones SVG */
-         .eye-icon {
-         width: 16px;
-         height: 16px;
-         display: inline-block;
-         }
-         .pwd-input {
-         width: 180px;
-         padding: 6px 10px;
-         border: none !important; /* Remove a borda */
-         border-radius: 10px;
-         background: transparent !important; /* Remove o fundo */
-         font-size: 12px;
-         color: var(--ink);
+         /* Centraliza botões dentro da célula de ações */
+         table td.actions .btn{
+         display:inline-flex; align-items:center; justify-content:center;
          }
       </style>
    </head>
