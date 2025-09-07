@@ -377,8 +377,6 @@
             <div class="actions">
                <button class="btn btn--primary" id="btnAplicar">🔍 Aplicar Filtros</button>
                <button class="btn" id="btnLimpar">🧹 Limpar</button>
-               <button class="btn" id="btnExportCsv"><img src="/static/csv.svg" alt="CSV" class="icon"> CSV</button>
-               <button class="btn" id="btnExportExcel"><img src="/static/xlsx.svg" alt="Excel" class="icon"> Excel</button>
                <button class="btn btn--live push-right" id="btnRealtime"><span class="dot"></span> Monitoramento em Tempo Real</button>
             </div>
             <div class="count" id="countBox"></div>
@@ -504,6 +502,7 @@
           <!-- Barra de ações do relatório -->
           <div class="report-actions">
             <button class="btn" id="btnPdfRel"><span class="icon">📄</span> PDF</button>
+			<button class="btn" id="btnCsvRel"><span class="icon">🧾</span> CSV</button>
             <button class="btn" id="btnXlsRel"><span class="icon">📊</span> XLS</button>
             <button class="btn" id="btnPrintRel"><span class="icon">🖨️</span> Imprimir</button>
             <button class="btn" id="btnEmailRel"><span class="icon">✉️</span> E‑mail</button>
@@ -709,8 +708,6 @@ function openWhatsApp(rawPhone, text){
              const btnRealtime = painel.querySelector('#btnRealtime');
              const btnAplicar = painel.querySelector('#btnAplicar');
              const btnLimpar = painel.querySelector('#btnLimpar');
-             const btnExportCsv = painel.querySelector('#btnExportCsv');
-             const btnExportExcel = painel.querySelector('#btnExportExcel');
              const btnMore = document.getElementById('btnMore');
              const pagination = document.getElementById('pagination');
          
@@ -1318,54 +1315,6 @@ function load({silent=false, append=false}={}){
                page = 0;
                load({silent:false});
              });
-             // Export CSV via fetch + blob (não abre nova aba).
-             // Use a separate AbortController so that exports are not cancelled by other fetches.
-             btnExportCsv.addEventListener('click', async () => {
-               const query = qs();
-               const sep = query ? '&' : '?';
-               const url = '/api/chamados/export' + query + sep + 'format=csv&_=' + Date.now();
-               const ac = new AbortController();
-               try {
-                 const res = await fetch(url, { signal: ac.signal, credentials: 'same-origin', cache: 'no-store' });
-                 if(!res.ok) throw new Error('HTTP ' + res.status);
-                 const dispo = res.headers.get('Content-Disposition') || '';
-                 let filename = 'chamados.csv';
-                 const m = /filename="?([^";]+)"?/i.exec(dispo);
-                 if(m) filename = m[1];
-                 const blob = await res.blob();
-                 const href = URL.createObjectURL(blob);
-                 const a = document.createElement('a');
-                 a.href = href; a.download = filename;
-                 document.body.appendChild(a); a.click(); a.remove();
-                 URL.revokeObjectURL(href);
-               } catch(err) {
-                 alert('Falha ao exportar CSV');
-               }
-             });
-             // Export Excel via fetch + blob (não abre nova aba).
-             // Use a separate AbortController so that exports are not cancelled by other fetches.
-             btnExportExcel.addEventListener('click', async () => {
-               const query = qs();
-               const sep = query ? '&' : '?';
-               const url = '/api/chamados/export' + query + sep + 'format=xlsx&_=' + Date.now();
-               const ac = new AbortController();
-               try {
-                 const res = await fetch(url, { signal: ac.signal, credentials: 'same-origin', cache: 'no-store' });
-                 if(!res.ok) throw new Error('HTTP ' + res.status);
-                 const dispo = res.headers.get('Content-Disposition') || '';
-                 let filename = 'chamados.xlsx';
-                 const m = /filename="?([^";]+)"?/i.exec(dispo);
-                 if(m) filename = m[1];
-                 const blob = await res.blob();
-                 const href = URL.createObjectURL(blob);
-                 const a = document.createElement('a');
-                 a.href = href; a.download = filename;
-                 document.body.appendChild(a); a.click(); a.remove();
-                 URL.revokeObjectURL(href);
-               } catch(err) {
-                 alert('Falha ao exportar Excel');
-               }
-             });
              // Paginação: carregar mais
              btnMore.addEventListener('click', () => {
                page++;
@@ -1526,8 +1475,7 @@ function criarUser(e) {
   return false;
 }
 
-// ====== <script src="/static/data.js"></script>
-Script da aba de Relatórios ======
+// ====== Script da aba de Relatórios ======
 // Este script habilita/desabilita os campos de filtro adicionais conforme as checkboxes
 // são marcadas ou desmarcadas.
 (() => {
@@ -1559,46 +1507,15 @@ Script da aba de Relatórios ======
 })();
 </script>
 
-<!-- === Data/Filters & Relatórios (corrigido) === -->
 <script>
-// Habilita/desabilita campos conforme checkboxes na aba Relatórios
-(() => {
-  document.addEventListener('DOMContentLoaded', () => {
-    const advFilters = [
-      { chk: 'chkClienteRel',        field: 'fClienteRel' },
-      { chk: 'chkRepresentanteRel',  field: 'fRepresentanteRel' },
-      { chk: 'chkSistemaRel',        field: 'fSistemaRel' },
-      { chk: 'chkModuloRel',         field: 'fModuloRel' },
-      { chk: 'chkOcorrenciaRel',     field: 'fOcorrenciaRel' }
-    ];
-    advFilters.forEach(({ chk, field }) => {
-      const c = document.getElementById(chk);
-      const f = document.getElementById(field);
-      if (!c || !f) return;
-      // estado inicial
-      f.disabled = !c.checked;
-      c.addEventListener('change', () => {
-        f.disabled = !c.checked;
-        if (!c.checked) {
-          if (f.tagName === 'SELECT') f.selectedIndex = 0;
-          else f.value = '';
-        }
-      });
-    });
-  });
-})();
-</script>
-
-<script>
-// Carrega representantes do backend e preenche selects
 document.addEventListener('DOMContentLoaded', async () => {
   async function carregarRepresentantes() {
     try {
       const res = await fetch('/api/representantes', { headers: { 'Accept':'application/json' }, cache:'no-store' });
       const lista = await res.json();
-      preencherSelect('fRepresentanteRel', lista, '');
-      // se existir no painel:
-      preencherSelect('fRep', lista, '');
+      preencherSelect('fRepresentanteRel', lista, /*placeholder*/'');
+      // Se existir um select no Painel:
+      preencherSelect('fRep', lista, /*placeholder*/'');
     } catch (e) {
       console.error('Falha ao carregar representantes:', e);
     }
@@ -1608,6 +1525,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const el = document.getElementById(id);
     if (!el) return;
     el.innerHTML = '';
+    // Se quiser uma opção "todas", use value vazio
     if (placeholder !== null) {
       const optAll = document.createElement('option');
       optAll.value = ''; optAll.textContent = placeholder || 'Todos';
@@ -1624,69 +1542,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 </script>
 
-<script>
-// Popula Sistema/Módulo/Ocorrência a partir do window.DATA
-document.addEventListener('DOMContentLoaded', () => {
-  const DATA   = window.DATA || {};
-  const selSis = document.getElementById('fSistemaRel');
-  const selMod = document.getElementById('fModuloRel');
-  const selOco = document.getElementById('fOcorrenciaRel');
-
-  function fill(select, items, first='— selecione —'){
-    if (!select) return;
-    select.innerHTML = '';
-    const o0 = document.createElement('option');
-    o0.value = ''; o0.textContent = first;
-    select.appendChild(o0);
-    (items || []).forEach(v=>{
-      const o = document.createElement('option');
-      o.value = v; o.textContent = v;
-      select.appendChild(o);
-    });
-  }
-
-  if (selSis) fill(selSis, Object.keys(DATA), '— sistema —');
-
-  selSis?.addEventListener('change', ()=>{
-    const sis = selSis.value;
-    const mods = sis && DATA[sis] ? Object.keys(DATA[sis]) : [];
-    fill(selMod, mods, '— módulo —');
-    fill(selOco, [], '— ocorrência —');
-  });
-
-  selMod?.addEventListener('change', ()=>{
-    const sis = selSis?.value;
-    const mod = selMod?.value;
-    const ocs = (sis && mod && DATA[sis] && DATA[sis][mod]) ? DATA[sis][mod] : [];
-    fill(selOco, ocs, '— ocorrência —');
-  });
-});
-</script>
 
 <script>
-// Geração do relatório e export, com validação de datas e todos os filtros
 (() => {
   const btn = document.getElementById('btnConfirmarRel');
   const mainEl = document.querySelector('#relatorios .report-main');
   const dtIni  = document.getElementById('relInicio');
   const dtFim  = document.getElementById('relFim');
-  const fCliente = document.getElementById('fClienteRel');
-  const fRep     = document.getElementById('fRepresentanteRel');
-  const fSis     = document.getElementById('fSistemaRel');
-  const fMod     = document.getElementById('fModuloRel');
-  const fOco     = document.getElementById('fOcorrenciaRel');
+  const inpCliente = document.getElementById('fClienteRel');
+  const selRepRel  = document.getElementById('fRepresentanteRel');
 
   function esc(s){ return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
   btn?.addEventListener('click', async () => {
     const de  = (dtIni?.value || '').trim();
     const ate = (dtFim?.value || '').trim();
-    const cli = (fCliente?.value || '').trim();
-    const rep = (fRep?.value || '').trim();
-    const sis = (fSis?.value || '').trim();
-    const mod = (fMod?.value || '').trim();
-    const oco = (fOco?.value || '').trim();
+    const cli = (inpCliente?.value || '').trim();
+	const rep = (selRepRel?.value || '').trim();
 
+    // >>> OBRIGATÓRIO: exigir as DUAS datas
     if (!de || !ate) {
       mainEl.innerHTML = `
         <div style="display:flex;align-items:center;justify-content:center;height:100%;">
@@ -1696,6 +1570,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>`;
       return;
     }
+    // <<< FIM obrigatório
 
     mainEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b;">Carregando cartões abertos no período…</div>';
 
@@ -1703,10 +1578,7 @@ document.addEventListener('DOMContentLoaded', () => {
     qs.set('de_criacao', de);
     qs.set('ate_criacao', ate);
     if (cli) qs.set('cliente', cli);
-    if (rep) qs.set('representante', rep);
-    if (sis) qs.set('sistema', sis);
-    if (mod) qs.set('modulo', mod);
-    if (oco) qs.set('ocorrencia', oco);
+	if (rep) qs.set('representante', rep);
 
     const res = await fetch('/api/chamados?' + qs.toString(), { headers: { 'Accept':'application/json' }, cache:'no-store' });
     const data = await res.json();
@@ -1720,28 +1592,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const rows = items.map(it=>{
       const dt = it.created_at ? new Date(it.created_at) : null;
       const d  = dt ? dt.toLocaleString('pt-BR') : '—';
-      return `<tr>
-        <td>${esc(it.titulo)}</td>
-        <td>${esc(it.cliente || '-')}</td>
-        <td>${esc(it.representante || '-')}</td>
-        <td>${esc(it.sistema || '-')}</td>
-        <td>${esc(it.modulo || '-')}</td>
-        <td>${esc(it.ocorrencia || '-')}</td>
-        <td>${esc(it.status || '-')}</td>
-        <td>${esc(d)}</td>
-      </tr>`;
+      return `<tr><td>${esc(it.titulo)}</td><td>${esc(it.representante||'-')}</td><td>${esc(it.status||'-')}</td><td>${esc(d)}</td></tr>`;
     }).join('');
 
     mainEl.innerHTML = `
       <div style="background:#fff;border:1px solid var(--stroke);border-radius:16px;overflow:auto;">
-        <table style="width:100%;min-width:1000px;border-collapse:separate;border-spacing:0">
+        <table style="width:100%;min-width:720px;border-collapse:separate;border-spacing:0">
           <thead><tr>
             <th style="text-align:left;padding:12px 16px;border-bottom:1px solid var(--stroke);">Título</th>
-            <th style="text-align:left;padding:12px 16px;border-bottom:1px solid var(--stroke);">Cliente</th>
             <th style="text-align:left;padding:12px 16px;border-bottom:1px solid var(--stroke);">Representante</th>
-            <th style="text-align:left;padding:12px 16px;border-bottom:1px solid var(--stroke);">Sistema</th>
-            <th style="text-align:left;padding:12px 16px;border-bottom:1px solid var(--stroke);">Módulo</th>
-            <th style="text-align:left;padding:12px 16px;border-bottom:1px solid var(--stroke);">Ocorrência</th>
             <th style="text-align:left;padding:12px 16px;border-bottom:1px solid var(--stroke);">Status</th>
             <th style="text-align:left;padding:12px 16px;border-bottom:1px solid var(--stroke);">Criado em</th>
           </tr></thead>
@@ -1751,27 +1610,24 @@ document.addEventListener('DOMContentLoaded', () => {
       <div style="margin-top:12px;color:var(--muted);font-size:14px;">📊 <strong>${items.length}</strong> cartão(is) aberto(s) no período.</div>`;
   });
 
+
+    // Export CSV/XLS do Relatório
   async function baixar(formato){
     const de  = (dtIni?.value || '').trim();
     const ate = (dtFim?.value || '').trim();
-    const cli = (fCliente?.value || '').trim();
-    const rep = (fRep?.value || '').trim();
-    const sis = (fSis?.value || '').trim();
-    const mod = (fMod?.value || '').trim();
-    const oco = (fOco?.value || '').trim();
+    const cli = (inpCliente?.value || '').trim();
 
+    // >>> OBRIGATÓRIO: exigir as DUAS datas
     if (!de || !ate) {
       alert('Para exportar, informe a data inicial e a data final.');
       return;
     }
+    // <<< FIM obrigatório
+
     const qs  = new URLSearchParams({ format: formato });
     qs.set('de_criacao', de);
     qs.set('ate_criacao', ate);
     if (cli) qs.set('cliente', cli);
-    if (rep) qs.set('representante', rep);
-    if (sis) qs.set('sistema', sis);
-    if (mod) qs.set('modulo', mod);
-    if (oco) qs.set('ocorrencia', oco);
 
     const res = await fetch('/api/chamados/export?' + qs.toString(), { cache:'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -1787,5 +1643,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnXlsRel')?.addEventListener('click', ()=>baixar('xlsx').catch(e=>alert(e.message)));
 })();
 </script>
+
+
+
+
 </body>
 </html>
