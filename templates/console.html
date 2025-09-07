@@ -1508,12 +1508,49 @@ function criarUser(e) {
 </script>
 
 <script>
+document.addEventListener('DOMContentLoaded', async () => {
+  async function carregarRepresentantes() {
+    try {
+      const res = await fetch('/api/representantes', { headers: { 'Accept':'application/json' }, cache:'no-store' });
+      const lista = await res.json();
+      preencherSelect('fRepresentanteRel', lista, /*placeholder*/'');
+      // Se existir um select no Painel:
+      preencherSelect('fRep', lista, /*placeholder*/'');
+    } catch (e) {
+      console.error('Falha ao carregar representantes:', e);
+    }
+  }
+
+  function preencherSelect(id, nomes, placeholder) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = '';
+    // Se quiser uma opção "todas", use value vazio
+    if (placeholder !== null) {
+      const optAll = document.createElement('option');
+      optAll.value = ''; optAll.textContent = placeholder || 'Todos';
+      el.appendChild(optAll);
+    }
+    (nomes || []).forEach(n => {
+      const o = document.createElement('option');
+      o.value = n; o.textContent = n;
+      el.appendChild(o);
+    });
+  }
+
+  await carregarRepresentantes();
+});
+</script>
+
+
+<script>
 (() => {
   const btn = document.getElementById('btnConfirmarRel');
   const mainEl = document.querySelector('#relatorios .report-main');
   const dtIni  = document.getElementById('relInicio');
   const dtFim  = document.getElementById('relFim');
   const inpCliente = document.getElementById('fClienteRel');
+  const selRepRel  = document.getElementById('fRepresentanteRel');
 
   function esc(s){ return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
@@ -1521,6 +1558,7 @@ function criarUser(e) {
     const de  = (dtIni?.value || '').trim();
     const ate = (dtFim?.value || '').trim();
     const cli = (inpCliente?.value || '').trim();
+	const rep = (selRepRel?.value || '').trim();
 
     // >>> OBRIGATÓRIO: exigir as DUAS datas
     if (!de || !ate) {
@@ -1540,6 +1578,7 @@ function criarUser(e) {
     qs.set('de_criacao', de);
     qs.set('ate_criacao', ate);
     if (cli) qs.set('cliente', cli);
+	if (rep) qs.set('representante', rep);
 
     const res = await fetch('/api/chamados?' + qs.toString(), { headers: { 'Accept':'application/json' }, cache:'no-store' });
     const data = await res.json();
