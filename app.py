@@ -622,7 +622,7 @@ def api_chamados():
         dt_raw = c.get("dateLastActivity")  # ISO do Trello
         representante = _parse_rep_from_desc(desc)
         whats = _parse_whatsapp_from_desc(desc)
-        \1        sistema = _parse_sistema_from_desc(desc)
+        sistema = _parse_sistema_from_desc(desc)
         modulo  = _parse_modulo_from_desc(desc)
         ocorr   = _parse_ocorrencia_from_desc(desc)
 
@@ -673,7 +673,6 @@ def api_chamados():
             "id": card_id,
             "titulo": titulo,
             "descricao": desc,
-            \1
             "sistema": sistema,
             "modulo": modulo,
             "ocorrencia": ocorr,
@@ -857,7 +856,7 @@ def api_chamados_export():
     f_q = (request.args.get("q") or "").strip().lower()
     f_de_criacao  = _iso_date_only(request.args.get("de_criacao") or "")
     f_ate_criacao = _iso_date_only(request.args.get("ate_criacao") or "")
-    \1    f_sistema = (request.args.get("sistema") or "").strip().lower()
+    f_sistema = (request.args.get("sistema") or "").strip().lower()
     f_modulo  = (request.args.get("modulo") or "").strip().lower()
     f_ocor    = (request.args.get("ocorrencia") or "").strip().lower()
 
@@ -892,7 +891,7 @@ def api_chamados_export():
         # campos derivados
         rep      = _parse_rep_from_desc(desc)
         whats    = _parse_whatsapp_from_desc(desc)
-        \1        sistema  = _parse_sistema_from_desc(desc)
+        sistema  = _parse_sistema_from_desc(desc)
         modulo   = _parse_modulo_from_desc(desc)
         ocorr    = _parse_ocorrencia_from_desc(desc)
 
@@ -919,7 +918,7 @@ def api_chamados_export():
             if f_q not in base:
                 continue
 
-        \1        # filtros por Sistema/Módulo/Ocorrência (parciais, case-insensitive)
+        # filtros por Sistema/Módulo/Ocorrência (parciais, case-insensitive)
         if f_sistema and f_sistema not in (sistema or "").lower():
             continue
         if f_modulo and f_modulo not in (modulo or "").lower():
@@ -948,7 +947,6 @@ def api_chamados_export():
             "id": card_id,
             "titulo": titulo,
             "descricao": desc,
-            \1
             "sistema": sistema,
             "modulo": modulo,
             "ocorrencia": ocorr,
