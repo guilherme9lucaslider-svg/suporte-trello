@@ -1681,134 +1681,163 @@
          }
          
       </script>
-	  
-	  <script src="/static/data.js"></script>
-
-		<script>
-  // Utilidades de popular/limpar
-  function fillSelect(selectEl, items, placeholder = "Selecione.") {
-    selectEl.innerHTML = "";
-    const opt = document.createElement("option");
-    opt.value = "";
-    opt.textContent = placeholder;
-    selectEl.appendChild(opt);
-
-    (items || []).forEach(({ value, label }) => {
-      const o = document.createElement("option");
-      o.value = value;
-      o.textContent = label;
-      selectEl.appendChild(o);
-    });
-  }
-
-  function getSystems() {
-    // DATA.Sistemas vem do /static/data.js
-    return (DATA && DATA.Sistemas ? DATA.Sistemas : []).map(s => ({
-      value: s.nome,
-      label: s.nome
-    }));
-  }
-
-  function getModulesBySystem(systemName) {
-    const sys = (DATA.Sistemas || []).find(s => s.nome === systemName);
-    if (!sys) return [];
-    return (sys.modulos || []).map(m => ({ value: m.nome, label: m.nome }));
-  }
-
-  function getOccurrencesBySystemModule(systemName, moduleName) {
-    const sys = (DATA.Sistemas || []).find(s => s.nome === systemName);
-    if (!sys) return [];
-    const mod = (sys.modulos || []).find(m => m.nome === moduleName);
-    if (!mod) return [];
-    return (mod.ocorrencias || []).map(o => ({ value: o, label: o }));
-  }
-
-  // Liga os checkboxes e encadeia os selects
-  function setupRelatorioChainedSelects() {
-    const chkSis   = document.getElementById("chkSistemaRel");
-    const chkMod   = document.getElementById("chkModuloRel");
-    const chkOcor  = document.getElementById("chkOcorrenciaRel");
-
-    const selSis   = document.getElementById("fSistemaRel");
-    const selMod   = document.getElementById("fModuloRel");
-    const selOcor  = document.getElementById("fOcorrenciaRel");
-
-    // Estado inicial
-    selSis.disabled  = !chkSis.checked;
-    selMod.disabled  = !chkMod.checked;
-    selOcor.disabled = !chkOcor.checked;
-
-    if (chkSis.checked) {
-      fillSelect(selSis, getSystems());
-    } else {
-      fillSelect(selSis, []);
-      selSis.value = "";
-    }
-    // Mod e Ocor sempre começam limpos
-    fillSelect(selMod, []);
-    fillSelect(selOcor, []);
-
-    // Quando marcar/desmarcar "Sistema"
-    chkSis.addEventListener("change", () => {
-      selSis.disabled = !chkSis.checked;
-      // Limpamos cadeia inteira abaixo
-      fillSelect(selSis, chkSis.checked ? getSystems() : []);
-      selSis.value = "";
-      fillSelect(selMod, []);
-      fillSelect(selOcor, []);
-    });
-
-    // Quando marcar/desmarcar "Módulo"
-    chkMod.addEventListener("change", () => {
-      selMod.disabled = !chkMod.checked;
-      fillSelect(selMod, []);
-      selMod.value = "";
-      // ao desmarcar módulo, zera ocorrências
-      fillSelect(selOcor, []);
-    });
-
-    // Quando marcar/desmarcar "Ocorrência"
-    chkOcor.addEventListener("change", () => {
-      selOcor.disabled = !chkOcor.checked;
-      fillSelect(selOcor, []);
-      selOcor.value = "";
-    });
-
-    // Quando escolher um Sistema → carrega Módulos (se o checkbox de Módulo estiver ativo)
-    selSis.addEventListener("change", () => {
-      // sempre que o sistema mudar, limpamos o que vem depois
-      fillSelect(selMod, []);
-      fillSelect(selOcor, []);
-      selMod.value = "";
-      selOcor.value = "";
-
-      if (chkMod.checked && selSis.value) {
-        fillSelect(selMod, getModulesBySystem(selSis.value));
-      }
-    });
-
-    // Quando escolher um Módulo → carrega Ocorrências (se o checkbox de Ocorrência estiver ativo)
-    selMod.addEventListener("change", () => {
-      fillSelect(selOcor, []);
-      selOcor.value = "";
-
-      if (chkOcor.checked && selSis.value && selMod.value) {
-        fillSelect(selOcor, getOccurrencesBySystemModule(selSis.value, selMod.value));
-      }
-    });
-  }
-
-  // Inicializa quando a página carregar
-  document.addEventListener("DOMContentLoaded", () => {
-    try {
-      setupRelatorioChainedSelects();
-    } catch (e) {
-      console.error("Erro ao configurar selects encadeados do relatório:", e);
-    }
-  });
-</script>
-
-	  
+      <script src="/static/data.js"></script>
+      <script>
+         // Utilidades de popular/limpar
+         function fillSelect(selectEl, items, placeholder = "Selecione.") {
+           selectEl.innerHTML = "";
+           const opt = document.createElement("option");
+           opt.value = "";
+           opt.textContent = placeholder;
+           selectEl.appendChild(opt);
+         
+           (items || []).forEach(({ value, label }) => {
+             const o = document.createElement("option");
+             o.value = value;
+             o.textContent = label;
+             selectEl.appendChild(o);
+           });
+         }
+         
+         // ======== AJUSTADAS PARA FUNCIONAR COM AMBOS FORMATOS DE data.js ========
+         
+         // 1) Sistemas
+         function getSystems() {
+           const D = window.DATA || {};
+           // Formato 1: DATA.Sistemas = [{ nome, modulos: [...] }]
+           if (Array.isArray(D.Sistemas)) {
+             return D.Sistemas.map(s => ({ value: s.nome, label: s.nome }));
+           }
+           // Formato 2: DATA = { "WebLider": { "Cadastro": [...] }, "Lider PDV": {...} }
+           return Object.keys(D).map(k => ({ value: k, label: k }));
+         }
+         
+         // 2) Módulos por Sistema
+         function getModulesBySystem(systemName) {
+           const D = window.DATA || {};
+           // Formato 1 (array):
+           if (Array.isArray(D.Sistemas)) {
+             const sys = (D.Sistemas || []).find(s => s.nome === systemName);
+             if (!sys) return [];
+             // Pode ser [{nome, ocorrencias}] ou array de strings
+             if (Array.isArray(sys.modulos) && sys.modulos.length && typeof sys.modulos[0] === "object") {
+               return sys.modulos.map(m => ({ value: m.nome, label: m.nome }));
+             }
+             if (Array.isArray(sys.modulos)) {
+               return sys.modulos.map(m => ({ value: m, label: m }));
+             }
+             return [];
+           }
+           // Formato 2 (mapa):
+           if (D[systemName] && typeof D[systemName] === "object") {
+             return Object.keys(D[systemName]).map(m => ({ value: m, label: m }));
+           }
+           return [];
+         }
+         
+         // 3) Ocorrências por Sistema + Módulo
+         function getOccurrencesBySystemModule(systemName, moduleName) {
+           const D = window.DATA || {};
+           // Formato 1 (array):
+           if (Array.isArray(D.Sistemas)) {
+             const sys = (D.Sistemas || []).find(s => s.nome === systemName);
+             if (!sys) return [];
+             const modObj = (sys.modulos || []).find(m =>
+               (typeof m === "object" ? m.nome : m) === moduleName
+             );
+             if (!modObj) return [];
+             const ocorrs = Array.isArray(modObj.ocorrencias) ? modObj.ocorrencias : [];
+             return ocorrs.map(o => ({ value: o, label: o }));
+           }
+           // Formato 2 (mapa):
+           const ocorrs = (D[systemName] && D[systemName][moduleName]) || [];
+           return (ocorrs || []).map(o => ({ value: o, label: o }));
+         }
+         
+         // Liga os checkboxes e encadeia os selects
+         function setupRelatorioChainedSelects() {
+           const chkSis   = document.getElementById("chkSistemaRel");
+           const chkMod   = document.getElementById("chkModuloRel");
+           const chkOcor  = document.getElementById("chkOcorrenciaRel");
+         
+           const selSis   = document.getElementById("fSistemaRel");
+           const selMod   = document.getElementById("fModuloRel");
+           const selOcor  = document.getElementById("fOcorrenciaRel");
+         
+           // Estado inicial
+           selSis.disabled  = !chkSis.checked;
+           selMod.disabled  = !chkMod.checked;
+           selOcor.disabled = !chkOcor.checked;
+         
+           if (chkSis.checked) {
+             fillSelect(selSis, getSystems());
+           } else {
+             fillSelect(selSis, []);
+             selSis.value = "";
+           }
+           // Mod e Ocor sempre começam limpos
+           fillSelect(selMod, []);
+           fillSelect(selOcor, []);
+         
+           // Quando marcar/desmarcar "Sistema"
+           chkSis.addEventListener("change", () => {
+             selSis.disabled = !chkSis.checked;
+             // Limpamos cadeia inteira abaixo
+             fillSelect(selSis, chkSis.checked ? getSystems() : []);
+             selSis.value = "";
+             fillSelect(selMod, []);
+             fillSelect(selOcor, []);
+           });
+         
+           // Quando marcar/desmarcar "Módulo"
+           chkMod.addEventListener("change", () => {
+             selMod.disabled = !chkMod.checked;
+             fillSelect(selMod, []);
+             selMod.value = "";
+             // ao desmarcar módulo, zera ocorrências
+             fillSelect(selOcor, []);
+           });
+         
+           // Quando marcar/desmarcar "Ocorrência"
+           chkOcor.addEventListener("change", () => {
+             selOcor.disabled = !chkOcor.checked;
+             fillSelect(selOcor, []);
+             selOcor.value = "";
+           });
+         
+           // Quando escolher um Sistema → carrega Módulos (se o checkbox de Módulo estiver ativo)
+           selSis.addEventListener("change", () => {
+             // sempre que o sistema mudar, limpamos o que vem depois
+             fillSelect(selMod, []);
+             fillSelect(selOcor, []);
+             selMod.value = "";
+             selOcor.value = "";
+         
+             if (chkMod.checked && selSis.value) {
+               fillSelect(selMod, getModulesBySystem(selSis.value));
+             }
+           });
+         
+           // Quando escolher um Módulo → carrega Ocorrências (se o checkbox de Ocorrência estiver ativo)
+           selMod.addEventListener("change", () => {
+             fillSelect(selOcor, []);
+             selOcor.value = "";
+         
+             if (chkOcor.checked && selSis.value && selMod.value) {
+               fillSelect(selOcor, getOccurrencesBySystemModule(selSis.value, selMod.value));
+             }
+           });
+         }
+         
+         // Inicializa quando a página carregar
+         document.addEventListener("DOMContentLoaded", () => {
+           try {
+             setupRelatorioChainedSelects();
+           } catch (e) {
+             console.error("Erro ao configurar selects encadeados do relatório:", e);
+           }
+         });
+      </script>
       <!-- Modal: Remover representante -->
       <div class="confirm-modal" id="confirmDeleteModal" style="display:none;">
          <div class="confirm__box">
@@ -1836,126 +1865,123 @@
             </div>
          </div>
       </div>
-	  
-	  <script>
-  // Guarda o último filtro de relatório aplicado (para travar exportação se não houver busca)
-  let __lastReportQuery = null;
-
-  // Lê os filtros da aba Relatórios e monta os parâmetros que a API entende
-  // Mapeamento: sistema -> sistema, módulo -> modulo, ocorrência -> ocorrencia
-  function getReportFiltersAsParams() {
-    const params = new URLSearchParams();
-
-    // Período (datas) - usa "de" e "ate" (última atividade) ou troque para "de_criacao/ate_criacao" se preferir criar por data de criação
-    const dtIni = document.getElementById('relInicio')?.value || '';
-    const dtFim = document.getElementById('relFim')?.value || '';
-    if (dtIni) params.set('de', dtIni);
-    if (dtFim) params.set('ate', dtFim);
-
-    // Tipo de relatório (não é filtro da API, mas pode ser útil no front)
-    const tipoRel = (document.querySelector('input[name="tipoRelatorio"]:checked') || {}).value || 'sintetico';
-    params.set('tipo_rel', tipoRel);
-
-    // Agrupar por (também é preferência do front)
-    const agrupar = (document.querySelector('input[name="agruparPor"]:checked') || {}).value || 'cliente';
-    params.set('agrupar_por', agrupar);
-
-    // Tipo de Chamado (duvida/melhoria/bug/todos) -> se != todos, mandamos como "tipo"
-    const tipoChamado = (document.querySelector('input[name="tipoChamado"]:checked') || {}).value || 'todos';
-    if (tipoChamado && tipoChamado !== 'todos') {
-      params.set('tipo', tipoChamado);
-    }
-
-    // Cliente (texto livre)
-    const chkCliente = document.getElementById('chkClienteRel')?.checked;
-    const vCliente   = document.getElementById('fClienteRel')?.value?.trim();
-    if (chkCliente && vCliente) params.set('cliente', vCliente);
-
-    // Representante
-    const chkRep = document.getElementById('chkRepresentanteRel')?.checked;
-    const vRep   = document.getElementById('fRepresentanteRel')?.value;
-    if (chkRep && vRep) params.set('representante', vRep);
-
-    // Sistema → campo "sistema" do cartão
-    const chkSis = document.getElementById('chkSistemaRel')?.checked;
-    const vSis   = document.getElementById('fSistemaRel')?.value;
-    if (chkSis && vSis) params.set('sistema', vSis);
-
-    // Módulo → campo "modulo" do cartão
-    const chkMod = document.getElementById('chkModuloRel')?.checked;
-    const vMod   = document.getElementById('fModuloRel')?.value;
-    if (chkMod && vMod) params.set('modulo', vMod);
-
-    // Ocorrência → campo "ocorrencia" do cartão
-    const chkOco = document.getElementById('chkOcorrenciaRel')?.checked;
-    const vOco   = document.getElementById('fOcorrenciaRel')?.value;
-    if (chkOco && vOco) params.set('ocorrencia', vOco);
-
-    // Paginação (opcional): podemos começar do offset 0 e definir um limit
-    params.set('offset', '0');
-    params.set('limit', '1000'); // ajuste se quiser
-
-    return params;
-  }
-
-  // Ação do botão "Confirmar": busca os dados com os filtros atuais
-  async function onConfirmarRel() {
-    const params = getReportFiltersAsParams();
-    const url = '/api/chamados?' + params.toString();
-
-    // Faz a busca
-    const box = document.querySelector('#relatorios .report-main');
-    try {
-      const res = await fetch(url, { credentials: 'same-origin' });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const data = await res.json();
-
-      // Guarda a última query para permitir exportar depois
-      __lastReportQuery = params.toString();
-
-      // Renderização simples: mostra um resumo no painel (você pode trocar por tabela/gráfico depois)
-      const total = (data && typeof data.total === 'number') ? data.total : (data?.items?.length || 0);
-      box.innerHTML = `
-        <div style="width:100%;min-height:200px;display:flex;align-items:center;justify-content:center;flex-direction:column;color:var(--ink);gap:8px;background:#fff;border:1px solid var(--stroke);border-radius:16px;padding:24px;">
-          <div style="font-weight:800;font-size:20px;">Resultado do Relatório</div>
-          <div style="color:var(--muted);">Total de chamados encontrados: <strong>${total}</strong></div>
-          <div style="font-size:12px;color:var(--muted);margin-top:4px;">(Sistema, Módulo e Ocorrência filtram nos seus campos específicos do cartão)</div>
-        </div>
-      `;
-    } catch (e) {
-      box.innerHTML = `
-        <div style="width:100%;min-height:200px;display:flex;align-items:center;justify-content:center;color:#b91c1c;background:#fff;border:1px solid var(--stroke);border-radius:16px;padding:24px;">
-          Erro ao buscar relatório: ${e.message}
-        </div>
-      `;
-      __lastReportQuery = null; // não deixa exportar se falhou
-    }
-  }
-
-  // Exportação CSV/XLS — só permite se já houve "Confirmar" (temos __lastReportQuery)
-  function onExportRel(format) {
-    if (!__lastReportQuery) {
-      alert('É necessário buscar um relatório antes de exportar.');
-      return;
-    }
-    // Reusa exatamente a última query + formato desejado
-    const url = '/api/chamados/export?format=' + encodeURIComponent(format) + '&' + __lastReportQuery;
-    // Abre em nova aba / inicia o download
-    window.open(url, '_blank');
-  }
-
-  // Liga os botões quando a página carregar
-  document.addEventListener('DOMContentLoaded', () => {
-    const btnConfirm = document.getElementById('btnConfirmarRel');
-    const btnCsv = document.getElementById('btnCsvRel');
-    const btnXls = document.getElementById('btnXlsRel');
-
-    btnConfirm?.addEventListener('click', onConfirmarRel);
-    btnCsv?.addEventListener('click', () => onExportRel('csv'));
-    btnXls?.addEventListener('click', () => onExportRel('xlsx')); // sua rota aceita 'xlsx'
-  });
-</script>
-
-	  
+      <script>
+         // Guarda o último filtro de relatório aplicado (para travar exportação se não houver busca)
+         let __lastReportQuery = null;
+         
+         // Lê os filtros da aba Relatórios e monta os parâmetros que a API entende
+         // Mapeamento: sistema -> sistema, módulo -> modulo, ocorrência -> ocorrencia
+         function getReportFiltersAsParams() {
+           const params = new URLSearchParams();
+         
+           // Período (datas) - usa "de" e "ate" (última atividade) ou troque para "de_criacao/ate_criacao" se preferir criar por data de criação
+           const dtIni = document.getElementById('relInicio')?.value || '';
+           const dtFim = document.getElementById('relFim')?.value || '';
+           if (dtIni) params.set('de', dtIni);
+           if (dtFim) params.set('ate', dtFim);
+         
+           // Tipo de relatório (não é filtro da API, mas pode ser útil no front)
+           const tipoRel = (document.querySelector('input[name="tipoRelatorio"]:checked') || {}).value || 'sintetico';
+           params.set('tipo_rel', tipoRel);
+         
+           // Agrupar por (também é preferência do front)
+           const agrupar = (document.querySelector('input[name="agruparPor"]:checked') || {}).value || 'cliente';
+           params.set('agrupar_por', agrupar);
+         
+           // Tipo de Chamado (duvida/melhoria/bug/todos) -> se != todos, mandamos como "tipo"
+           const tipoChamado = (document.querySelector('input[name="tipoChamado"]:checked') || {}).value || 'todos';
+           if (tipoChamado && tipoChamado !== 'todos') {
+             params.set('tipo', tipoChamado);
+           }
+         
+           // Cliente (texto livre)
+           const chkCliente = document.getElementById('chkClienteRel')?.checked;
+           const vCliente   = document.getElementById('fClienteRel')?.value?.trim();
+           if (chkCliente && vCliente) params.set('cliente', vCliente);
+         
+           // Representante
+           const chkRep = document.getElementById('chkRepresentanteRel')?.checked;
+           const vRep   = document.getElementById('fRepresentanteRel')?.value;
+           if (chkRep && vRep) params.set('representante', vRep);
+         
+           // Sistema → campo "sistema" do cartão
+           const chkSis = document.getElementById('chkSistemaRel')?.checked;
+           const vSis   = document.getElementById('fSistemaRel')?.value;
+           if (chkSis && vSis) params.set('sistema', vSis);
+         
+           // Módulo → campo "modulo" do cartão
+           const chkMod = document.getElementById('chkModuloRel')?.checked;
+           const vMod   = document.getElementById('fModuloRel')?.value;
+           if (chkMod && vMod) params.set('modulo', vMod);
+         
+           // Ocorrência → campo "ocorrencia" do cartão
+           const chkOco = document.getElementById('chkOcorrenciaRel')?.checked;
+           const vOco   = document.getElementById('fOcorrenciaRel')?.value;
+           if (chkOco && vOco) params.set('ocorrencia', vOco);
+         
+           // Paginação (opcional): podemos começar do offset 0 e definir um limit
+           params.set('offset', '0');
+           params.set('limit', '1000'); // ajuste se quiser
+         
+           return params;
+         }
+         
+         // Ação do botão "Confirmar": busca os dados com os filtros atuais
+         async function onConfirmarRel() {
+           const params = getReportFiltersAsParams();
+           const url = '/api/chamados?' + params.toString();
+         
+           // Faz a busca
+           const box = document.querySelector('#relatorios .report-main');
+           try {
+             const res = await fetch(url, { credentials: 'same-origin' });
+             if (!res.ok) throw new Error('HTTP ' + res.status);
+             const data = await res.json();
+         
+             // Guarda a última query para permitir exportar depois
+             __lastReportQuery = params.toString();
+         
+             // Renderização simples: mostra um resumo no painel (você pode trocar por tabela/gráfico depois)
+             const total = (data && typeof data.total === 'number') ? data.total : (data?.items?.length || 0);
+             box.innerHTML = `
+               <div style="width:100%;min-height:200px;display:flex;align-items:center;justify-content:center;flex-direction:column;color:var(--ink);gap:8px;background:#fff;border:1px solid var(--stroke);border-radius:16px;padding:24px;">
+                 <div style="font-weight:800;font-size:20px;">Resultado do Relatório</div>
+                 <div style="color:var(--muted);">Total de chamados encontrados: <strong>${total}</strong></div>
+                 <div style="font-size:12px;color:var(--muted);margin-top:4px;">(Sistema, Módulo e Ocorrência filtram nos seus campos específicos do cartão)</div>
+               </div>
+             `;
+           } catch (e) {
+             box.innerHTML = `
+               <div style="width:100%;min-height:200px;display:flex;align-items:center;justify-content:center;color:#b91c1c;background:#fff;border:1px solid var(--stroke);border-radius:16px;padding:24px;">
+                 Erro ao buscar relatório: ${e.message}
+               </div>
+             `;
+             __lastReportQuery = null; // não deixa exportar se falhou
+           }
+         }
+         
+         // Exportação CSV/XLS — só permite se já houve "Confirmar" (temos __lastReportQuery)
+         function onExportRel(format) {
+           if (!__lastReportQuery) {
+             alert('É necessário buscar um relatório antes de exportar.');
+             return;
+           }
+           // Reusa exatamente a última query + formato desejado
+           const url = '/api/chamados/export?format=' + encodeURIComponent(format) + '&' + __lastReportQuery;
+           // Abre em nova aba / inicia o download
+           window.open(url, '_blank');
+         }
+         
+         // Liga os botões quando a página carregar
+         document.addEventListener('DOMContentLoaded', () => {
+           const btnConfirm = document.getElementById('btnConfirmarRel');
+           const btnCsv = document.getElementById('btnCsvRel');
+           const btnXls = document.getElementById('btnXlsRel');
+         
+           btnConfirm?.addEventListener('click', onConfirmarRel);
+           btnCsv?.addEventListener('click', () => onExportRel('csv'));
+           btnXls?.addEventListener('click', () => onExportRel('xlsx')); // sua rota aceita 'xlsx'
+         });
+      </script>
    </body>
 </html>
