@@ -1320,24 +1320,24 @@ def admin_rep_del(rep_id):
     # Confirmação obrigatória vinda do front-end
     confirm = request.form.get("confirm") or (request.json or {}).get("confirm")
     if str(confirm).lower() not in ("1", "true", "sim", "yes"):
-        # Se não confirmou, retorna aviso
         msg = "Ao deletar um representante, todos os usuários vinculados também serão deletados. Confirme para prosseguir."
         return jsonify(ok=False, deleted=False, message=msg), 400
 
-    # Deletar representante e todos os usuários vinculados (cascade já cuida disso)
+    # Deletar representante e todos os usuários vinculados
     db.session.delete(rep)
     db.session.commit()
 
-    reps = [
-        serialize_rep(r)
-        for r in Representative.query.order_by(Representative.nome.asc()).all()
-    ]
+    reps = [serialize_rep(r) for r in Representative.query.order_by(Representative.nome.asc()).all()]
+    users = [serialize_user(u) for u in User.query.order_by(User.username.asc()).all()]
+
     return jsonify(
         ok=True,
         deleted=True,
         reps=reps,
+        users=users,
         message="Representante e todos os usuários vinculados foram removidos com sucesso."
     )
+
 
 
 

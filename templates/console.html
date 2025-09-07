@@ -1640,84 +1640,160 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 <script>
 async function removerRep(id) {
-  if (!confirm("Ao deletar um representante, todos os usuários vinculados também serão deletados. Deseja continuar?")) {
-    return;
-  }
-  try {
-    const res = await fetch('/admin/rep/' + id + '/delete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify({ confirm: true })
-    });
-    const data = await res.json();
-    if (!res.ok || !data.ok) {
-      alert(data.message || 'Erro ao remover representante');
-      return;
-    }
-    // Atualiza a tabela de representantes
-    const tbody = document.querySelector('#t-reps tbody');
-    if (tbody) {
-      let html = '';
-      (data.reps || []).forEach(r => {
-        html += '<tr data-id="'+r.id+'">'+
-                  '<td><strong>'+r.nome+'</strong></td>'+
-                  '<td class="actions">'+
-                    '<button class="btn btn--ghost" type="button" onclick="removerRep('+r.id+')">Remover</button>'+
-                  '</td>'+
-                '</tr>';
+  // Abre o modal
+  const modal = document.getElementById("confirmDeleteModal");
+  modal.style.display = "flex";
+
+  // Botão "Sim, quero remover"
+  document.getElementById("btnConfirmDelete").onclick = async () => {
+    modal.style.display = "none";
+    try {
+      const res = await fetch('/admin/rep/' + id + '/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ confirm: true })
       });
-      if (!html) {
-        html = '<tr><td colspan="2" class="empty-state">Nenhum representante cadastrado</td></tr>';
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        alert(data.message || 'Erro ao remover representante');
+        return;
       }
-      tbody.innerHTML = html;
+
+      // Atualiza a tabela de representantes
+      const repTbody = document.querySelector('#t-reps tbody');
+      if (repTbody) {
+        let html = '';
+        (data.reps || []).forEach(r => {
+          html += '<tr data-id="'+r.id+'">'+
+                    '<td><strong>'+r.nome+'</strong></td>'+
+                    '<td class="actions">'+
+                      '<button class="btn btn--ghost" type="button" onclick="removerRep('+r.id+')">Remover</button>'+
+                    '</td>'+
+                  '</tr>';
+        });
+        if (!html) {
+          html = '<tr><td colspan="2" class="empty-state">Nenhum representante cadastrado</td></tr>';
+        }
+        repTbody.innerHTML = html;
+      }
+
+      // Atualiza a tabela de usuários
+      const userTbody = document.querySelector('#t-users tbody');
+      if (userTbody && data.users) {
+        let html = '';
+        (data.users || []).forEach(u => {
+          const repName = u.representante || '';
+          html += '<tr data-id="'+u.id+'">'+
+                    '<td><strong>'+u.username+'</strong></td>'+
+                    '<td><span class="pill">'+repName+'</span></td>'+
+                    '<td class="actions">'+
+                      '<button class="btn btn--ghost" type="button" onclick="removerUser('+u.id+')">Remover</button>'+
+                    '</td>'+
+                  '</tr>';
+        });
+        if (!html) {
+          html = '<tr><td colspan="3" class="empty-state">Nenhum usuário cadastrado</td></tr>';
+        }
+        userTbody.innerHTML = html;
+      }
+
+      alert(data.message || 'Representante removido com sucesso');
+    } catch (e) {
+      alert('Erro: ' + e.message);
     }
-    alert(data.message || 'Representante removido com sucesso');
-  } catch (e) {
-    alert('Erro: ' + e.message);
-  }
+  };
+
+  // Botão "Cancelar"
+  document.getElementById("btnCancelDelete").onclick = () => {
+    modal.style.display = "none";
+  };
 }
 
+
+
 async function removerUser(id) {
-  if (!confirm("Tem certeza que deseja remover este usuário?")) {
-    return;
-  }
-  try {
-    const res = await fetch('/admin/user/' + id + '/delete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin'
-    });
-    const data = await res.json();
-    if (!res.ok || !data.ok) {
-      alert(data.message || 'Erro ao remover usuário');
-      return;
-    }
-    // Atualiza a tabela de usuários
-    const tbody = document.querySelector('#t-users tbody');
-    if (tbody) {
-      let html = '';
-      (data.users || []).forEach(u => {
-        const repName = u.representante || '';
-        html += '<tr data-id="'+u.id+'">'+
-                  '<td><strong>'+u.username+'</strong></td>'+
-                  '<td><span class="pill">'+repName+'</span></td>'+
-                  '<td class="actions">'+
-                    '<button class="btn btn--ghost" type="button" onclick="removerUser('+u.id+')">Remover</button>'+
-                  '</td>'+
-                '</tr>';
+  // Abre o modal
+  const modal = document.getElementById("confirmDeleteUserModal");
+  modal.style.display = "flex";
+
+  // Botão "Sim, quero remover"
+  document.getElementById("btnConfirmDeleteUser").onclick = async () => {
+    modal.style.display = "none";
+    try {
+      const res = await fetch('/admin/user/' + id + '/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin'
       });
-      if (!html) {
-        html = '<tr><td colspan="3" class="empty-state">Nenhum usuário cadastrado</td></tr>';
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        alert(data.message || 'Erro ao remover usuário');
+        return;
       }
-      tbody.innerHTML = html;
+
+      // Atualiza a tabela de usuários
+      const tbody = document.querySelector('#t-users tbody');
+      if (tbody) {
+        let html = '';
+        (data.users || []).forEach(u => {
+          const repName = u.representante || '';
+          html += '<tr data-id="'+u.id+'">'+
+                    '<td><strong>'+u.username+'</strong></td>'+
+                    '<td><span class="pill">'+repName+'</span></td>'+
+                    '<td class="actions">'+
+                      '<button class="btn btn--ghost" type="button" onclick="removerUser('+u.id+')">Remover</button>'+
+                    '</td>'+
+                  '</tr>';
+        });
+        if (!html) {
+          html = '<tr><td colspan="3" class="empty-state">Nenhum usuário cadastrado</td></tr>';
+        }
+        tbody.innerHTML = html;
+      }
+
+      alert(data.message || 'Usuário removido com sucesso');
+    } catch (e) {
+      alert('Erro: ' + e.message);
     }
-    alert(data.message || 'Usuário removido com sucesso');
-  } catch (e) {
-    alert('Erro: ' + e.message);
-  }
+  };
+
+  // Botão "Cancelar"
+  document.getElementById("btnCancelDeleteUser").onclick = () => {
+    modal.style.display = "none";
+  };
 }
+
 </script>
+
+<div class="confirm-modal" id="confirmDeleteModal">
+  <div class="confirm__box">
+    <div class="confirm__title">Remover representante</div>
+    <div class="confirm__msg">
+      Ao deletar um representante, todos os usuários vinculados a ele também serão deletados.<br>
+      Deseja continuar?
+    </div>
+    <div class="confirm__actions">
+      <button class="btn btn--secondary" id="btnConfirmDelete">Sim, quero remover</button>
+      <button class="btn btn--ghost" id="btnCancelDelete">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="confirm-modal" id="confirmDeleteUserModal" style="display:none;">
+  <div class="confirm__box">
+    <div class="confirm__title">Remover usuário</div>
+    <div class="confirm__msg">
+      Deseja realmente remover este usuário?
+    </div>
+    <div class="confirm__actions">
+      <button class="btn btn--secondary" id="btnConfirmDeleteUser">Sim, quero remover</button>
+      <button class="btn btn--ghost" id="btnCancelDeleteUser">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 
 
 
