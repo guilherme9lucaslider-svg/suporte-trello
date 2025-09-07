@@ -469,6 +469,32 @@ def _parse_cliente_from_desc(desc: str) -> str:
     return val.splitlines()[0].strip()
 
 
+def _parse_field(desc: str, label: str) -> str:
+    """
+    Lê uma linha do tipo '**Label:** valor' na descrição do cartão.
+    Ex.: '**Sistema:** ERP' -> 'ERP'.
+    """
+    if not desc:
+        return ""
+    pat = rf"^\*\*{re.escape(label)}:\*\*\s*(.+)$"
+    m = re.search(pat, desc, flags=re.MULTILINE)
+    if m:
+        return m.group(1).strip()
+    # fallback sem **
+    m2 = re.search(rf"^{re.escape(label)}\s*:\s*(.+)$", desc, flags=re.MULTILINE|re.IGNORECASE)
+    return (m2.group(1).strip() if m2 else "")
+
+def _parse_sistema_from_desc(desc: str) -> str:
+    return _parse_field(desc, "Sistema")
+
+def _parse_modulo_from_desc(desc: str) -> str:
+    return _parse_field(desc, "Módulo")
+
+def _parse_ocorrencia_from_desc(desc: str) -> str:
+    return _parse_field(desc, "Ocorrência")
+
+
+
 
 
 
@@ -596,7 +622,9 @@ def api_chamados():
         dt_raw = c.get("dateLastActivity")  # ISO do Trello
         representante = _parse_rep_from_desc(desc)
         whats = _parse_whatsapp_from_desc(desc)
-        cliente = _parse_cliente_from_desc(desc)
+        \1        sistema = _parse_sistema_from_desc(desc)
+        modulo  = _parse_modulo_from_desc(desc)
+        ocorr   = _parse_ocorrencia_from_desc(desc)
 
         # filtros
         if f_rep and representante != f_rep:
@@ -645,7 +673,10 @@ def api_chamados():
             "id": card_id,
             "titulo": titulo,
             "descricao": desc,
-            "cliente": cliente,
+            \1
+            "sistema": sistema,
+            "modulo": modulo,
+            "ocorrencia": ocorr,
             "representante": representante,
             "lista": lista,
             "status": status,
@@ -826,7 +857,9 @@ def api_chamados_export():
     f_q = (request.args.get("q") or "").strip().lower()
     f_de_criacao  = _iso_date_only(request.args.get("de_criacao") or "")
     f_ate_criacao = _iso_date_only(request.args.get("ate_criacao") or "")
-    f_cliente = (request.args.get("cliente") or "").strip().lower()
+    \1    f_sistema = (request.args.get("sistema") or "").strip().lower()
+    f_modulo  = (request.args.get("modulo") or "").strip().lower()
+    f_ocor    = (request.args.get("ocorrencia") or "").strip().lower()
 
     # força representante para não-admin
     if session.get("user") and not session.get("admin"):
@@ -859,7 +892,9 @@ def api_chamados_export():
         # campos derivados
         rep      = _parse_rep_from_desc(desc)
         whats    = _parse_whatsapp_from_desc(desc)
-        cliente  = _parse_cliente_from_desc(desc)   # <- seu extrator de Cliente
+        \1        sistema  = _parse_sistema_from_desc(desc)
+        modulo   = _parse_modulo_from_desc(desc)
+        ocorr    = _parse_ocorrencia_from_desc(desc)
 
         # filtros simples
         if f_rep and rep != f_rep:
@@ -884,10 +919,13 @@ def api_chamados_export():
             if f_q not in base:
                 continue
 
-        # filtro de Cliente — agora só pelo campo Cliente extraído
-        if f_cliente:
-            if f_cliente not in (cliente or "").lower():
-                continue
+        \1        # filtros por Sistema/Módulo/Ocorrência (parciais, case-insensitive)
+        if f_sistema and f_sistema not in (sistema or "").lower():
+            continue
+        if f_modulo and f_modulo not in (modulo or "").lower():
+            continue
+        if f_ocor and f_ocor not in (ocorr or "").lower():
+            continue
 
         # inferir criação e filtrar por criação (aplica somente se AMBAS as datas vierem)
         card_id = c.get("id")
@@ -910,7 +948,10 @@ def api_chamados_export():
             "id": card_id,
             "titulo": titulo,
             "descricao": desc,
-            "cliente": cliente,
+            \1
+            "sistema": sistema,
+            "modulo": modulo,
+            "ocorrencia": ocorr,
             "representante": rep,
             "lista": lista,
             "status": status,
@@ -926,7 +967,7 @@ def api_chamados_export():
     if fmt == "csv":
         output = io.StringIO()
         fieldnames = [
-            "id","titulo","descricao","cliente","representante","lista",
+            "id","titulo","descricao","cliente","representante","sistema","modulo","ocorrencia","lista",
             "status","url","ultima_atividade","whatsapp","created_at",
         ]
         writer = csv.DictWriter(output, fieldnames=fieldnames)
