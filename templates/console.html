@@ -336,6 +336,44 @@
         #relatorios .report-sidebar select {
           min-width: 0;
         }
+		
+		/* ===== Modal de confirmação ===== */
+		.confirm-modal{
+		  position: fixed;
+		  inset: 0;
+		  display: none;
+		  align-items: center;
+		  justify-content: center;
+		  background: rgba(15,31,28,0.40);
+		  backdrop-filter: blur(2px);
+		  z-index: 9999;
+		  padding: 16px;
+		}
+		.confirm__box{
+		  width: 100%;
+		  max-width: 520px;
+		  background: var(--surface);
+		  border: 1px solid var(--stroke);
+		  border-radius: 16px;
+		  box-shadow: 0 10px 40px rgba(0,0,0,.15);
+		  padding: 20px;
+		}
+		.confirm__title{
+		  font-weight: 700;
+		  font-size: 18px;
+		  margin-bottom: 8px;
+		  color: var(--ink);
+		}
+		.confirm__msg{
+		  color: var(--muted);
+		  line-height: 1.5;
+		  margin-bottom: 16px;
+		}
+		.confirm__actions{
+		  display: flex;
+		  gap: 10px;
+		  justify-content: flex-end;
+		}
       </style>
    </head>
    <body>
@@ -1766,7 +1804,8 @@ async function removerUser(id) {
 
 </script>
 
-<div class="confirm-modal" id="confirmDeleteModal">
+<!-- Modal: Remover representante -->
+<div class="confirm-modal" id="confirmDeleteModal" style="display:none;">
   <div class="confirm__box">
     <div class="confirm__title">Remover representante</div>
     <div class="confirm__msg">
@@ -1780,7 +1819,7 @@ async function removerUser(id) {
   </div>
 </div>
 
-
+<!-- Modal: Remover usuário -->
 <div class="confirm-modal" id="confirmDeleteUserModal" style="display:none;">
   <div class="confirm__box">
     <div class="confirm__title">Remover usuário</div>
@@ -1793,6 +1832,7 @@ async function removerUser(id) {
     </div>
   </div>
 </div>
+
 
 
 
