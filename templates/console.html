@@ -769,6 +769,7 @@
          abortController = null;
          }
          }
+         window.cleanupRealTime = cleanupRealTime;
          
          
             /**
@@ -778,69 +779,69 @@
              * "Em aberto", reinicia a página e inicia o intervalo. Ao desativar,
              * encerra o intervalo e recarrega os dados com os filtros atuais.
              */
-            function toggleRealTime(){
+            async function toggleRealTime(){
          console.log('🔄 Toggle realtime:', !isRealTimeActive);
          
-         if(!isRealTimeActive){
-          // ATIVANDO monitoramento
-          isRealTimeActive = true;
+         if (!isRealTimeActive) {
+         // ===== ATIVANDO (mantenha seu bloco atual como está) =====
+         isRealTimeActive = true;
          
-          // Força filtro "Em aberto" e limpa outros filtros
-          try {
-            statusSelect.value = 'Em aberto';
-            deInput.value = '';
-            ateInput.value = '';
-            qInput.value = '';
-            if(typeof applyStatusSelectColors === 'function') applyStatusSelectColors();
-          } catch(e){}
+         try {
+         // Força filtro “Em aberto”
+         statusSelect.value = 'Em aberto';
+         deInput.value = '';
+         ateInput.value = '';
+         qInput.value = '';
+         if (typeof applyStatusSelectColors === 'function') applyStatusSelectColors();
+         } catch(e){}
          
-          // Visual do botão
-          btnRealtime.classList.add('is-on');
-          btnRealtime.textContent = 'Parar Monitoramento';
+         btnRealtime.classList.add('is-on');
+         btnRealtime.textContent = 'Parar Monitoramento';
          
-          // Limpa quaisquer conexões anteriores (SSE ou polling)
-          cleanupRealTime();
+         // Limpa quaisquer conexões anteriores (por segurança)
+         cleanupRealTime();
          
-          // Reinicia paginação
-          page = 0;
+         page = 0;
          
-          // Carrega dados e, após finalizado, inicia o polling de 6s
-          load({silent:false}).then(() => {
-            if(!isRealTimeActive) return; // Se foi desativado enquanto carregava
-            // Inicia polling simples a cada 6 segundos
-            realTimeInterval = setInterval(() => {
-              if(isRealTimeActive) {
-                // Carrega chamados normalmente e também verifica novos cartões Trello
-                load({ silent: true });
-                fetchNewTrelloCards();
-              }
-            }, 2500);
-          }).catch(err => {
-            console.error('Erro ao carregar para monitoramento:', err);
-          });
+         // Carrega e depois inicia o polling
+         try {
+         await load({ silent: false });
+         if (isRealTimeActive) {
+         realTimeInterval = setInterval(() => {
+          if (isRealTimeActive) {
+            load({ silent: true });
+            fetchNewTrelloCards();
+          }
+         }, 2500);
+         }
+         } catch (err) {
+         console.error('Erro ao carregar para monitoramento:', err);
+         }
          
          } else {
-          // DESATIVANDO monitoramento
-          isRealTimeActive = false;
+         // ===== DESATIVANDO =====
+         isRealTimeActive = false;
          
-          // Visual do botão
-          btnRealtime.classList.remove('is-on');
-          btnRealtime.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
+         btnRealtime.classList.remove('is-on');
+         btnRealtime.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
          
-          // Encerra polling/SSE e aborta fetch pendente
-          cleanupRealTime();
+         // 1) Limpa TUDO (polling/SSE/fetch)
+         cleanupRealTime();
          
-          // Reinicia paginação
-          page = 0;
+         // 2) Aguarda um micro-intervalo para o abort propagar
+         await new Promise(r => setTimeout(r, 50));
          
-          // Aguarda um pequeno atraso e recarrega com filtros atuais
-          setTimeout(() => {
-            load({ silent:false })
-              .then(() => { console.log('✅ Monitoramento desativado e dados recarregados'); })
-              .catch(err => { console.error('Erro ao recarregar após desativar:', err); });
-          }, 120);
+         // 3) Reseta paginação e recarrega “normal”
+         page = 0;
+         try {
+         await load({ silent: false });
+         console.log('✅ Monitoramento desativado e dados recarregados');
+         } catch (err) {
+         console.error('Erro ao recarregar após desativar:', err);
          }
-            }
+         }
+         }
+         
          
          function startSSEConnection(){
          if(!isRealTimeActive) return;
@@ -1082,23 +1083,22 @@
          });
          return Promise.race([promise, timeout]).finally(() => clearTimeout(to));
          }
-         function load({silent=false, append=false}={}){
-         abortController = new AbortController();
-         
-         console.log('📥 Load chamado:', {silent, append, page, isRealTimeActive});
-         
-         const currentId = ++latestLoadId;
-         console.log('🆔 Load ID:', currentId);
-         
-         // Cancela chamada anterior
-         if(abortController){
-           try {
-             abortController.abort();
-             console.log('🚫 Fetch anterior abortado');
-           } catch(e){}
+         function load({silent=false, append=false}={}) {
+         // 1) Se havia uma requisição anterior, aborta primeiro
+         if (abortController) {
+         try {
+         abortController.abort();
+         console.log('🚫 Fetch anterior abortado');
+         } catch (e) {}
          }
+         
+         // 2) Agora cria um NOVO controller para esta chamada
          abortController = new AbortController();
          const { signal } = abortController;
+         
+         console.log('📥 Load chamado:', { silent, append, page, isRealTimeActive });
+         
+         const currentId = ++latestLoadId;
          
          // Exibe spinner se necessário
          if(!silent){
