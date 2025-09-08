@@ -1890,25 +1890,23 @@
              }
            });
          
-           // Quando escolher um Módulo → carrega Ocorrências (se o checkbox de Ocorrência estiver ativo)
-           selMod.addEventListener("change", () => {
-             fillSelect(selOcor, []);
-             selOcor.value = "";
-         
-             if (chkOcor.checked && selSis.value && selMod.value) {
-               fillSelect(selOcor, getOccurrencesBySystemModule(selSis.value, selMod.value));
-             }
-           });
-         }
+           // ⚡ Garante preenchimento inicial (se já tiver Sistema selecionado e checkboxes marcados)
+			if (chkSis.checked && selSis.value && chkMod.checked) {
+			  fillSelect(selMod, getModulesBySystem(selSis.value));
+			  if (chkOcor.checked && selMod.value) {
+				fillSelect(selOcor, getOccurrencesBySystemModule(selSis.value, selMod.value));
+			  }
+			}
+
          
          // Inicializa quando a página carregar
          document.addEventListener("DOMContentLoaded", () => {
-           try {
-             setupRelatorioChainedSelects();
-           } catch (e) {
-             console.error("Erro ao configurar selects encadeados do relatório:", e);
-           }
-         });
+		  try {
+			setupRelatorioChainedSelects();
+		  } catch (e) {
+			console.error("Erro ao configurar selects encadeados do relatório:", e);
+		  }
+		});
       </script>
       <!-- Modal: Remover representante -->
       <div class="confirm-modal" id="confirmDeleteModal" style="display:none;">
