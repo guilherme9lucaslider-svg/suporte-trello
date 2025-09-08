@@ -1894,13 +1894,18 @@
 
 			if (chkSis.checked) {
 			  fillSelect(selSis, getSystems());
+			  // 👇 garante que o primeiro sistema fique selecionado se não houver valor
+			  if (!selSis.value && selSis.options.length > 0) {
+				selSis.selectedIndex = 0;
+			  }
+			  // 👇 já carrega módulos se o checkbox de módulo estiver marcado
 			  if (chkMod.checked && selSis.value) {
 				fillSelect(selMod, getModulesBySystem(selSis.value));
 				if (chkOcor.checked && selMod.value) {
 				  fillSelect(selOcor, getOccurrencesBySystemModule(selSis.value, selMod.value));
 				}
 			  }
-			} else {
+			}else {
 			  fillSelect(selSis, []);
 			  selSis.value = "";
 			  fillSelect(selMod, []);
