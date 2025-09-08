@@ -5,10 +5,12 @@ import sys
 import re
 import time
 import json
+import unicodedata
 import hashlib
 from pathlib import Path
 from datetime import datetime, timezone
 from functools import wraps
+
 
 from flask import (
     Flask,
@@ -149,6 +151,13 @@ def _no_store(resp):
 # -----------------------------------------------------------------------------
 ADMIN_USER = os.getenv("ADMIN_USER", "lider")
 ADMIN_PASS = os.getenv("ADMIN_PASS", "2018")
+
+def _norm(s: str) -> str:
+    s = s or ""
+    s = unicodedata.normalize("NFD", s)
+    s = "".join(ch for ch in s if unicodedata.category(ch) != "Mn")  # remove acentos
+    return s.strip().lower()
+
 
 
 def admin_logged():
@@ -520,6 +529,32 @@ def _parse_whatsapp_from_desc(desc: str) -> str:
 
     return ""
 
+def _parse_field_from_desc(desc: str, label: str) -> str:
+    """
+    Extrai um campo textual da descrição do Trello.
+    Aceita formatos com ou sem negrito, por ex:
+    **Sistema:** WebLíder
+    Sistema: WebLíder
+    """
+    text = desc or ""
+    # 1) com negrito/asteriscos
+    m = re.search(rf"\*\*?\s*{re.escape(label)}\s*:\s*\**\s*(.+)", text, flags=re.I)
+    if m:
+        return m.group(1).strip()
+    # 2) simples
+    m2 = re.search(rf"{re.escape(label)}\s*:\s*(.+)", text, flags=re.I)
+    return (m2.group(1).strip() if m2 else "")
+
+def _parse_sistema_from_desc(desc: str) -> str:
+    return _parse_field_from_desc(desc, "Sistema")
+
+def _parse_modulo_from_desc(desc: str) -> str:
+    return _parse_field_from_desc(desc, "Módulo")
+
+def _parse_ocorrencia_from_desc(desc: str) -> str:
+    return _parse_field_from_desc(desc, "Ocorrência")
+
+
 
 # ---------------------------------------------------------------------------
 # Nova implementação do endpoint /api/chamados com suporte a id, created_at,
@@ -603,9 +638,20 @@ def api_chamados():
         status = LIST_STATUS_MAP.get(lista, "Em aberto")
         url = c.get("shortUrl")
         dt_raw = c.get("dateLastActivity")  # ISO do Trello
+
         representante = _parse_rep_from_desc(desc)
         whats = _parse_whatsapp_from_desc(desc)
         cliente = _parse_cliente_from_desc(desc)
+
+        # >>> extrai campos de formulário gravados na descrição
+        sistema    = _parse_sistema_from_desc(desc)
+        modulo     = _parse_modulo_from_desc(desc)
+        ocorrencia = _parse_ocorrencia_from_desc(desc)
+
+        # >>> normalizações para filtros (minúsculas e espaços tratados)
+        s_sis  = (sistema or "").strip().lower()
+        s_mod  = (modulo or "").strip().lower()
+        s_ocor = (ocorrencia or "").strip().lower()
 
         # filtros
         if f_rep and representante != f_rep:
@@ -615,6 +661,14 @@ def api_chamados():
         # cliente: somente pelo campo 'cliente' extraído da descrição
         if f_cliente and f_cliente not in (cliente or "").lower():
             continue
+        # filtros por sistema/módulo/ocorrência (comparação já normalizada)
+        if f_sistema and _norm(f_sistema) != _norm(sistema):
+            continue
+        if f_modulo and _norm(f_modulo) != _norm(modulo):
+            continue
+        if f_ocor and _norm(f_ocor) != _norm(ocorrencia):
+            continue
+
 
         # filtro por última atividade (de/ate)
         if (f_de or f_ate) and dt_raw:
@@ -662,6 +716,9 @@ def api_chamados():
             "ultima_atividade": dt_raw,
             "whatsapp": whats,
             "created_at": created_at,
+            "sistema": sistema or None,
+            "modulo": modulo or None,
+            "ocorrencia": ocorrencia or None,
         })
 
     total = len(items)
@@ -675,6 +732,7 @@ def api_chamados():
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
     return response
+
 
 
 # ---------------------------------------------
@@ -836,6 +894,10 @@ def api_chamados_export():
     f_de_criacao  = _iso_date_only(request.args.get("de_criacao") or "")
     f_ate_criacao = _iso_date_only(request.args.get("ate_criacao") or "")
     f_cliente = (request.args.get("cliente") or "").strip().lower()
+    f_sistema = (request.args.get("sistema") or "").strip()
+    f_modulo  = (request.args.get("modulo") or "").strip()
+    f_ocor    = (request.args.get("ocorrencia") or "").strip()
+
 
     # força representante para não-admin
     if session.get("user") and not session.get("admin"):
@@ -864,17 +926,28 @@ def api_chamados_export():
         status = LIST_STATUS_MAP.get(lista, "Em aberto")
         url = c.get("shortUrl")
         dt_raw = c.get("dateLastActivity")
+        
 
         # campos derivados
         rep      = _parse_rep_from_desc(desc)
         whats    = _parse_whatsapp_from_desc(desc)
         cliente  = _parse_cliente_from_desc(desc)   # <- seu extrator de Cliente
+        sistema    = _parse_sistema_from_desc(desc)
+        modulo     = _parse_modulo_from_desc(desc)
+        ocorrencia = _parse_ocorrencia_from_desc(desc)
 
         # filtros simples
         if f_rep and rep != f_rep:
             continue
         if f_stat and status != f_stat:
             continue
+        if f_sistema and _norm(f_sistema) != _norm(sistema):
+            continue
+        if f_modulo and _norm(f_modulo) != _norm(modulo):
+            continue
+        if f_ocor and _norm(f_ocor) != _norm(ocorrencia):
+            continue
+
 
         # filtro por última atividade (de/ate)
         if (f_de or f_ate) and dt_raw:
@@ -927,6 +1000,7 @@ def api_chamados_export():
             "ultima_atividade": dt_raw,
             "whatsapp": whats,
             "created_at": created_at,
+            
         })
 
     # gerar arquivo
