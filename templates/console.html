@@ -2352,5 +2352,299 @@
            }
          });
       </script>
-   </body>
+   
+<!-- ==== Relatórios: lógica corrigida v2 (injetada) ==== -->
+<script id="relatorio-logic-corrigido">
+(function(){
+  if (window.__REL_LOGIC_V2__) return; // evita duplicar
+  window.__REL_LOGIC_V2__ = true;
+
+  const $ = (s,root=document)=>root.querySelector(s);
+  const $$ = (s,root=document)=>Array.from(root.querySelectorAll(s));
+
+  // Elements
+  const relScope = document.getElementById('relatorios');
+  if(!relScope) return;
+  const btnConfirmar = relScope.querySelector('#btnConfirmarRel');
+  const btnLimpar    = relScope.querySelector('#btnLimparRel'); // pode não existir
+  const previewRoot  = relScope.querySelector('#reportPreview');
+
+  const btnPdf   = relScope.querySelector('#btnPdfRel');
+  const btnPrint = relScope.querySelector('#btnPrintRel');
+  const btnEmail = relScope.querySelector('#btnEmailRel');
+  const btnCsv   = relScope.querySelector('#btnCsvRel');
+  const btnXls   = relScope.querySelector('#btnXlsRel');
+
+  const btnZoomIn  = relScope.querySelector('#btnZoomInRel');
+  const btnZoomOut = relScope.querySelector('#btnZoomOutRel');
+
+  const btnFirst = relScope.querySelector('#btnFirstPageRel');
+  const btnPrev  = relScope.querySelector('#btnPrevPageRel');
+  const btnNext  = relScope.querySelector('#btnNextPageRel');
+  const btnLast  = relScope.querySelector('#btnLastPageRel');
+
+  const fIni  = relScope.querySelector('#relInicio');
+  const fFim  = relScope.querySelector('#relFim');
+
+  const chkCliente = relScope.querySelector('#chkClienteRel');
+  const fCliente   = relScope.querySelector('#fClienteRel');
+  const chkRep     = relScope.querySelector('#chkRepresentanteRel');
+  const fRep       = relScope.querySelector('#fRepresentanteRel');
+  const chkSis     = relScope.querySelector('#chkSistemaRel');
+  const fSis       = relScope.querySelector('#fSistemaRel');
+  const chkMod     = relScope.querySelector('#chkModuloRel');
+  const fMod       = relScope.querySelector('#fModuloRel');
+  const chkOco     = relScope.querySelector('#chkOcorrenciaRel');
+  const fOco       = relScope.querySelector('#fOcorrenciaRel');
+
+  function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
+  function fmtDateBR(iso){
+    if(!iso) return '';
+    try{
+      const d = new Date(iso);
+      const dd = String(d.getDate()).padStart(2,'0');
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const yyyy = d.getFullYear();
+      return `${dd}/${mm}/${yyyy}`;
+    }catch{ return iso }
+  }
+  function chunk(arr, n){ const out=[]; for(let i=0;i<arr.length;i+=n) out.push(arr.slice(i,i+n)); return out; }
+
+  // Enable/disable advanced filters
+  function hookupCheckbox(chk, input){
+    if(!chk || !input) return;
+    input.disabled = !chk.checked;
+    chk.addEventListener('change', ()=> { input.disabled = !chk.checked; });
+  }
+  hookupCheckbox(chkCliente, fCliente);
+  hookupCheckbox(chkRep, fRep);
+  hookupCheckbox(chkSis, fSis);
+  hookupCheckbox(chkMod, fMod);
+  hookupCheckbox(chkOco, fOco);
+
+  // Populate selects from API (ajuste endpoints conforme backend)
+  async function preencherFiltrosRel(){
+    try{
+      const rReps = await fetch('/api/representantes', {credentials:'same-origin'});
+      if(rReps.ok){
+        const reps = await rReps.json();
+        if(Array.isArray(reps)){
+          fRep.innerHTML = '<option value="">Selecione…</option>' + reps.map(r=>`<option value="${esc(r.id)}">${esc(r.nome)}</option>`).join('');
+        }
+      }
+    }catch{}
+    try{
+      const rSis = await fetch('/api/sistemas', {credentials:'same-origin'});
+      if(rSis.ok){
+        const sis = await rSis.json();
+        if(Array.isArray(sis)){
+          fSis.innerHTML = '<option value="">Selecione…</option>' + sis.map(s=>`<option value="${esc(s.id)}">${esc(s.nome)}</option>`).join('');
+        }
+      }
+    }catch{}
+  }
+  preencherFiltrosRel();
+
+  // Encadeia módulo e ocorrência
+  fSis?.addEventListener('change', async ()=>{
+    fMod.disabled = !fSis.value; fOco.disabled = true;
+    fMod.innerHTML = '<option value="">Selecione…</option>';
+    fOco.innerHTML = '<option value="">Selecione…</option>';
+    if(!fSis.value) return;
+    try{
+      const r = await fetch(`/api/modulos?sistema=${encodeURIComponent(fSis.value)}`, {credentials:'same-origin'});
+      if(r.ok){
+        const mods = await r.json();
+        if(Array.isArray(mods)){
+          fMod.innerHTML = '<option value="">Selecione…</option>' + mods.map(m=>`<option value="${esc(m.id)}">${esc(m.nome)}</option>`).join('');
+        }
+      }
+    }catch{}
+  });
+  fMod?.addEventListener('change', async ()=>{
+    fOco.disabled = !fMod.value;
+    fOco.innerHTML = '<option value="">Selecione…</option>';
+    if(!fMod.value) return;
+    try{
+      const r = await fetch(`/api/ocorrencias?modulo=${encodeURIComponent(fMod.value)}`, {credentials:'same-origin'});
+      if(r.ok){
+        const ocs = await r.json();
+        if(Array.isArray(ocs)){
+          fOco.innerHTML = '<option value="">Selecione…</option>' + ocs.map(o=>`<option value="${esc(o.id)}">${esc(o.nome)}</option>`).join('');
+        }
+      }
+    }catch{}
+  });
+
+  function getParams(){
+    const p = new URLSearchParams();
+    if(fIni?.value) p.set('dt_ini', fIni.value);
+    if(fFim?.value) p.set('dt_fim', fFim.value);
+    if(chkCliente?.checked && fCliente?.value.trim()) p.set('cliente', fCliente.value.trim());
+    if(chkRep?.checked && fRep?.value) p.set('representante', fRep.value);
+    if(chkSis?.checked && fSis?.value) p.set('sistema', fSis.value);
+    if(chkMod?.checked && fMod?.value) p.set('modulo', fMod.value);
+    if(chkOco?.checked && fOco?.value) p.set('ocorrencia', fOco.value);
+    // outros filtros: tipoRelatorio, agruparPor, tipoChamado
+    const tipoRel = relScope.querySelector('input[name="tipoRelatorio"]:checked')?.value;
+    const agrupar = relScope.querySelector('input[name="agruparPor"]:checked')?.value;
+    const tipoCha = relScope.querySelector('input[name="tipoChamado"]:checked')?.value;
+    if(tipoRel) p.set('tipo_rel', tipoRel);
+    if(agrupar) p.set('agrupar', agrupar);
+    if(tipoCha && tipoCha!=='todos') p.set('tipo', tipoCha);
+    return p;
+  }
+
+  async function fetchChamadosForReport(){
+    const params = getParams();
+    const dtIni = params.get('dt_ini');
+    const dtFim = params.get('dt_fim');
+    if(!dtIni || !dtFim) throw new Error('Informe as duas datas (inicial e final).');
+
+    const url = '/api/chamados?' + params.toString();
+    const r = await fetch(url, {credentials:'same-origin', cache:'no-store'});
+    if(!r.ok) throw new Error('Falha ao buscar chamados.');
+    const data = await r.json().catch(()=>[]);
+    return Array.isArray(data) ? data : (data.items || []);
+  }
+
+  function rowsPerPage(){ return 28; }
+
+  function renderReportA4(items){
+    previewRoot.innerHTML = '';
+    if(!items.length){
+      previewRoot.innerHTML = '<div class="a4"><div class="page-header"><h2>Relatório de Chamados</h2><div class="meta">Período: '
+        + esc(fmtDateBR(fIni.value)) + ' a ' + esc(fmtDateBR(fFim.value))
+        + '</div></div><div class="page-body"><div class="avoid-break" style="padding:16px;color:#64748b;">Nenhum registro encontrado.</div></div></div>';
+      current = 0; total = 1; updatePagination();
+      return;
+    }
+    const pages = chunk(items, rowsPerPage());
+    pages.forEach((pageItems, idx)=>{
+      const html = `
+        <div class="a4">
+          <div class="page-header">
+            <h2>Relatório de Chamados</h2>
+            <div class="meta">Período: ${esc(fmtDateBR(fIni.value))} a ${esc(fmtDateBR(fFim.value))} • Página ${idx+1}/${pages.length}</div>
+          </div>
+          <div class="page-body">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th style="width:64px">#</th>
+                  <th>Cliente</th>
+                  <th>Sistema / Módulo</th>
+                  <th>Ocorrência</th>
+                  <th>Status</th>
+                  <th style="width:88px">Abertura</th>
+                  <th>Resp.</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${pageItems.map(it => `
+                  <tr class="avoid-break">
+                    <td>${esc(it.id)}</td>
+                    <td>${esc(it.cliente || it.title || it.titulo || '-')}</td>
+                    <td>${esc(it.sistema || '-')}${it.modulo ? ' / ' + esc(it.modulo) : ''}</td>
+                    <td>${esc(it.ocorrencia || '-')}</td>
+                    <td>${esc(it.status || '-')}</td>
+                    <td>${esc(fmtDateBR(it.data_abertura || it.created_at || ''))}</td>
+                    <td>${esc(it.responsavel || it.representante || '')}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+      previewRoot.insertAdjacentHTML('beforeend', html);
+    });
+    current = 0; total = pages.length; updatePagination(true);
+  }
+
+  async function onConfirmarRel(){
+    previewRoot.innerHTML = '<div class="a4"><div class="page-header"><h2>Relatório de Chamados</h2></div><div class="page-body"><div style="padding:16px;">Carregando…</div></div></div>';
+    try{
+      const items = await fetchChamadosForReport();
+      renderReportA4(items);
+    }catch(err){
+      previewRoot.innerHTML = '<div class="a4"><div class="page-header"><h2>Relatório de Chamados</h2></div><div class="page-body"><div style="padding:16px;color:#7f1d1d;background:#fff3f3;border:1px solid #fecaca;border-radius:8px;">Erro ao gerar relatório: '+esc(err.message||err)+'</div></div></div>';
+      current=0; total=1; updatePagination();
+    }
+  }
+  function onLimparRel(){
+    if(fIni) fIni.value='';
+    if(fFim) fFim.value='';
+    if(fCliente) fCliente.value='';
+    if(fRep) fRep.value='';
+    if(fSis) fSis.value='';
+    if(fMod){ fMod.innerHTML='<option value="">Selecione…</option>'; fMod.disabled=true; }
+    if(fOco){ fOco.innerHTML='<option value="">Selecione…</option>'; fOco.disabled=true; }
+    previewRoot.innerHTML = '';
+    current=0; total=1; updatePagination();
+  }
+
+  // Export
+  async function onExportRel(fmt){
+    const params = getParams();
+    if(!params.get('dt_ini') || !params.get('dt_fim')){ alert('Informe as duas datas para exportar.'); return; }
+    const url = '/api/chamados/export?' + params.toString() + '&format=' + encodeURIComponent(fmt);
+    try{
+      const r = await fetch(url, {credentials:'same-origin'});
+      if(!r.ok) throw new Error('Falha ao exportar.');
+      const blob = await r.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'relatorio_chamados.' + (fmt==='xlsx'?'xlsx':'csv');
+      document.body.appendChild(a); a.click();
+      URL.revokeObjectURL(a.href); a.remove();
+    }catch(e){
+      alert('Erro ao exportar: ' + (e.message||e));
+    }
+  }
+
+  // Print/PDF via diálogo do navegador
+  btnPdf?.addEventListener('click', ()=> window.print());
+  btnPrint?.addEventListener('click', ()=> window.print());
+  btnEmail?.addEventListener('click', ()=>{
+    const subject = encodeURIComponent('Relatório de Chamados');
+    const body = encodeURIComponent('Segue o relatório de chamados em anexo.');
+    location.href = `mailto:?subject=${subject}&body=${body}`;
+  });
+
+  // Zoom & Paginação
+  let zoom = 1, current = 0, total = 1;
+  function setZoom(z){
+    zoom = Math.max(.6, Math.min(2, z));
+    previewRoot.style.transformOrigin = 'top center';
+    previewRoot.style.transform = `scale(${zoom})`;
+  }
+  function updatePagination(scroll=false){
+    const pages = $$('.a4', previewRoot);
+    total = Math.max(1, pages.length);
+    current = Math.max(0, Math.min(current, total-1));
+    pages.forEach((p,i)=> p.style.display = (i===current?'block':'none'));
+    if(scroll && pages[current]) pages[current].scrollIntoView({behavior:'smooth', block:'start'});
+  }
+  btnZoomIn?.addEventListener('click', ()=> setZoom(zoom + .1));
+  btnZoomOut?.addEventListener('click', ()=> setZoom(zoom - .1));
+  btnFirst?.addEventListener('click', ()=>{ current=0; updatePagination(true); });
+  btnPrev ?.addEventListener('click', ()=>{ current=Math.max(0,current-1); updatePagination(true); });
+  btnNext ?.addEventListener('click', ()=>{ current=Math.min(total-1,current+1); updatePagination(true); });
+  btnLast ?.addEventListener('click', ()=>{ current=total-1; updatePagination(true); });
+
+  // Bind buttons
+  btnConfirmar?.addEventListener('click', onConfirmarRel);
+  btnLimpar   ?.addEventListener('click', onLimparRel);
+  btnCsv      ?.addEventListener('click', ()=> onExportRel('csv'));
+  btnXls      ?.addEventListener('click', ()=> onExportRel('xlsx'));
+
+  // Default state
+  setZoom(1);
+  // Mensagem vazia inicial (mantém área pronta)
+  previewRoot.innerHTML = '<div class="a4"><div class="page-header"><h2>Relatório de Chamados</h2><div class="meta">Selecione um período e clique em Confirmar</div></div><div class="page-body"><div style="padding:16px;color:#64748b;">Aguardando filtros…</div></div></div>';
+  updatePagination();
+})();
+</script>
+
+</body>
 </html>
