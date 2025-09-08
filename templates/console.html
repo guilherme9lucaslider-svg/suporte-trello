@@ -695,6 +695,8 @@
              let cache = []; let lastKeys = new Set();
              let isRealTimeActive = false;
              let realTimeInterval = null;
+         let isEditingStatus = false;
+         let pendingRenderData = null;
          
              // Cancelamento de chamadas pendentes
              let abortController = null;
@@ -808,10 +810,10 @@
          await load({ silent: false });
          if (isRealTimeActive) {
          realTimeInterval = setInterval(() => {
-          if (isRealTimeActive) {
-            load({ silent: true });
-            fetchNewTrelloCards();
-          }
+          if (!isEditingStatus) {
+         load({ silent: true });
+         fetchNewTrelloCards();
+         }
          }, 2500);
          }
          } catch (err) {
@@ -1048,6 +1050,45 @@
          }
          });
          
+         // --- Manter o dropdown de status aberto sem ser fechado por refresh ---
+         tbody.addEventListener('focusin', (e) => {
+         const sel = e.target.closest('select.status-select');
+         if (!sel) return;
+         // Entrou em edição: não re-renderizar tabela enquanto estiver focado
+         isEditingStatus = true;
+         });
+         
+         tbody.addEventListener('focusout', (e) => {
+         const sel = e.target.closest('select.status-select');
+         if (!sel) return;
+         // Saiu do select de status: espera o foco realmente sair (próximo tick)
+         setTimeout(() => {
+         const stillFocused = tbody.querySelector('select.status-select:focus');
+         if (!stillFocused) {
+         isEditingStatus = false;
+         // Se houver dados pendentes acumulados durante a edição, aplica agora
+         if (pendingRenderData) {
+         const { items, silent } = pendingRenderData;
+         pendingRenderData = null;
+         render(items, { silent: true }); // aplica em modo silencioso
+         }
+         }
+         }, 0);
+         });
+         
+         // Opcional: se clicar em qualquer lugar fora da tabela, encerra edição
+         document.addEventListener('mousedown', (e) => {
+         if (isEditingStatus && !e.target.closest('#tbl')) {
+         isEditingStatus = false;
+         if (pendingRenderData) {
+         const { items, silent } = pendingRenderData;
+         pendingRenderData = null;
+         render(items, { silent: true });
+         }
+         }
+         });
+         
+         
              function render(items,{silent=false}={}){
                const prev = lastKeys;
                tbody.innerHTML = items.length ? items.map(buildRowHTML).join('') :
@@ -1158,21 +1199,31 @@
              
              totalItems = j.total ?? items.length;
              
-             if(append && page > 0){
+             // Se estiver editando o status e monitoramento ativo, não re-renderiza agora.
+         // Em vez disso, guarda como pendente para aplicar quando a edição terminar.
+         const shouldDeferRender = isEditingStatus && isRealTimeActive;
+         
+         if (append && page > 0) {
          const combined = cache.concat(items);
-         // Limitar cache a 500 itens máximo para evitar vazamento de memória
-         if(combined.length > 500){
-         const trimmed = combined.slice(-500);
-         render(trimmed, {silent});
-         cache = trimmed;
+         const next = (combined.length > 500) ? combined.slice(-500) : combined;
+         
+         if (shouldDeferRender) {
+         pendingRenderData = { items: next, silent: true };
+         cache = next;
          } else {
-         render(combined, {silent});
-         cache = combined;
+         render(next, { silent });
+         cache = next;
          }
          } else {
-         render(items, {silent});
+         if (shouldDeferRender) {
+         pendingRenderData = { items, silent: true };
+         cache = items;
+         } else {
+         render(items, { silent });
          cache = items;
          }
+         }
+         
              
              // Atualiza contagem
              countBox.innerHTML = `📊 <strong>${totalItems}</strong> chamado${totalItems!==1?'s':''} no total`;
@@ -1267,27 +1318,6 @@
          });
            })();
       </script>
-      <script>
-         // Fecha monitoramento se sair do Painel (previne SSE/poll rodando em background)
-         (function(){
-           try {
-             const tabs = document.querySelectorAll('.tab');
-             tabs.forEach(btn => btn.addEventListener('click', () => {
-               const target = btn.getAttribute('data-target') || '';
-               if (target !== '#painel' && typeof window.cleanupRealTime === 'function') {
-                 try { window.cleanupRealTime(); } catch(e){}
-                 if (typeof window.isRealTimeActive !== 'undefined') window.isRealTimeActive = false;
-                 const liveBtn = document.getElementById('btnRealtime');
-                 if (liveBtn) {
-                   liveBtn.classList.remove('is-on');
-                   liveBtn.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
-                 }
-               }
-             }));
-           } catch(e){}
-         })();
-      </script>
-      <!-- Admin helper functions: create representative and user via fetch -->
       <script>
          // ====== Funções do CADASTRO ======
          function criarRep(e) {
