@@ -2348,5 +2348,132 @@
            }
          });
       </script>
-   </body>
+   
+<!-- ==== A4 Host (auto-inserido) ==== -->
+<style id="a4-style-injected">
+  :root{ --a4w:210mm; --a4h:297mm; }
+  #reportA4Host{ margin: 12px auto; display:flex; flex-direction:column; gap:16px; align-items:center; }
+  .a4{
+    width:var(--a4w); min-height:var(--a4h); background:#fff;
+    border:1px solid #d1d5db; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,.05);
+    overflow:hidden;
+  }
+  .a4 .page{ padding:18mm 15mm; }
+  .a4 .hdr{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;
+            border-bottom:1px dashed #e5e7eb; padding-bottom:6px; }
+  .a4 .hdr .title{ font-weight:800; letter-spacing:.2px; }
+  .a4 table{ border-collapse:collapse; width:100%; }
+  .a4 th,.a4 td{ border-bottom:1px solid #eef2f7; padding:8px 6px; font-size:12px; text-align:left; vertical-align:top; }
+  .a4 th{ text-transform:uppercase; letter-spacing:.04em; }
+  @media print{
+    body *{ visibility:hidden !important; }
+    #reportA4Host, #reportA4Host *{ visibility:visible !important; }
+    #reportA4Host{ position:absolute; left:0; top:0; }
+    .a4{ box-shadow:none; border:0; margin:0; page-break-after:always; }
+    @page{ size:A4; margin:10mm; }
+  }
+</style>
+<div id="reportA4Host" style="display:none"></div>
+
+<script id="a4-renderer-injected">
+(function(){
+  if(window.__A4_RENDERER__) return; window.__A4_RENDERER__=true;
+  const host = document.getElementById('reportA4Host');
+  const $ = (s,root=document)=>root.querySelector(s);
+  const $$ = (s,root=document)=>Array.from(root.querySelectorAll(s));
+  function fmtDateBR(iso){ if(!iso) return ''; const d=new Date(iso); return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
+  function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+  function chunk(arr, n){ const out=[]; for(let i=0;i<arr.length;i+=n) out.push(arr.slice(i,i+n)); return out; }
+  function rowsPerPage(){ return 28; }
+
+  // Try to detect existing "Confirmar" button used in your UI
+  const btn = document.querySelector('#btnConfirmarRel, button#confirmar, button[data-role="confirmar"]') || document.querySelectorAll('button').find?.(b => /confirmar/i.test(b.textContent||''));
+
+  // Build filters from common ids used previously
+  function params(){
+    const p = new URLSearchParams();
+    const di = document.querySelector('#relInicio, #dtIni')?.value;
+    const df = document.querySelector('#relFim, #dtFim')?.value;
+    if(di) p.set('dt_ini', di); if(df) p.set('dt_fim', df);
+    const cliente = document.querySelector('#fClienteRel, #cliente')?.value?.trim(); if(cliente) p.set('cliente', cliente);
+    const rep = document.querySelector('#fRepresentanteRel, #representante')?.value; if(rep) p.set('representante', rep);
+    const sis = document.querySelector('#fSistemaRel, #sistema')?.value; if(sis) p.set('sistema', sis);
+    const mod = document.querySelector('#fModuloRel, #modulo')?.value; if(mod) p.set('modulo', mod);
+    const oco = document.querySelector('#fOcorrenciaRel, #ocorrencia')?.value; if(oco) p.set('ocorrencia', oco);
+    return p;
+  }
+
+  async function fetchItems(){
+    const p = params();
+    if(!p.get('dt_ini') || !p.get('dt_fim')) throw new Error('Informe as duas datas.');
+    const r = await fetch('/api/chamados?'+p.toString(), {credentials:'same-origin', cache:'no-store'});
+    if(!r.ok) throw new Error('Falha ao buscar chamados');
+    const data = await r.json().catch(()=>[]);
+    return Array.isArray(data) ? data : (data.items||[]);
+  }
+
+  function renderA4(items){
+    host.style.display='flex';
+    host.innerHTML='';
+    if(!items.length){
+      host.innerHTML='<div class="a4"><div class="page"><div class="hdr"><div class="title">Relatório de Chamados</div><div>'+new Date().toLocaleString()+'</div></div><div>Nenhum registro encontrado.</div></div></div>';
+      return;
+    }
+    const pages = chunk(items, rowsPerPage());
+    pages.forEach((page, i)=>{
+      const html = `
+        <div class="a4">
+          <div class="page">
+            <div class="hdr">
+              <div class="title">Relatório de Chamados</div>
+              <div>Pág. ${i+1}/${pages.length}</div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:64px">#</th>
+                  <th>Título</th>
+                  <th>Representante</th>
+                  <th>Status</th>
+                  <th style="width:110px">Criado em</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${page.map(it=>`
+                  <tr>
+                    <td>${esc(it.id)}</td>
+                    <td>${esc(it.cliente || it.titulo || it.title || '-')}</td>
+                    <td>${esc(it.representante || it.responsavel || '')}</td>
+                    <td>${esc(it.status || '-')}</td>
+                    <td>${esc(fmtDateBR(it.data_abertura || it.created_at || ''))}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+      host.insertAdjacentHTML('beforeend', html);
+    });
+  }
+
+  async function onConfirm(){
+    // Hide old list/table if exists
+    const oldList = document.querySelector('.report-main, #reportList, .results, .table-container');
+    if(oldList) oldList.style.display='none';
+    host.innerHTML='<div class="a4"><div class="page"><div>Carregando…</div></div></div>';
+    host.style.display='flex';
+    try{
+      const items = await fetchItems();
+      renderA4(items);
+    }catch(e){
+      host.innerHTML='<div class="a4"><div class="page"><div style="color:#7f1d1d;background:#fff3f3;border:1px solid #fecaca;padding:12px;border-radius:8px;">Erro: '+(e.message||e)+'</div></div></div>';
+    }
+  }
+
+  // Hook button
+  if(btn){ btn.addEventListener('click', onConfirm, {capture:true}); }
+})();
+</script>
+
+</body>
 </html>
