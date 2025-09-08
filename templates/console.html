@@ -2280,7 +2280,7 @@
          }
          
          /* 2) Buscar dados no backend (mesma API dos chamados) */
-         let __lastReportQuery = null; // usado por CSV/XLS
+         __lastReportQuery = null; // usado por CSV/XLS
          async function fetchChamadosForReport(){
            const params = getReportFiltersAsParams();
            __lastReportQuery = params.toString(); // salva p/ exportações
