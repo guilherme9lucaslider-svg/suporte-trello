@@ -251,6 +251,101 @@
          table td.actions .btn{
          display:inline-flex; align-items:center; justify-content:center;
          }
+		 
+		 /* ===== Folha A4 na tela e na impressão ===== */
+		.report-root {
+		  background: #eef2f7;      /* fundo da página inteira */
+		  padding: 16px;            /* respiro ao redor das folhas */
+		}
+
+		.a4 {
+		  width: 210mm;
+		  min-height: 297mm;
+		  margin: 0 auto 16px auto; /* centraliza e separa as folhas na tela */
+		  background: #fff;
+		  border: 1px solid var(--stroke);
+		  border-radius: 6px;
+		  box-shadow: 0 4px 18px rgba(0,0,0,.08);
+		  overflow: hidden;
+		  position: relative;
+		  /* define a grade para o conteúdo interno */
+		  display: flex;
+		  flex-direction: column;
+		}
+
+		/* Conteúdo interno da folha */
+		.a4 .page-header {
+		  padding: 10mm 12mm 6mm 12mm;
+		  border-bottom: 1px solid #ddd;
+		}
+		.a4 .page-header h2 {
+		  margin: 0;
+		  font-size: 20px;
+		  line-height: 1.2;
+		}
+		.a4 .page-header .meta {
+		  font-size: 12px;
+		  color: #516072;
+		  margin-top: 4px;
+		}
+
+		.a4 .page-body {
+		  padding: 8mm 12mm 12mm 12mm;
+		}
+
+		/* Tabelas do relatório */
+		.report-table {
+		  width: 100%;
+		  border-collapse: collapse;
+		  font-size: 12px;
+		}
+		.report-table th,
+		.report-table td {
+		  border: 1px solid #cfd7e3;
+		  padding: 6px 8px;
+		  vertical-align: top;
+		}
+		.report-table th {
+		  background: #f6f8fb;
+		  text-transform: uppercase;
+		  font-weight: 700;
+		  letter-spacing: .02em;
+		}
+		.report-section-title {
+		  font-weight: 800;
+		  font-size: 13px;
+		  background: #eef3fb;
+		  border: 1px solid #cfd7e3;
+		  padding: 6px 8px;
+		  margin: 8px 0 4px 0;
+		}
+
+		/* Evitar quebra no meio de "blocos" (grupo do cliente/representante) */
+		.avoid-break {
+		  page-break-inside: avoid;
+		  break-inside: avoid;
+		}
+
+		/* Regras de impressão */
+		@media print {
+		  :root { --stroke: #cfd7e3; }
+		  body { background: #fff !important; }
+		  .report-root { padding: 0 !important; }
+		  .a4 {
+			width: 210mm !important;
+			min-height: 297mm !important;
+			margin: 0 auto !important;
+			box-shadow: none !important;
+			border-radius: 0 !important;
+		  }
+		  /* cada .a4 vira uma página impressa */
+		  .a4 { page-break-after: always; }
+		  .a4:last-child { page-break-after: auto; }
+		  /* Esconde elementos da UI comum quando imprimir (se quiser) */
+		  .tabs, .header, #painel, #relatorios .report-actions { display: none !important; }
+		}
+
+		 
       </style>
    </head>
    <body>
@@ -518,12 +613,13 @@
                   </div>
                </div>
                <!-- Área principal onde o relatório será exibido -->
-               <div class="report-main">
-                  <!-- Espaço reservado para a visualização do relatório -->
-                  <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);">
-                     <p>Visualização do relatório virá aqui</p>
-                  </div>
-               </div>
+			<div class="report-main">
+			  <!-- ====== PRÉ-VISUALIZAÇÃO DO RELATÓRIO EM FOLHAS A4 ====== -->
+			  <div id="reportPreview" class="report-root">
+				<!-- As páginas .a4 serão inseridas por JavaScript aqui dentro -->
+			  </div>
+			</div>
+
             </div>
          </section>
       </main>
@@ -1452,6 +1548,144 @@
            });
          })();
       </script>
+	  
+	  <script>
+/**
+ * Cria uma página A4 com header e body e devolve os elementos
+ * para você preencher depois (headerEl, bodyEl).
+ * title: título do relatório
+ * subtitle: período e/ou filtros (texto livre)
+ */
+function createA4Page({ title = "Relatório", subtitle = "" } = {}) {
+  const page = document.createElement("div");
+  page.className = "a4";
+
+  const header = document.createElement("div");
+  header.className = "page-header";
+  header.innerHTML = `
+    <h2>${title}</h2>
+    <div class="meta">${subtitle}</div>
+  `;
+
+  const body = document.createElement("div");
+  body.className = "page-body";
+
+  page.appendChild(header);
+  page.appendChild(body);
+  return { page, headerEl: header, bodyEl: body };
+}
+
+/**
+ * Insere um bloco (ex.: tabela/grupo) no body atual.
+ * Se passar do limite, cria nova página automaticamente.
+ * Obs.: funciona bem para blocos moderados. Para blocos gigantes,
+ * mantenha class="avoid-break" no contêiner para tentar evitar página cortada.
+ */
+function appendBlockWithPagination(rootEl, currentPage, blockMaker, pageMeta) {
+  const { page, bodyEl } = currentPage;
+
+  // cria o bloco em memória
+  const temp = document.createElement("div");
+  blockMaker(temp);
+
+  bodyEl.appendChild(temp);
+
+  // Se ficou muito grande e "estourou" o tamanho da página, mover para nova página
+  const pageMax = 297; // altura em mm
+  const pxPerMm = 3.78; // aproximado na maioria dos monitores
+  const headerH = 26 * pxPerMm; // ~26mm para header
+  const bodyMaxPx = (pageMax * pxPerMm) - headerH - 14; // respiro
+
+  if (bodyEl.scrollHeight > bodyMaxPx) {
+    // remove e passa para nova página
+    bodyEl.removeChild(temp);
+
+    const newPage = createA4Page(pageMeta);
+    rootEl.appendChild(newPage.page);
+
+    // coloca o bloco na nova página
+    newPage.bodyEl.appendChild(temp);
+
+    return newPage; // devolve a nova página como "página corrente"
+  }
+  return currentPage; // permanece na mesma página
+}
+
+/**
+ * Exemplo de uso: limpa preview e cria primeira página vazia.
+ * Depois, nas próximas etapas, vamos alimentar com dados de verdade.
+ */
+function resetReportPreview() {
+  const root = document.getElementById("reportPreview");
+  root.innerHTML = "";
+  return root;
+}
+
+/* ===== Exemplo rápido (mock) para você testar já =====
+   Quando clicar no botão "Confirmar" dos Relatórios, por enquanto
+   vamos só montar páginas A4 de teste. Depois (próximo passo)
+   eu troco para gerar SINTÉTICO e ANALÍTICO de verdade. */
+(function hookConfirmForDemo(){
+  const btn = document.getElementById("btnConfirmarRel");
+  if (!btn) return;
+
+  btn.addEventListener("click", (ev) => {
+    // SOMENTE DEMO DE LAYOUT: isso não chama a API ainda.
+    const root = resetReportPreview();
+
+    // Cabeçalho dinâmico (ex.: período)
+    const periodo = `${document.getElementById("fDataIni")?.value || "--/--/----"} a ${document.getElementById("fDataFim")?.value || "--/--/----"}`;
+
+    // cria primeira página
+    let page = createA4Page({
+      title: "Curva ABC de Chamados (DEMO)",
+      subtitle: `Período: ${periodo}`
+    });
+    root.appendChild(page.page);
+
+    // adiciona 3 blocos fictícios para ver a quebra
+    for (let i = 1; i <= 3; i++) {
+      page = appendBlockWithPagination(root, page, (container) => {
+        container.className = "avoid-break";
+        container.innerHTML = `
+          <div class="report-section-title">CLIENTE ${i}</div>
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th>Sistema</th>
+                <th>Módulo</th>
+                <th>Ocorrência</th>
+                <th>Tipo</th>
+                <th>Quantidade</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${Array.from({length: 20}).map((_, idx) => `
+                <tr>
+                  <td>WebLíder</td>
+                  <td>Configurações</td>
+                  <td>Outros ${idx+1}</td>
+                  <td>Auxílio</td>
+                  <td>1</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+          <div style="margin-top:6px;font-weight:700;">Quantidade de Chamados: 20</div>
+        `;
+      }, {
+        title: "Curva ABC de Chamados (DEMO)",
+        subtitle: `Período: ${periodo}`
+      });
+    }
+
+    // pronto: você verá 1..N páginas A4 na tela.
+    // Ao imprimir (CTRL+P), cada .a4 vira uma página.
+  });
+})();
+</script>
+
+	  
       <script>
          document.addEventListener('DOMContentLoaded', async () => {
            async function carregarRepresentantes() {
