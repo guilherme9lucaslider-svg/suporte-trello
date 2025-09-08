@@ -295,12 +295,11 @@
          font-size: 12px;
          }
          .report-table th,
-		.report-table td {
-		  border: 0.5px solid #bbb;
-		  padding: 4px 6px;
-		  vertical-align: middle;makeA4Page
-		}
-
+         .report-table td {
+         border: 0.5px solid #bbb;
+         padding: 4px 6px;
+         vertical-align: middle;makeA4Page
+         }
          .report-table th {
          background: #f6f8fb;
          text-transform: uppercase;
@@ -1955,6 +1954,21 @@
          document.addEventListener("DOMContentLoaded", () => {
            try {
              setupRelatorioChainedSelects();
+         const selSis = document.getElementById("fSistemaRel");
+         const selMod = document.getElementById("fModuloRel");
+         const selOcor = document.getElementById("fOcorrenciaRel");
+         const chkMod = document.getElementById("chkModuloRel");
+         const chkOcor = document.getElementById("chkOcorrenciaRel");
+         
+         // Se já houver um sistema selecionado e a checkbox de Módulo estiver ligada, carrega os módulos
+         if (selSis && selSis.value && chkMod && chkMod.checked) {
+         fillSelect(selMod, getModulesBySystem(selSis.value));
+         }
+         
+         // Se já houver sistema + módulo selecionados e a checkbox de Ocorrência estiver ligada, carrega as ocorrências
+         if (selSis && selSis.value && selMod && selMod.value && chkOcor && chkOcor.checked) {
+         fillSelect(selOcor, getOccurrencesBySystemModule(selSis.value, selMod.value));
+         }
            } catch (e) {
              console.error("Erro ao configurar selects encadeados do relatório:", e);
            }
@@ -2122,21 +2136,21 @@
          
          /* 4) Gera HTML de UMA página A4 com cabeçalho e um trecho de tabela */
          function makeA4Page({title, periodo, tableHeaderHtml, rowsHtml}) {
-		  return `
-			<div class="a4">
-			  <div class="page-header" style="text-align:center;">
-				<h2 style="margin:0;font-size:22px;">${title}</h2>
-				<div class="meta" style="margin-top:4px;font-size:13px;">${periodo}</div>
-			  </div>
-			  <div class="page-body">
-				<table class="report-table">
-				  <thead>${tableHeaderHtml}</thead>
-				  <tbody>${rowsHtml}</tbody>
-				</table>
-			  </div>
-			</div>`;
-		}
-
+         return `
+         <div class="a4">
+         <div class="page-header" style="text-align:center;">
+         <h2 style="margin:0;font-size:22px;">${title}</h2>
+         <div class="meta" style="margin-top:4px;font-size:13px;">${periodo}</div>
+         </div>
+         <div class="page-body">
+         <table class="report-table">
+         <thead>${tableHeaderHtml}</thead>
+         <tbody>${rowsHtml}</tbody>
+         </table>
+         </div>
+         </div>`;
+         }
+         
          
          /* 5) Quebra as linhas em várias páginas para simular A4 na tela */
          function paginateRows(rowsHtmlArray, headerHtml, title, periodo) {
