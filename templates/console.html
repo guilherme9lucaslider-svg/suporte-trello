@@ -271,7 +271,7 @@
          flex-direction: column;
          }
          /* Conteúdo interno da folha */
-         .a4 .page-header { text-align:center;
+         .a4 .page-header {
          padding: 10mm 12mm 6mm 12mm;
          border-bottom: 1px solid #ddd;
          }
@@ -294,25 +294,13 @@
          border-collapse: collapse;
          font-size: 12px;
          }
-.report-table td.num,
-.report-table th.num { text-align: right; width: 90px; }
-
-.report-group-title {
-  font-weight: 700; text-align: center; background: #efefef;
-  border: 0.5px solid #bbb; padding: 4px 6px;
-}
-
-.report-grandtotal {
-  margin-top: 10px; border-top: 1px dashed #bbb; padding-top: 6px;
-  font-weight: 700; font-size: 12px;
-}
-
          .report-table th,
-         .report-table td {
-  border: 0.5px solid #bbb;
-  padding: 4px 6px;
-  vertical-align: middle;
-}
+		.report-table td {
+		  border: 0.5px solid #bbb;
+		  padding: 4px 6px;
+		  vertical-align: middle;makeA4Page
+		}
+
          .report-table th {
          background: #f6f8fb;
          text-transform: uppercase;
@@ -1899,19 +1887,26 @@
            const selOcor  = document.getElementById("fOcorrenciaRel");
          
            // Estado inicial
-           selSis.disabled  = !chkSis.checked;
-           selMod.disabled  = !chkMod.checked;
-           selOcor.disabled = !chkOcor.checked;
-         
-           if (chkSis.checked) {
-             fillSelect(selSis, getSystems());
-           } else {
-             fillSelect(selSis, []);
-             selSis.value = "";
-           }
-           // Mod e Ocor sempre começam limpos
-           fillSelect(selMod, []);
-           fillSelect(selOcor, []);
+           // Estado inicial
+			selSis.disabled  = !chkSis.checked;
+			selMod.disabled  = !chkMod.checked;
+			selOcor.disabled = !chkOcor.checked;
+
+			if (chkSis.checked) {
+			  fillSelect(selSis, getSystems());
+			  if (chkMod.checked && selSis.value) {
+				fillSelect(selMod, getModulesBySystem(selSis.value));
+				if (chkOcor.checked && selMod.value) {
+				  fillSelect(selOcor, getOccurrencesBySystemModule(selSis.value, selMod.value));
+				}
+			  }
+			} else {
+			  fillSelect(selSis, []);
+			  selSis.value = "";
+			  fillSelect(selMod, []);
+			  fillSelect(selOcor, []);
+			}
+
          
            // Quando marcar/desmarcar "Sistema"
            chkSis.addEventListener("change", () => {
@@ -2134,20 +2129,21 @@
          
          /* 4) Gera HTML de UMA página A4 com cabeçalho e um trecho de tabela */
          function makeA4Page({title, periodo, tableHeaderHtml, rowsHtml}) {
-           return `
-             <div class="a4">
-               <div class="page-header">
-                 <h2>${title}</h2>
-                 <div class="meta">${periodo}</div>
-               </div>
-               <div class="page-body">
-                 <table class="report-table">
-                   <thead>${tableHeaderHtml}</thead>
-                   <tbody>${rowsHtml}</tbody>
-                 </table>
-               </div>
-             </div>`;
-         }
+		  return `
+			<div class="a4">
+			  <div class="page-header" style="text-align:center;">
+				<h2 style="margin:0;font-size:22px;">${title}</h2>
+				<div class="meta" style="margin-top:4px;font-size:13px;">${periodo}</div>
+			  </div>
+			  <div class="page-body">
+				<table class="report-table">
+				  <thead>${tableHeaderHtml}</thead>
+				  <tbody>${rowsHtml}</tbody>
+				</table>
+			  </div>
+			</div>`;
+		}
+
          
          /* 5) Quebra as linhas em várias páginas para simular A4 na tela */
          function paginateRows(rowsHtmlArray, headerHtml, title, periodo) {
@@ -2169,52 +2165,10 @@
                - Sintético: mostra quantidade por Grupo (Cliente ou Representante)
                - Analítico: lista cada chamado com colunas básicas
             Depois refinamos p/ ficar idêntico às suas imagens. */
-         
-function renderReportA4(rawItems){
-  const items = rawItems.map(normalizeItem);
-  const root = document.getElementById('reportPreview');
-  if(!root) return;
-
-  const tipoRel = document.querySelector('input[name="tipoRelatorio"]:checked')?.value || 'sintetico';
-  const agrupar = document.querySelector('input[name="agruparPor"]:checked')?.value || 'cliente';
-  const periodo = [
-    document.getElementById('relInicio')?.value || '—',
-    document.getElementById('relFim')?.value   || '—'
-  ].join(' a ');
-  const agora = new Date().toLocaleString('pt-BR');
-
-  let titulo = 'Curva ABC de Chamados';
-  if (tipoRel === 'sintetico' && agrupar === 'cliente') titulo = 'Curva ABC de Chamados por Cliente';
-  if (tipoRel === 'sintetico' && agrupar === 'representante') titulo = 'Curva ABC de Chamados por Representante';
-  if (tipoRel === 'analitico' && agrupar === 'cliente') titulo = 'Relação de Chamados por Cliente';
-  if (tipoRel === 'analitico' && agrupar === 'representante') titulo = 'Relação de Chamados por Representantes';
-
-  let bodyHtml = '';
-  if (tipoRel === 'sintetico' && agrupar === 'cliente') {
-    bodyHtml = buildSinteticoCliente(items);
-  } else if (tipoRel === 'sintetico' && agrupar === 'representante') {
-    bodyHtml = buildSinteticoRepresentante(items);
-  } else if (tipoRel === 'analitico' && agrupar === 'cliente') {
-    bodyHtml = buildAnaliticoCliente(items);
-  } else {
-    bodyHtml = buildAnaliticoRepresentante(items);
-  }
-
-  root.innerHTML = `
-    <div class="a4">
-      <div class="page-header">
-        <h2>${titulo}</h2>
-        <div class="meta">Período de ${periodo} <span style="float:right">${agora}</span></div>
-      </div>
-      <div class="page-body">
-        ${bodyHtml}
-      </div>
-    </div>
-  `;
-
-  rel_onRendered();
-}
-= getRelFilters();
+         function renderReportA4(items) {
+           const root = document.getElementById('reportPreview');
+           if (!root) return;
+           const { inicio, fim, tipoRel, agrupar } = getRelFilters();
            const periodo = (inicio || fim) ? `Período de ${inicio || '—'} a ${fim || '—'}` : '';
          
            if (!items.length) {
@@ -2368,52 +2322,17 @@ function renderReportA4(rawItems){
          }
          
          /* 5) Renderizar as páginas A4 dentro de #reportPreview */
+         function renderReportA4(items){
+           const root = document.getElementById('reportPreview');
+           if(!root) return;
          
-function renderReportA4(rawItems){
-  const items = rawItems.map(normalizeItem);
-  const root = document.getElementById('reportPreview');
-  if(!root) return;
-
-  const tipoRel = document.querySelector('input[name="tipoRelatorio"]:checked')?.value || 'sintetico';
-  const agrupar = document.querySelector('input[name="agruparPor"]:checked')?.value || 'cliente';
-  const periodo = [
-    document.getElementById('relInicio')?.value || '—',
-    document.getElementById('relFim')?.value   || '—'
-  ].join(' a ');
-  const agora = new Date().toLocaleString('pt-BR');
-
-  let titulo = 'Curva ABC de Chamados';
-  if (tipoRel === 'sintetico' && agrupar === 'cliente') titulo = 'Curva ABC de Chamados por Cliente';
-  if (tipoRel === 'sintetico' && agrupar === 'representante') titulo = 'Curva ABC de Chamados por Representante';
-  if (tipoRel === 'analitico' && agrupar === 'cliente') titulo = 'Relação de Chamados por Cliente';
-  if (tipoRel === 'analitico' && agrupar === 'representante') titulo = 'Relação de Chamados por Representantes';
-
-  let bodyHtml = '';
-  if (tipoRel === 'sintetico' && agrupar === 'cliente') {
-    bodyHtml = buildSinteticoCliente(items);
-  } else if (tipoRel === 'sintetico' && agrupar === 'representante') {
-    bodyHtml = buildSinteticoRepresentante(items);
-  } else if (tipoRel === 'analitico' && agrupar === 'cliente') {
-    bodyHtml = buildAnaliticoCliente(items);
-  } else {
-    bodyHtml = buildAnaliticoRepresentante(items);
-  }
-
-  root.innerHTML = `
-    <div class="a4">
-      <div class="page-header">
-        <h2>${titulo}</h2>
-        <div class="meta">Período de ${periodo} <span style="float:right">${agora}</span></div>
-      </div>
-      <div class="page-body">
-        ${bodyHtml}
-      </div>
-    </div>
-  `;
-
-  rel_onRendered();
-}
-));
+           // 5.1: transforma os itens em "linhas" da tabela
+           const linhas = items.map(it => ({
+             titulo: it.titulo || '-',
+             representante: it.representante || '-',
+             status: it.status || '-',
+             created_at: it.created_at || it.ultima_atividade || null
+           }));
          
            // 5.2: paginação por quantidade de linhas
            const MAX_ROWS = 28; // ajuste se quiser
@@ -2557,204 +2476,5 @@ function renderReportA4(rawItems){
            }
          });
       </script>
-   <script>
-
-/* ===== Helpers simples ===== */
-const val = (x, k, d='-') => (x && x[k]) ? x[k] : d;
-
-function groupBy(arr, keyFn){
-  const map = new Map();
-  arr.forEach(it => {
-    const k = keyFn(it);
-    if(!map.has(k)) map.set(k, []);
-    map.get(k).push(it);
-  });
-  return map;
-}
-
-function normalizeItem(it){
-  return {
-    cliente:       val(it,'cliente'),
-    representante: val(it,'representante'),
-    sistema:       val(it,'sistema'),
-    modulo:        val(it,'modulo'),
-    ocorrencia:    val(it,'ocorrencia'),
-    tipo:          val(it,'tipo'),
-    quant:         Number(it.quant || 1),
-    created_at:    it.created_at || it.ultima_atividade || null,
-  };
-}
-
-function headerSinteticoCliente(){
-  return `
-    <tr>
-      <th>Cliente</th>
-      <th>Representante</th>
-      <th class="num">Quant.</th>
-    </tr>`;
-}
-function headerSinteticoRepresentante(){
-  return `
-    <tr>
-      <th>Representante</th>
-      <th class="num">Quant.</th>
-    </tr>`;
-}
-function headerAnalitico(){
-  return `
-    <tr>
-      <th>Sistema</th>
-      <th>Modulo</th>
-      <th>Ocorrência</th>
-      <th>Tipo</th>
-      <th class="num">Quant.</th>
-    </tr>`;
-}
-
-function buildSinteticoCliente(items){
-  const byCliente = groupBy(items, x => x.cliente || '—');
-  let html = '';
-  let grandTotal = 0;
-
-  byCliente.forEach((rows, cliente) => {
-    const byRep = groupBy(rows, r => r.representante || '—');
-    const linhas = [];
-    let subtotal = 0;
-    byRep.forEach((rs, rep) => {
-      const q = rs.reduce((s,r)=>s+(r.quant||1),0);
-      subtotal += q;
-      linhas.push(`
-        <tr>
-          <td>${cliente}</td>
-          <td>${rep}</td>
-          <td class="num">${q}</td>
-        </tr>`);
-    });
-
-    grandTotal += subtotal;
-
-    html += `
-      <div class="report-group-title">${cliente}</div>
-      <table class="report-table">
-        <thead>${headerSinteticoCliente()}</thead>
-        <tbody>${linhas.join('')}</tbody>
-      </table>
-    `;
-  });
-
-  html += `<div class="report-grandtotal">Total de Chamados: <strong>${grandTotal}</strong></div>`;
-  return html;
-}
-
-function buildSinteticoRepresentante(items){
-  const byRep = groupBy(items, x => x.representante || '—');
-  let html = '';
-  let grandTotal = 0;
-
-  byRep.forEach((rows, rep) => {
-    const subtotal = rows.reduce((s,r)=>s+(r.quant||1),0);
-    grandTotal += subtotal;
-
-    html += `
-      <div class="report-group-title">${rep}</div>
-      <table class="report-table">
-        <thead>${headerSinteticoRepresentante()}</thead>
-        <tbody>
-          <tr>
-            <td>${rep}</td>
-            <td class="num">${subtotal}</td>
-          </tr>
-        </tbody>
-      </table>
-    `;
-  });
-
-  html += `<div class="report-grandtotal">Total de Chamados: <strong>${grandTotal}</strong></div>`;
-  return html;
-}
-
-function buildAnaliticoCliente(items){
-  const byCliente = groupBy(items, x => x.cliente || '—');
-  let html = '';
-  let grandTotal = 0;
-
-  byCliente.forEach((rows, cliente) => {
-    const key = r => [r.sistema,r.modulo,r.ocorrencia,r.tipo].join('||');
-    const byCombo = groupBy(rows, key);
-
-    const linhas = [];
-    let subtotal = 0;
-    byCombo.forEach((rs) => {
-      const base = rs[0];
-      const q = rs.reduce((s,r)=>s+(r.quant||1),0);
-      subtotal += q;
-      linhas.push(`
-        <tr>
-          <td>${base.sistema||'—'}</td>
-          <td>${base.modulo||'—'}</td>
-          <td>${base.ocorrencia||'—'}</td>
-          <td>${base.tipo||'—'}</td>
-          <td class="num">${q}</td>
-        </tr>`);
-    });
-
-    grandTotal += subtotal;
-
-    html += `
-      <div class="report-group-title">${cliente}</div>
-      <table class="report-table">
-        <thead>${headerAnalitico()}</thead>
-        <tbody>${linhas.join('')}</tbody>
-      </table>
-      <div class="report-subtotal">Quantidade de Chamados: <strong>${subtotal}</strong></div>
-    `;
-  });
-
-  html += `<div class="report-grandtotal">Total de Chamados: <strong>${grandTotal}</strong></div>`;
-  return html;
-}
-
-function buildAnaliticoRepresentante(items){
-  const byRep = groupBy(items, x => x.representante || '—');
-  let html = '';
-  let grandTotal = 0;
-
-  byRep.forEach((rows, rep) => {
-    const key = r => [r.sistema,r.modulo,r.ocorrencia,r.tipo].join('||');
-    const byCombo = groupBy(rows, key);
-
-    const linhas = [];
-    let subtotal = 0;
-    byCombo.forEach((rs) => {
-      const base = rs[0];
-      const q = rs.reduce((s,r)=>s+(r.quant||1),0);
-      subtotal += q;
-      linhas.push(`
-        <tr>
-          <td>${base.sistema||'—'}</td>
-          <td>${base.modulo||'—'}</td>
-          <td>${base.ocorrencia||'—'}</td>
-          <td>${base.tipo||'—'}</td>
-          <td class="num">${q}</td>
-        </tr>`);
-    });
-
-    grandTotal += subtotal;
-
-    html += `
-      <div class="report-group-title">${rep}</div>
-      <table class="report-table">
-        <thead>${headerAnalitico()}</thead>
-        <tbody>${linhas.join('')}</tbody>
-      </table>
-      <div class="report-subtotal">Quantidade de Chamados: <strong>${subtotal}</strong></div>
-    `;
-  });
-
-  html += `<div class="report-grandtotal">Total de Chamados: <strong>${grandTotal}</strong></div>`;
-  return html;
-}
-
-</script>
-</body>
+   </body>
 </html>
