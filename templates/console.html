@@ -1779,6 +1779,18 @@
            fillSelect(selMod, []);
            fillSelect(selOcor, []);
          
+         // Se já estiver marcado "Módulo" e já houver um Sistema selecionado, preenche agora
+         if (chkMod.checked && selSis.value) {
+         fillSelect(selMod, getModulesBySystem(selSis.value));
+         }
+         
+         // Se já estiver marcado "Ocorrência" e já houver Sistema+Módulo, preenche agora
+         if (chkOcor.checked && selSis.value && selMod.value) {
+         fillSelect(selOcor, getOccurrencesBySystemModule(selSis.value, selMod.value));
+         }
+         
+         
+         
            // Quando marcar/desmarcar "Sistema"
            chkSis.addEventListener("change", () => {
              selSis.disabled = !chkSis.checked;
@@ -1790,20 +1802,50 @@
            });
          
            // Quando marcar/desmarcar "Módulo"
-           chkMod.addEventListener("change", () => {
-             selMod.disabled = !chkMod.checked;
-             fillSelect(selMod, []);
-             selMod.value = "";
-             // ao desmarcar módulo, zera ocorrências
-             fillSelect(selOcor, []);
-           });
+         chkMod.addEventListener("change", () => {
+         selMod.disabled = !chkMod.checked;
+         // sempre limpa as ocorrências ao mexer no módulo
+         fillSelect(selOcor, []);
+         selOcor.value = "";
+         
+         if (!chkMod.checked) {
+         // desmarcou: limpa o select de módulo
+         fillSelect(selMod, []);
+         selMod.value = "";
+         return;
+         }
+         
+         // marcou: se já existe um Sistema escolhido, preenche agora
+         if (selSis.value) {
+         fillSelect(selMod, getModulesBySystem(selSis.value));
+         } else {
+         fillSelect(selMod, []);
+         selMod.value = "";
+         }
+         });
+         
+         
          
            // Quando marcar/desmarcar "Ocorrência"
-           chkOcor.addEventListener("change", () => {
-             selOcor.disabled = !chkOcor.checked;
-             fillSelect(selOcor, []);
-             selOcor.value = "";
-           });
+         chkOcor.addEventListener("change", () => {
+         selOcor.disabled = !chkOcor.checked;
+         
+         if (!chkOcor.checked) {
+         // desmarcou: limpa
+         fillSelect(selOcor, []);
+         selOcor.value = "";
+         return;
+         }
+         
+         // marcou: se já existe Sistema e Módulo escolhidos, preenche agora
+         if (selSis.value && selMod.value) {
+         fillSelect(selOcor, getOccurrencesBySystemModule(selSis.value, selMod.value));
+         } else {
+         fillSelect(selOcor, []);
+         selOcor.value = "";
+         }
+         });
+         
          
            // Quando escolher um Sistema → carrega Módulos (se o checkbox de Módulo estiver ativo)
            selSis.addEventListener("change", () => {
