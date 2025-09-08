@@ -298,7 +298,7 @@
          .report-table td {
          border: 0.5px solid #bbb;
          padding: 4px 6px;
-         vertical-align: middle;makeA4Page
+         vertical-align: middle;
          }
          .report-table th {
          background: #f6f8fb;
@@ -1876,102 +1876,147 @@
          }
          
          // Liga os checkboxes e encadeia os selects
+         // Substitua a função inteira por esta versão
          function setupRelatorioChainedSelects() {
-           const chkSis   = document.getElementById("chkSistemaRel");
-           const chkMod   = document.getElementById("chkModuloRel");
-           const chkOcor  = document.getElementById("chkOcorrenciaRel");
+         const chkSis  = document.getElementById("chkSistemaRel");
+         const chkMod  = document.getElementById("chkModuloRel");
+         const chkOco  = document.getElementById("chkOcorrenciaRel");
          
-           const selSis   = document.getElementById("fSistemaRel");
-           const selMod   = document.getElementById("fModuloRel");
-           const selOcor  = document.getElementById("fOcorrenciaRel");
+         const selSis  = document.getElementById("fSistemaRel");
+         const selMod  = document.getElementById("fModuloRel");
+         const selOco  = document.getElementById("fOcorrenciaRel");
          
-           // Estado inicial
-           selSis.disabled  = !chkSis.checked;
-           selMod.disabled  = !chkMod.checked;
-           selOcor.disabled = !chkOcor.checked;
+         // Helper: preenche um <select> com placeholder + opções
+         function fillSelectSafe(selectEl, options) {
+         if (!selectEl) return;
+         selectEl.innerHTML = ""; // limpa
+         // placeholder padrão
+         const opt0 = document.createElement("option");
+         opt0.value = "";
+         opt0.textContent = "Selecione.";
+         selectEl.appendChild(opt0);
          
-           if (chkSis.checked) {
-             fillSelect(selSis, getSystems());
-           } else {
-             fillSelect(selSis, []);
-             selSis.value = "";
-           }
-           // Mod e Ocor sempre começam limpos
-           fillSelect(selMod, []);
-           fillSelect(selOcor, []);
-         
-           // Quando marcar/desmarcar "Sistema"
-           chkSis.addEventListener("change", () => {
-             selSis.disabled = !chkSis.checked;
-             // Limpamos cadeia inteira abaixo
-             fillSelect(selSis, chkSis.checked ? getSystems() : []);
-             selSis.value = "";
-             fillSelect(selMod, []);
-             fillSelect(selOcor, []);
-           });
-         
-           // Quando marcar/desmarcar "Módulo"
-           chkMod.addEventListener("change", () => {
-             selMod.disabled = !chkMod.checked;
-             fillSelect(selMod, []);
-             selMod.value = "";
-             // ao desmarcar módulo, zera ocorrências
-             fillSelect(selOcor, []);
-           });
-         
-           // Quando marcar/desmarcar "Ocorrência"
-           chkOcor.addEventListener("change", () => {
-             selOcor.disabled = !chkOcor.checked;
-             fillSelect(selOcor, []);
-             selOcor.value = "";
-           });
-         
-           // Quando escolher um Sistema → carrega Módulos (se o checkbox de Módulo estiver ativo)
-           selSis.addEventListener("change", () => {
-             // sempre que o sistema mudar, limpamos o que vem depois
-             fillSelect(selMod, []);
-             fillSelect(selOcor, []);
-             selMod.value = "";
-             selOcor.value = "";
-         
-             if (chkMod.checked && selSis.value) {
-               fillSelect(selMod, getModulesBySystem(selSis.value));
-             }
-           });
-         
-           // Quando escolher um Módulo → carrega Ocorrências (se o checkbox de Ocorrência estiver ativo)
-           selMod.addEventListener("change", () => {
-             fillSelect(selOcor, []);
-             selOcor.value = "";
-         
-             if (chkOcor.checked && selSis.value && selMod.value) {
-               fillSelect(selOcor, getOccurrencesBySystemModule(selSis.value, selMod.value));
-             }
-           });
+         // suporta retorno síncrono (array) ou promessa
+         Promise.resolve(options || []).then(list => {
+         if (Array.isArray(list)) {
+          list.forEach(v => {
+            const opt = document.createElement("option");
+            // aceita item string ou objeto {value,label}
+            if (typeof v === "string") {
+              opt.value = v;
+              opt.textContent = v;
+            } else if (v && typeof v === "object") {
+              opt.value = v.value ?? v.label ?? "";
+              opt.textContent = v.label ?? v.value ?? "";
+            }
+            selectEl.appendChild(opt);
+          });
+         }
+         }).catch(err => {
+         console.error("Falha ao preencher select:", err);
+         });
          }
          
+         // Habilita/Desabilita campos conforme checkbox
+         function syncDisabled() {
+         if (selSis) selSis.disabled = !(chkSis && chkSis.checked);
+         if (selMod) selMod.disabled = !(chkMod && chkMod.checked);
+         if (selOco) selOco.disabled = !(chkOco && chkOco.checked);
+         }
+         
+         // Quando marcar/desmarcar as checkboxes
+         chkSis && chkSis.addEventListener("change", () => {
+         syncDisabled();
+         // Se ligou Sistema e já há valor, tenta recarregar módulos/ocorrências em cadeia
+         if (chkSis.checked && selSis && selSis.value) {
+         if (chkMod && chkMod.checked) {
+          fillSelectSafe(selMod, getModulesBySystem(selSis.value));
+         }
+         if (chkOco && chkOco.checked && selMod && selMod.value) {
+          fillSelectSafe(selOco, getOccurrencesBySystemModule(selSis.value, selMod.value));
+         }
+         }
+         });
+         
+         chkMod && chkMod.addEventListener("change", () => {
+         syncDisabled();
+         // Se ligou Módulo, recarrega a lista de módulos do sistema atual
+         if (chkMod.checked && selSis && selSis.value) {
+         fillSelectSafe(selMod, getModulesBySystem(selSis.value));
+         } else {
+         fillSelectSafe(selMod, []); // limpa
+         }
+         // Ao desligar Módulo, limpa Ocorrência também
+         if (!chkMod.checked) {
+         fillSelectSafe(selOco, []);
+         }
+         });
+         
+         chkOco && chkOco.addEventListener("change", () => {
+         syncDisabled();
+         if (chkOco.checked && selSis && selSis.value && selMod && selMod.value) {
+         fillSelectSafe(selOco, getOccurrencesBySystemModule(selSis.value, selMod.value));
+         } else {
+         fillSelectSafe(selOco, []);
+         }
+         });
+         
+         // Quando mudar o SISTEMA, recarrega MÓDULOS (se a checkbox de Módulo estiver marcada)
+         selSis && selSis.addEventListener("change", () => {
+         if (chkMod && chkMod.checked) {
+         fillSelectSafe(selMod, getModulesBySystem(selSis.value));
+         } else {
+         fillSelectSafe(selMod, []);
+         }
+         // ao trocar sistema, zera ocorrência
+         fillSelectSafe(selOco, []);
+         });
+         
+         // Quando mudar o MÓDULO, recarrega OCORRÊNCIAS (se a checkbox de Ocorrência estiver marcada)
+         selMod && selMod.addEventListener("change", () => {
+         if (chkOco && chkOco.checked && selSis && selSis.value && selMod.value) {
+         fillSelectSafe(selOco, getOccurrencesBySystemModule(selSis.value, selMod.value));
+         } else {
+         fillSelectSafe(selOco, []);
+         }
+         });
+         
+         // Estado inicial
+         syncDisabled();
+         
+         // Se já existir um sistema selecionado ao carregar a página,
+         // garante que os módulos/ocorrências também carreguem.
+         if (selSis && selSis.value) {
+         if (chkMod && chkMod.checked) {
+         fillSelectSafe(selMod, getModulesBySystem(selSis.value));
+         }
+         if (chkOco && chkOco.checked && selMod && selMod.value) {
+         fillSelectSafe(selOco, getOccurrencesBySystemModule(selSis.value, selMod.value));
+         }
+         }
+         }
+      </script>
+      <script>
          // Inicializa quando a página carregar
          document.addEventListener("DOMContentLoaded", () => {
-           try {
-             setupRelatorioChainedSelects();
+         try {
+         setupRelatorioChainedSelects();
          const selSis = document.getElementById("fSistemaRel");
          const selMod = document.getElementById("fModuloRel");
          const selOcor = document.getElementById("fOcorrenciaRel");
          const chkMod = document.getElementById("chkModuloRel");
          const chkOcor = document.getElementById("chkOcorrenciaRel");
-         
          // Se já houver um sistema selecionado e a checkbox de Módulo estiver ligada, carrega os módulos
          if (selSis && selSis.value && chkMod && chkMod.checked) {
          fillSelect(selMod, getModulesBySystem(selSis.value));
          }
-         
          // Se já houver sistema + módulo selecionados e a checkbox de Ocorrência estiver ligada, carrega as ocorrências
          if (selSis && selSis.value && selMod && selMod.value && chkOcor && chkOcor.checked) {
          fillSelect(selOcor, getOccurrencesBySystemModule(selSis.value, selMod.value));
          }
-           } catch (e) {
-             console.error("Erro ao configurar selects encadeados do relatório:", e);
-           }
+         } catch (e) {
+         console.error("Erro ao configurar selects encadeados do relatório:", e);
+         }
          });
       </script>
       <!-- Modal: Remover representante -->
@@ -2002,11 +2047,10 @@
          </div>
       </div>
       <script>
-         // Guarda o último filtro de relatório aplicado (para travar exportação se não houver busca)
-         let __lastReportQuery = null;
-         
          // Lê os filtros da aba Relatórios e monta os parâmetros que a API entende
          // Mapeamento: sistema -> sistema, módulo -> modulo, ocorrência -> ocorrencia
+         let __lastReportQuery = null;
+         
          function getReportFiltersAsParams() {
            const params = new URLSearchParams();
          
@@ -2233,7 +2277,7 @@
            }
          });
       </script>
-      <script>
+      <!-- <script>
          /* ==========================================================
             RELATÓRIO EM A4 — motor completo (cola e pronto)
             ========================================================== */
@@ -2280,7 +2324,6 @@
          }
          
          /* 2) Buscar dados no backend (mesma API dos chamados) */
-         __lastReportQuery = null; // usado por CSV/XLS
          async function fetchChamadosForReport(){
            const params = getReportFiltersAsParams();
            __lastReportQuery = params.toString(); // salva p/ exportações
@@ -2482,6 +2525,6 @@
              sync();
            }
          });
-      </script>
+         </script> -->
    </body>
 </html>
