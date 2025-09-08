@@ -1614,65 +1614,66 @@
             Quando clicar no botão "Confirmar" dos Relatórios, por enquanto
             vamos só montar páginas A4 de teste. Depois (próximo passo)
             eu troco para gerar SINTÉTICO e ANALÍTICO de verdade. */
-         (function hookConfirmForDemo(){
-           const btn = document.getElementById("btnConfirmarRel");
-           if (!btn) return;
          
-           btn.addEventListener("click", (ev) => {
-             // SOMENTE DEMO DE LAYOUT: isso não chama a API ainda.
-             const root = resetReportPreview();
-         
-             // Cabeçalho dinâmico (ex.: período)
-             const periodo = `${document.getElementById("fDataIni")?.value || "--/--/----"} a ${document.getElementById("fDataFim")?.value || "--/--/----"}`;
-         
-             // cria primeira página
-             let page = createA4Page({
-               title: "Curva ABC de Chamados (DEMO)",
-               subtitle: `Período: ${periodo}`
-             });
-             root.appendChild(page.page);
-         
-             // adiciona 3 blocos fictícios para ver a quebra
-             for (let i = 1; i <= 3; i++) {
-               page = appendBlockWithPagination(root, page, (container) => {
-                 container.className = "avoid-break";
-                 container.innerHTML = `
-                   <div class="report-section-title">CLIENTE ${i}</div>
-                   <table class="report-table">
-                     <thead>
-                       <tr>
-                         <th>Sistema</th>
-                         <th>Módulo</th>
-                         <th>Ocorrência</th>
-                         <th>Tipo</th>
-                         <th>Quantidade</th>
-                       </tr>
-                     </thead>
-                     <tbody>
-                       ${Array.from({length: 20}).map((_, idx) => `
-                         <tr>
-                           <td>WebLíder</td>
-                           <td>Configurações</td>
-                           <td>Outros ${idx+1}</td>
-                           <td>Auxílio</td>
-                           <td>1</td>
-                         </tr>
-                       `).join("")}
-                     </tbody>
-                   </table>
-                   <div style="margin-top:6px;font-weight:700;">Quantidade de Chamados: 20</div>
-                 `;
-               }, {
-                 title: "Curva ABC de Chamados (DEMO)",
-                 subtitle: `Período: ${periodo}`
-               });
-             }
-         
-             // pronto: você verá 1..N páginas A4 na tela.
-             // Ao imprimir (CTRL+P), cada .a4 vira uma página.
-           });
-         })();
-      </script>
+// Handler real do botão Confirmar (sem DEMO): busca dados e renderiza A4
+document.getElementById("btnConfirmarRel")?.addEventListener("click", async () => {
+  const root = document.getElementById("reportPreview");
+  if (!root) return;
+  root.innerHTML = '<div class="a4"><div class="page-body">Carregando…</div></div>';
+  try {
+    // Busca na sua API usando os filtros atuais
+    const p = getReportFiltersAsParams();
+    const url = '/api/chamados?' + p.toString() + '&limit=10000';
+    const r = await fetch(url, { credentials:'same-origin', cache:'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    const items = Array.isArray(data) ? data : (data.items || []);
+
+    // Se não houver dados, mostra folha A4 com mensagem (mantendo layout)
+    if (!items.length) {
+      root.innerHTML = '<div class="a4"><div class="page-body"><p>Nenhum dado para o período/filtros.</p></div></div>';
+      return;
+    }
+
+    // Monta uma tabela simples com os dados retornados (mantendo A4)
+    const inicio = document.getElementById('relInicio')?.value || '';
+    const fim    = document.getElementById('relFim')?.value || '';
+    const periodo = (inicio || fim) ? `Período de ${inicio || '—'} a ${fim || '—'}` : '';
+
+    const rows = items.map(it => `
+      <tr>
+        <td>${(it.sistema||'—')}</td>
+        <td>${(it.modulo||'—')}</td>
+        <td>${(it.ocorrencia||'—')}</td>
+        <td>${(it.tipo||it.status||'—')}</td>
+        <td>1</td>
+      </tr>
+    `);
+
+    const header = `<tr>
+      <th>SISTEMA</th><th>MÓDULO</th><th>OCORRÊNCIA</th><th>TIPO</th><th>QUANTIDADE</th>
+    </tr>`;
+
+    const pageHtml = \`
+      <div class="a4">
+        <div class="page-header" style="text-align:left;">
+          <h2 style="margin:0;font-size:22px;">Curva ABC de Chamados</h2>
+          <div class="meta" style="margin-top:4px;font-size:13px;">\${periodo}</div>
+        </div>
+        <div class="page-body">
+          <table class="report-table">
+            <thead>\${header}</thead>
+            <tbody>\${rows.join('')}</tbody>
+          </table>
+        </div>
+      </div>\`;
+
+    root.innerHTML = pageHtml;
+  } catch(e) {
+    root.innerHTML = '<div class="a4"><div class="page-body">Erro ao gerar relatório: ' + (e.message||e) + '</div></div>';
+  }
+});
+</script>
       <script>
          document.addEventListener('DOMContentLoaded', async () => {
            async function carregarRepresentantes() {
