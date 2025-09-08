@@ -1889,32 +1889,38 @@
          // Helper: preenche um <select> com placeholder + opções
          function fillSelectSafe(selectEl, options) {
          if (!selectEl) return;
-         selectEl.innerHTML = ""; // limpa
-         // placeholder padrão
-         const opt0 = document.createElement("option");
-         opt0.value = "";
-         opt0.textContent = "Selecione.";
+         
+         // Limpa e adiciona placeholder
+         selectEl.innerHTML = '';
+         const opt0 = document.createElement('option');
+         opt0.value = '';
+         opt0.textContent = 'Selecione...';
          selectEl.appendChild(opt0);
          
-         // suporta retorno síncrono (array) ou promessa
-         Promise.resolve(options || []).then(list => {
-         if (Array.isArray(list)) {
-          list.forEach(v => {
-            const opt = document.createElement("option");
-            // aceita item string ou objeto {value,label}
-            if (typeof v === "string") {
-              opt.value = v;
-              opt.textContent = v;
-            } else if (v && typeof v === "object") {
-              opt.value = v.value ?? v.label ?? "";
-              opt.textContent = v.label ?? v.value ?? "";
-            }
-            selectEl.appendChild(opt);
-          });
+         // Pega texto de qualquer formato (objeto ou string)
+         function toText(x) {
+         if (x == null) return '';
+         if (typeof x === 'string' || typeof x === 'number') return String(x).trim();
+         if (typeof x === 'object') {
+         const c = x.label ?? x.name ?? x.value ?? x.titulo ?? x.title ?? x.sistema;
+         if (typeof c === 'string' && c.trim()) return c.trim();
+         for (const k of Object.keys(x)) {
+         if (typeof x[k] === 'string' && x[k].trim()) return x[k].trim();
          }
-         }).catch(err => {
-         console.error("Falha ao preencher select:", err);
+         }
+         return '';
+         }
+         
+         Promise.resolve(options || []).then(list => {
+         (list || []).forEach(item => {
+         const txt = toText(item);
+         if (!txt) return;
+         const opt = document.createElement('option');
+         opt.value = txt;
+         opt.textContent = txt;
+         selectEl.appendChild(opt);
          });
+         }).catch(err => console.error('Falha ao preencher select:', err));
          }
          
          // Habilita/Desabilita campos conforme checkbox
@@ -2008,29 +2014,7 @@
          }
          
       </script>
-      <script>
-         // Inicializa quando a página carregar
-         document.addEventListener("DOMContentLoaded", () => {
-         try {
-         setupRelatorioChainedSelects();
-         const selSis = document.getElementById("fSistemaRel");
-         const selMod = document.getElementById("fModuloRel");
-         const selOcor = document.getElementById("fOcorrenciaRel");
-         const chkMod = document.getElementById("chkModuloRel");
-         const chkOcor = document.getElementById("chkOcorrenciaRel");
-         // Se já houver um sistema selecionado e a checkbox de Módulo estiver ligada, carrega os módulos
-         if (selSis && selSis.value && chkMod && chkMod.checked) {
-         fillSelect(selMod, getModulesBySystem(selSis.value));
-         }
-         // Se já houver sistema + módulo selecionados e a checkbox de Ocorrência estiver ligada, carrega as ocorrências
-         if (selSis && selSis.value && selMod && selMod.value && chkOcor && chkOcor.checked) {
-         fillSelect(selOcor, getOccurrencesBySystemModule(selSis.value, selMod.value));
-         }
-         } catch (e) {
-         console.error("Erro ao configurar selects encadeados do relatório:", e);
-         }
-         });
-      </script>
+      
       <!-- Modal: Remover representante -->
       <div class="confirm-modal" id="confirmDeleteModal" style="display:none;">
          <div class="confirm__box">
@@ -2140,154 +2124,142 @@
            btnXls?.addEventListener('click', () => onExportRel('xlsx')); // sua rota aceita 'xlsx'
          });
       </script>
-      <script>
-         /* ====== RELATÓRIOS: mecanismo básico de páginas A4 ====== */
-         
-         /* 1) Lê os filtros atuais da aba Relatórios */
-         function getRelFilters() {
-           const inicio = document.getElementById('relInicio')?.value || '';
-           const fim    = document.getElementById('relFim')?.value || '';
-           const tipoRel = (document.querySelector('input[name="tipoRelatorio"]:checked')||{}).value || 'sintetico';
-           const agrupar = (document.querySelector('input[name="agruparPor"]:checked')||{}).value || 'cliente';
-         
-           // filtros opcionais
-           const chkCli = document.getElementById('chkClienteRel')?.checked;
-           const chkRep = document.getElementById('chkRepresentanteRel')?.checked;
-           const chkSis = document.getElementById('chkSistemaRel')?.checked;
-           const chkMod = document.getElementById('chkModuloRel')?.checked;
-           const chkOco = document.getElementById('chkOcorrenciaRel')?.checked;
-         
-           const q = [];
-           if (inicio) q.push('de=' + encodeURIComponent(inicio));
-           if (fim)    q.push('ate=' + encodeURIComponent(fim));
-           if (chkCli) q.push('cliente=' + encodeURIComponent(document.getElementById('fClienteRel').value || ''));
-           if (chkRep) q.push('representante=' + encodeURIComponent(document.getElementById('fRepresentanteRel').value || ''));
-           if (chkSis) q.push('sistema=' + encodeURIComponent(document.getElementById('fSistemaRel').value || ''));
-           if (chkMod) q.push('modulo=' + encodeURIComponent(document.getElementById('fModuloRel').value || ''));
-           if (chkOco) q.push('ocorrencia=' + encodeURIComponent(document.getElementById('fOcorrenciaRel').value || ''));
-         
-           return { inicio, fim, tipoRel, agrupar, query: q.join('&') ? '?' + q.join('&') : '' };
-         }
-         
-         /* 2) Busca dados na sua API usando os filtros */
-         async function fetchChamadosForReport() {
-           const f = getRelFilters();
-           const url = '/api/chamados' + f.query + (f.query ? '&' : '?') + 'limit=10000'; // pega tudo do período
-           const r = await fetch(url, { credentials: 'same-origin', cache:'no-store' });
-           if (!r.ok) throw new Error('HTTP ' + r.status);
-           const j = await r.json();
-           return Array.isArray(j) ? j : (j.items || []);
-         }
-         
-         /* 3) Helpers simples para agrupar e contar */
-         function groupBy(arr, keyFn) {
-           const map = new Map();
-           for (const it of arr) {
-             const k = keyFn(it);
-             if (!map.has(k)) map.set(k, []);
-             map.get(k).push(it);
-           }
-           return map;
-         }
-         
-         /* 4) Gera HTML de UMA página A4 com cabeçalho e um trecho de tabela */
-         function makeA4Page({title, periodo, tableHeaderHtml, rowsHtml}) {
-         return `
-         <div class="a4">
-         <div class="page-header" style="text-align:center;">
-         <h2 style="margin:0;font-size:22px;">${title}</h2>
-         <div class="meta" style="margin-top:4px;font-size:13px;">${periodo}</div>
-         </div>
-         <div class="page-body">
-         <table class="report-table">
-         <thead>${tableHeaderHtml}</thead>
-         <tbody>${rowsHtml}</tbody>
-         </table>
-         </div>
-         </div>`;
-         }
-         
-         
-         /* 5) Quebra as linhas em várias páginas para simular A4 na tela */
-         function paginateRows(rowsHtmlArray, headerHtml, title, periodo) {
-           const MAX_ROWS_PER_PAGE = 28; // ajuste fino conforme necessário
-           const pages = [];
-           for (let i = 0; i < rowsHtmlArray.length; i += MAX_ROWS_PER_PAGE) {
-             const slice = rowsHtmlArray.slice(i, i + MAX_ROWS_PER_PAGE).join('');
-             pages.push(makeA4Page({
-               title,
-               periodo,
-               tableHeaderHtml: headerHtml,
-               rowsHtml: slice
-             }));
-           }
-           return pages.join('');
-         }
-         
-         /* 6) Render mínimo:
-               - Sintético: mostra quantidade por Grupo (Cliente ou Representante)
-               - Analítico: lista cada chamado com colunas básicas
-            Depois refinamos p/ ficar idêntico às suas imagens. */
-         function renderReportA4(items) {
-           const root = document.getElementById('reportPreview');
-           if (!root) return;
-           const { inicio, fim, tipoRel, agrupar } = getRelFilters();
-           const periodo = (inicio || fim) ? `Período de ${inicio || '—'} a ${fim || '—'}` : '';
-         
-           if (!items.length) {
-             root.innerHTML = '<div class="a4"><div class="page-body"><p>Nenhum dado para o período/filtros.</p></div></div>';
-             return;
-           }
-         
-           if (tipoRel === 'sintetico') {
-             // agrupa e soma
-             const map = groupBy(items, it => (agrupar === 'cliente' ? (it.cliente || '—') : (it.representante || '—')));
-             const rows = [];
-             for (const [groupKey, arr] of map.entries()) {
-               rows.push(`<tr class="avoid-break">
-                 <td style="font-weight:700">${groupKey}</td>
-                 <td style="text-align:right">${arr.length}</td>
-               </tr>`);
-             }
-             const header = `<tr>
-               <th>${agrupar === 'cliente' ? 'Cliente' : 'Representante'}</th>
-               <th style="width:90px;text-align:right">Quant.</th>
-             </tr>`;
-             const title = `Curva ABC de Chamados por ${agrupar === 'cliente' ? 'Cliente' : 'Representante'} (Sintético)`;
-             root.innerHTML = paginateRows(rows, header, title, periodo);
-           } else {
-             // analítico básico (uma linha por chamado)
-             const rows = items.map(it => `
-               <tr>
-                 <td>${(it.sistema || '—')}</td>
-                 <td>${(it.modulo || '—')}</td>
-                 <td>${(it.ocorrencia || '—')}</td>
-                 <td>${(it.status || '—')}</td>
-                 <td>${(agrupar === 'cliente' ? (it.cliente || '—') : (it.representante || '—'))}</td>
-               </tr>
-             `);
-             const header = `<tr>
-               <th>Sistema</th><th>Módulo</th><th>Ocorrência</th><th>Tipo/Status</th>
-               <th>${agrupar === 'cliente' ? 'Cliente' : 'Representante'}</th>
-             </tr>`;
-             const title = `Relação de Chamados por ${agrupar === 'cliente' ? 'Cliente' : 'Representante'} (Analítico)`;
-             root.innerHTML = paginateRows(rows, header, title, periodo);
-           }
-         }
-         
-         /* 7) Liga o botão "Confirmar" da aba Relatórios */
-         document.getElementById('btnConfirmarRel')?.addEventListener('click', async () => {
-           const root = document.getElementById('reportPreview');
-           if (!root) return;
-           root.innerHTML = '<div class="a4"><div class="page-body">Carregando…</div></div>';
-           try {
-             const items = await fetchChamadosForReport();
-             renderReportA4(items);
-           } catch (e) {
-             root.innerHTML = '<div class="a4"><div class="page-body">Erro ao gerar relatório: '
-               + String(e.message || e) + '</div></div>';
-           }
-         });
-      </script>
-   </body>
+      
+   <script>
+// === Helpers seguros para selects do Relatório (sistema → módulo → ocorrência) ===
+function fillSelect(selectEl, values) {
+  if (!selectEl) return;
+  const cur = selectEl.value || "";
+  selectEl.innerHTML = '<option value="">Selecione...</option>' + (Array.isArray(values) ? values.map(v => {
+    const val = String(v?.value ?? v ?? "").trim();
+    const txt = String(v?.label ?? v ?? "").trim();
+    const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    return '<option value="' + esc(val) + '">' + esc(txt) + '</option>';
+  }).join("") : "");
+  if (cur && [...selectEl.options].some(o => o.value === cur)) {
+    selectEl.value = cur;
+  }
+}
+
+function getSystems(){
+  return ["ERP","PDV","Mobile","Fiscal"]; // ajuste conforme sua base
+}
+function getModulesBySystem(sys){
+  const map = {
+    "ERP": ["Vendas","Compras","Estoque","Financeiro"],
+    "PDV": ["Frente de Caixa","Integração","TEF"],
+    "Mobile": ["Coletor","Força de Vendas"],
+    "Fiscal": ["NFe","CTe","SPED"]
+  };
+  return map[sys] || [];
+}
+function getOccurrencesBySystemModule(sys, mod){
+  const map = {
+    "ERP|Vendas": ["Pedido","NF-e","Comissão"],
+    "ERP|Compras": ["Cotação","Pedido Compra","Entrada"],
+    "ERP|Estoque": ["Inventário","Kardex"],
+    "ERP|Financeiro": ["Contas a Pagar","Contas a Receber","Conciliação"],
+    "PDV|Frente de Caixa": ["Cupom","Cancelamento"],
+    "PDV|Integração": ["Envio","Retorno"],
+    "PDV|TEF": ["Transação","Estorno"],
+    "Mobile|Coletor": ["Leitura","Sincronização"],
+    "Mobile|Força de Vendas": ["Pedido","Sincronização"],
+    "Fiscal|NFe": ["Autorização","Carta de Correção"],
+    "Fiscal|CTe": ["Emissão","Cancelamento"],
+    "Fiscal|SPED": ["Geração","Validação"]
+  };
+  return map[sys + "|" + mod] || [];
+}
+
+// Liga os checkboxes e encadeia os selects
+function setupRelatorioChainedSelects() {
+  const chkSis   = document.getElementById("chkSistemaRel");
+  const chkMod   = document.getElementById("chkModuloRel");
+  const chkOcor  = document.getElementById("chkOcorrenciaRel");
+
+  const selSis   = document.getElementById("fSistemaRel");
+  const selMod   = document.getElementById("fModuloRel");
+  const selOcor  = document.getElementById("fOcorrenciaRel");
+
+  // Estado inicial
+  selSis && (selSis.disabled  = !chkSis?.checked);
+  selMod && (selMod.disabled  = !chkMod?.checked);
+  selOcor && (selOcor.disabled = !chkOcor?.checked);
+
+  if (chkSis?.checked) {
+    fillSelect(selSis, getSystems());
+  } else {
+    fillSelect(selSis, []);
+    if (selSis) selSis.value = "";
+  }
+  fillSelect(selMod, []);
+  fillSelect(selOcor, []);
+
+  chkSis && chkSis.addEventListener("change", () => {
+    if (!selSis || !selMod || !selOcor) return;
+    selSis.disabled = !chkSis.checked;
+    fillSelect(selSis, chkSis.checked ? getSystems() : []);
+    selSis.value = "";
+    fillSelect(selMod, []);
+    fillSelect(selOcor, []);
+  });
+
+  chkMod && chkMod.addEventListener("change", () => {
+    if (!selMod || !selOcor) return;
+    selMod.disabled = !chkMod.checked;
+    fillSelect(selMod, []);
+    selMod.value = "";
+    fillSelect(selOcor, []);
+  });
+
+  chkOcor && chkOcor.addEventListener("change", () => {
+    if (!selOcor) return;
+    selOcor.disabled = !chkOcor.checked;
+    fillSelect(selOcor, []);
+    selOcor.value = "";
+  });
+
+  selSis && selSis.addEventListener("change", () => {
+    if (!selMod || !selOcor) return;
+    fillSelect(selMod, []);
+    fillSelect(selOcor, []);
+    selMod.value = "";
+    selOcor.value = "";
+
+    if (chkMod?.checked && selSis.value) {
+      fillSelect(selMod, getModulesBySystem(selSis.value));
+    }
+  });
+
+  selMod && selMod.addEventListener("change", () => {
+    if (!selSis || !selOcor) return;
+    fillSelect(selOcor, []);
+    selOcor.value = "";
+    if (chkOcor?.checked && selSis.value && selMod.value) {
+      fillSelect(selOcor, getOccurrencesBySystemModule(selSis.value, selMod.value));
+    }
+  });
+}
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  try {
+    setupRelatorioChainedSelects();
+    const selSis = document.getElementById("fSistemaRel");
+    const selMod = document.getElementById("fModuloRel");
+    const selOcor = document.getElementById("fOcorrenciaRel");
+    const chkMod = document.getElementById("chkModuloRel");
+    const chkOcor = document.getElementById("chkOcorrenciaRel");
+    if (selSis && selSis.value && chkMod && chkMod.checked) {
+      fillSelect(selMod, getModulesBySystem(selSis.value));
+    }
+    if (selSis && selSis.value && selMod && selMod.value && chkOcor && chkOcor.checked) {
+      fillSelect(selOcor, getOccurrencesBySystemModule(selSis.value, selMod.value));
+    }
+  } catch (e) {
+    console.error("Erro ao configurar selects encadeados do relatório:", e);
+  }
+});
+</script>
+</body>
 </html>
