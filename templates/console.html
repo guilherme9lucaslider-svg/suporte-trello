@@ -2349,23 +2349,17 @@
          });
       </script>
    
-<!-- ==== A4 Inline (substitui listagem) ==== -->
-<style id="a4-inline-style">
+<!-- ==== A4 Inline (com Observer anti-rollback) ==== -->
+<style id="a4-inline-style-v3">
   :root{ --a4w:210mm; --a4h:297mm; }
   #reportA4Host{ margin: 12px auto; display:flex; flex-direction:column; gap:16px; align-items:center; }
-  .a4{
-    width:var(--a4w); min-height:var(--a4h); background:#fff;
-    border:1px solid #d1d5db; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,.05);
-    overflow:hidden;
-  }
+  .a4{ width:var(--a4w); min-height:var(--a4h); background:#fff; border:1px solid #d1d5db; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,.05); overflow:hidden; }
   .a4 .page{ padding:18mm 15mm; }
-  .a4 .hdr{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;
-            border-bottom:1px dashed #e5e7eb; padding-bottom:6px; }
+  .a4 .hdr{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; border-bottom:1px dashed #e5e7eb; padding-bottom:6px; }
   .a4 .hdr .title{ font-weight:800; letter-spacing:.2px; }
   .a4 table{ border-collapse:collapse; width:100%; }
   .a4 th,.a4 td{ border-bottom:1px solid #eef2f7; padding:8px 6px; font-size:12px; text-align:left; vertical-align:top; }
   .a4 th{ text-transform:uppercase; letter-spacing:.04em; }
-  /* Faz o painel da direita virar um viewport scrollável para as páginas */
   .a4-container-scroll{ overflow:auto; padding:12px; }
   @media print{
     body *{ visibility:hidden !important; }
@@ -2375,51 +2369,15 @@
     @page{ size:A4; margin:10mm; }
   }
 </style>
-<script id="a4-inline-script">
+<script id="a4-inline-script-v3">
 (function(){
-  if(window.__A4_INLINE__) return; window.__A4_INLINE__=true;
+  if(window.__A4_INLINE_V3__) return; window.__A4_INLINE_V3__=true;
   const $ = (s,root=document)=>root.querySelector(s);
   const $$ = (s,root=document)=>Array.from(root.querySelectorAll(s));
-
-  function findResultsContainer(){
-    // 1) Procura por uma tabela com headers conhecidos e sobe até o card/section
-    const th = Array.from(document.querySelectorAll('th')).find(el => /t[íi]tulo/i.test(el.textContent||''));
-    if(th){
-      let c = th.closest('.card, section, .report-main, .table-container, .content, .panel, .box');
-      if(c) return c;
-    }
-    // 2) Procura bloco grande ao lado do painel de filtros (segunda coluna)
-    const grids = Array.from(document.querySelectorAll('.layout, .grid, [class*="grid"]'));
-    for(const g of grids){
-      const cols = Array.from(g.children);
-      if(cols.length>=2){
-        // assume segunda coluna
-        return cols[1];
-      }
-    }
-    // 3) fallback: body
-    return document.body;
-  }
-
-  function ensureHostMounted(){
-    let host = document.getElementById('reportA4Host');
-    const container = findResultsContainer();
-    if(!host){
-      host = document.createElement('div');
-      host.id = 'reportA4Host';
-    }
-    // Substitui o conteúdo do container pela A4
-    container.classList.add('a4-container-scroll');
-    container.innerHTML = ''; // remove listagem antiga
-    container.appendChild(host);
-    return host;
-  }
-
   function fmtDateBR(iso){ if(!iso) return ''; const d=new Date(iso); return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
   function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',\"'\":'&#39;'}[m]));}
   function chunk(arr, n){ const out=[]; for(let i=0;i<arr.length;i+=n) out.push(arr.slice(i,i+n)); return out; }
   function rowsPerPage(){ return 28; }
-
   function gatherParams(){
     const p = new URLSearchParams();
     const di = document.querySelector('#relInicio, #dtIni')?.value;
@@ -2432,7 +2390,6 @@
     const oco = document.querySelector('#fOcorrenciaRel, #ocorrencia')?.value; if(oco) p.set('ocorrencia', oco);
     return p;
   }
-
   async function fetchItems(){
     const p = gatherParams();
     if(!p.get('dt_ini') || !p.get('dt_fim')) throw new Error('Informe as duas datas.');
@@ -2441,9 +2398,21 @@
     const data = await r.json().catch(()=>[]);
     return Array.isArray(data) ? data : (data.items||[]);
   }
-
-  function renderA4(items){
-    const host = ensureHostMounted();
+  function ensureHostIn(container){
+    let host = container.querySelector('#reportA4Host');
+    if(!host){
+      host = document.createElement('div');
+      host.id = 'reportA4Host';
+      container.classList.add('a4-container-scroll');
+      container.innerHTML = ''; // limpa listagem antiga
+      container.appendChild(host);
+    }else{
+      container.classList.add('a4-container-scroll');
+    }
+    return host;
+  }
+  function renderA4In(container, items){
+    const host = ensureHostIn(container);
     host.innerHTML='';
     if(!items.length){
       host.innerHTML='<div class="a4"><div class="page"><div class="hdr"><div class="title">Relatório de Chamados</div><div>'+new Date().toLocaleString()+'</div></div><div>Nenhum registro encontrado.</div></div></div>';
@@ -2451,7 +2420,7 @@
     }
     const pages = chunk(items, rowsPerPage());
     pages.forEach((page, i)=>{
-      const html = `
+      host.insertAdjacentHTML('beforeend', `
         <div class="a4">
           <div class="page">
             <div class="hdr">
@@ -2481,25 +2450,58 @@
               </tbody>
             </table>
           </div>
-        </div>`;
-      host.insertAdjacentHTML('beforeend', html);
+        </div>`);
     });
   }
+  function findResultsContainer(){
+    // onde a tabela antiga é montada
+    const th = Array.from(document.querySelectorAll('th')).find(el => /t[íi]tulo/i.test(el.textContent||''));
+    if(th){
+      const c = th.closest('.card, section, .report-main, .table-container, .content, .panel, .box');
+      if(c) return c;
+    }
+    // fallback: segunda coluna do grid principal
+    const grids = Array.from(document.querySelectorAll('.layout, .grid, [class*="grid"]'));
+    for(const g of grids){
+      const cols = Array.from(g.children||[]);
+      if(cols.length>=2) return cols[1];
+    }
+    return document.body;
+  }
+  // Observa e substitui sempre que a listagem for re-renderizada pelo código antigo
+  let lastContainer = null;
+  const mo = new MutationObserver(async (muts)=>{
+    const container = findResultsContainer();
+    if(!container) return;
+    // se reaparecer uma tabela com header "TÍTULO", substitui por A4
+    const hasTitulo = Array.from(container.querySelectorAll('th')).some(el=>/t[íi]tulo/i.test(el.textContent||''));
+    if(hasTitulo){
+      try{
+        const items = await fetchItems();
+        renderA4In(container, items);
+      }catch(e){
+        const host = ensureHostIn(container);
+        host.innerHTML = '<div class="a4"><div class="page"><div style="color:#7f1d1d;background:#fff3f3;border:1px solid #fecaca;padding:12px;border-radius:8px;">Erro: '+(e.message||e)+'</div></div></div>';
+      }
+    }
+    lastContainer = container;
+  });
+  mo.observe(document.documentElement, {childList:true, subtree:true});
 
+  // Botão confirmar: força render após clique
+  const btn = document.querySelector('#btnConfirmarRel, button#confirmar, button[data-role="confirmar"]')
+           || Array.from(document.querySelectorAll('button')).find(b=>/confirmar/i.test(b.textContent||''));
   async function handleConfirm(){
-    const host = ensureHostMounted();
+    const container = findResultsContainer();
+    const host = ensureHostIn(container);
     host.innerHTML = '<div class="a4"><div class="page"><div>Carregando…</div></div></div>';
     try{
       const items = await fetchItems();
-      renderA4(items);
+      renderA4In(container, items);
     }catch(e){
       host.innerHTML = '<div class="a4"><div class="page"><div style="color:#7f1d1d;background:#fff3f3;border:1px solid #fecaca;padding:12px;border-radius:8px;">Erro: '+(e.message||e)+'</div></div></div>';
     }
   }
-
-  // conectar ao botão Confirmar da sua UI
-  const btn = document.querySelector('#btnConfirmarRel, button#confirmar, button[data-role="confirmar"]')
-           || Array.from(document.querySelectorAll('button')).find(b=>/confirmar/i.test(b.textContent||''));
   if(btn) btn.addEventListener('click', handleConfirm, {capture:true});
 })();
 </script>
