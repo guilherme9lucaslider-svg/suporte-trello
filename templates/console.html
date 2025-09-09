@@ -367,11 +367,14 @@
          font-weight: 700;
          background: #fff;
          }
-		 /* Cursor de “mão” ao poder arrastar e “segurando” enquanto arrasta */
-		 #a4-viewer-wrap.a4-can-pan { cursor: grab; }
-		 #a4-viewer-wrap.a4-panning { cursor: grabbing; }
-
-		 
+         /* Cursor de “mão” ao poder arrastar e “segurando” enquanto arrasta */
+         #a4-viewer-wrap.a4-can-pan { cursor: grab; }
+         #a4-viewer-wrap.a4-panning { cursor: grabbing;
+         }
+         /* total solto abaixo da tabela */
+         .rpt-total-inline{ margin-top:6px; font-weight:700; font-size:12px; }
+         .rpt-total-inline .num{ display:inline-block; min-width:24px; text-align:right; 
+         }
       </style>
    </head>
    <body>
@@ -640,22 +643,7 @@
                </div>
                <!-- Área principal onde o relatório será exibido -->
                <div class="report-main">
-                  <!-- Toolbar A4 -->
-                  <div id="a4-toolbar">
-                     <button type="button" class="btn" id="a4-print">Imprimir</button>
-                     <span class="sep"></span>
-                     <button type="button" class="btn" id="a4-zoom-out">Zoom −</button>
-                     <button type="button" class="btn" id="a4-zoom-in">Zoom +</button>
-                     <span class="sep"></span>
-                     <button type="button" class="btn" id="a4-first">⟪</button>
-                     <button type="button" class="btn" id="a4-prev">◀</button>
-                     <button type="button" class="btn" id="a4-next">▶</button>
-                     <button type="button" class="btn" id="a4-last">⟫</button>
-                     <div id="a4-info">
-                        <span id="a4-page-info">Página 1/1</span>
-                        <span id="a4-zoom-info">100%</span>
-                     </div>
-                  </div>
+                 
                   <!-- Viewer A4 -->
                   <div id="a4-viewer-wrap">
                      <div id="a4-pages"></div>
@@ -1735,24 +1723,21 @@
          const tabela = `
          <table class="rpt-table">
          <thead>
-          <tr>
-            <th>Cliente</th>
-            <th>Representante</th>
-            <th class="num">Quant.</th>
-          </tr>
+         <tr>
+         <th>Cliente</th>
+         <th>Representante</th>
+         <th class="num">Quant.</th>
+         </tr>
          </thead>
          <tbody>
-          ${linhas.join('')}
-          <tr class="rpt-total">
-            <td colspan="2">Total de Chamados</td>
-            <td class="num">${total}</td>
-          </tr>
+         ${linhas.join('')}
          </tbody>
          </table>
          `;
-         
-         const conteudo = header('Curva ABC de Chamados por Cliente') + tabela;
+         const totalSolto = `<div class="rpt-total-inline">Quantidade de Chamados: <span class="num">${total}</span></div>`;
+         const conteudo = header('Curva ABC de Chamados por Cliente') + tabela + totalSolto;
          return [conteudo];
+         
          }
          
          // agrupado por REPRESENTANTE
@@ -1778,22 +1763,19 @@
          <table class="rpt-table">
          <thead>
          <tr>
-          <th>Representante</th>
-          <th class="num">Quant.</th>
+         <th>Representante</th>
+         <th class="num">Quant.</th>
          </tr>
          </thead>
          <tbody>
          ${linhasRep.join('')}
-         <tr class="rpt-total">
-          <td>Total de Chamados</td>
-          <td class="num">${totalRep}</td>
-         </tr>
          </tbody>
          </table>
          `;
-         
-         const conteudoRep = header('Curva ABC de Chamados por Representante') + tabelaRep;
+         const totalSoltoRep = `<div class="rpt-total-inline">Quantidade de Chamados: <span class="num">${totalRep}</span></div>`;
+         const conteudoRep = header('Curva ABC de Chamados por Representante') + tabelaRep + totalSoltoRep;
          return [conteudoRep];
+         
          }
          
          
