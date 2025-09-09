@@ -1565,9 +1565,9 @@
          
          // pega só a lista de chamados
          const dados = respJson.items || [];
-		 
-		 console.log("Dados recebidos no relatório:", dados);
-
+         
+         console.log("Dados recebidos no relatório:", dados);
+         
          
          // 4) Gerar HTML conforme o tipo escolhido
          let paginas = [];
@@ -1583,45 +1583,120 @@
            });
          })();
          
+         
+         // Formata AAAA-MM-DD -> DD/MM/AAAA
+         function fmtData(d) {
+         if (!d) return '';
+         const [yyyy, mm, dd] = d.split('-');
+         return `${dd}/${mm}/${yyyy}`;
+         }
          // ====== Funções auxiliares para relatórios ======
          function gerarSintetico(dados, agrupar){
-           let grupos = {};
-           if (agrupar === 'cliente') {
-             dados.forEach(d => {
-               const key = d.cliente || 'Sem Cliente';
-               if (!grupos[key]) grupos[key] = {representante: d.representante, quant:0};
-               grupos[key].quant++;
-             });
-             // montar linhas
-             let linhas = Object.entries(grupos).map(([cliente, info]) =>
-               `<tr><td>${cliente}</td><td>${info.representante||''}</td><td>${info.quant}</td></tr>`
-             );
-             const total = Object.values(grupos).reduce((s, g) => s+g.quant, 0);
-             linhas.push(`<tr><td colspan="2" style="font-weight:bold">Total de Chamados</td><td style="font-weight:bold">${total}</td></tr>`);
-             const tabela = `<table border="1" cellspacing="0" cellpadding="4" style="width:100%;border-collapse:collapse">
-               <thead><tr><th>Cliente</th><th>Representante</th><th>Quant.</th></tr></thead>
-               <tbody>${linhas.join('')}</tbody>
-             </table>`;
-             return [`<div class="a4-page"><h2>Relatório Sintético por Cliente</h2>${tabela}</div>`];
-           } else {
-             // agrupado por representante
-             dados.forEach(d => {
-               const key = d.representante || 'Sem Representante';
-               if (!grupos[key]) grupos[key] = {quant:0};
-               grupos[key].quant++;
-             });
-             let linhas = Object.entries(grupos).map(([rep, info]) =>
-               `<tr><td>${rep}</td><td>${info.quant}</td></tr>`
-             );
-             const total = Object.values(grupos).reduce((s, g) => s+g.quant, 0);
-             linhas.push(`<tr><td style="font-weight:bold">Total de Chamados</td><td style="font-weight:bold">${total}</td></tr>`);
-             const tabela = `<table border="1" cellspacing="0" cellpadding="4" style="width:100%;border-collapse:collapse">
-               <thead><tr><th>Representante</th><th>Quant.</th></tr></thead>
-               <tbody>${linhas.join('')}</tbody>
-             </table>`;
-             return [`<div class="a4-page"><h2>Relatório Sintético por Representante</h2>${tabela}</div>`];
-           }
+         // título e período (sem hora), exatamente como você pediu
+         const ini = document.getElementById('relInicio').value;
+         const fim = document.getElementById('relFim').value;
+         const periodo = (ini || fim) ? `Período de ${fmtData(ini||fim)} a ${fmtData(fim||ini)}` : '';
+         
+         // Agrupa e conta
+         let linhasHtml = [];
+         let total = 0;
+         
+         if (agrupar === 'cliente') {
+         // mapa: cliente -> { representante: (último visto), quant: N }
+         const mapa = {};
+         dados.forEach(d => {
+         const cliente = d.cliente || 'Sem Cliente';
+         const rep = (d.representante || '').trim();  // se vier ausente, fica vazio
+         if (!mapa[cliente]) mapa[cliente] = { representante: rep || '—', quant: 0 };
+         mapa[cliente].quant += 1;
+         });
+         total = Object.values(mapa).reduce((s, g) => s + g.quant, 0);
+         
+         // ordena por cliente (opcional)
+         const ordenado = Object.entries(mapa).sort((a,b) => a[0].localeCompare(b[0], 'pt-BR'));
+         linhasHtml = ordenado.map(([cliente, info]) =>
+         `<tr>
+         <td>${cliente}</td>
+         <td>${info.representante}</td>
+         <td style="text-align:right;">${info.quant}</td>
+         </tr>`
+         );
+         
+         // monta a tabela
+         const tabela = `
+         <table style="width:100%;border-collapse:collapse;font-size:12px;">
+         <thead>
+          <tr>
+            <th style="border:1px solid #000;padding:6px;text-align:left;">Cliente</th>
+            <th style="border:1px solid #000;padding:6px;text-align:left;">Representante</th>
+            <th style="border:1px solid #000;padding:6px;text-align:right;">Quant.</th>
+          </tr>
+         </thead>
+         <tbody>
+          ${linhasHtml.join('')}
+          <tr>
+            <td colspan="2" style="border:1px solid #000;padding:6px;font-weight:bold;">Total de Chamados</td>
+            <td style="border:1px solid #000;padding:6px;font-weight:bold;text-align:right;">${total}</td>
+          </tr>
+         </tbody>
+         </table>`;
+         
+         // conteúdo da página (sem <div class="a4-page">)
+         const conteudo = `
+         <header style="margin-bottom:10mm;border:1px solid #000;padding:6px;">
+         <div style="font-size:20px;font-weight:800;text-align:center;">Curva ABC de Chamados por Cliente</div>
+         <div style="font-size:12px;text-align:center;margin-top:4px;">${periodo}</div>
+         </header>
+         ${tabela}
+         `;
+         return [conteudo];
+         
+         } else {
+         // agrupado por REPRESENTANTE
+         const mapa = {};
+         dados.forEach(d => {
+         const rep = (d.representante || 'Sem Representante').trim() || 'Sem Representante';
+         if (!mapa[rep]) mapa[rep] = 0;
+         mapa[rep] += 1;
+         });
+         total = Object.values(mapa).reduce((s, n) => s + n, 0);
+         
+         const ordenado = Object.entries(mapa).sort((a,b) => a[0].localeCompare(b[0], 'pt-BR'));
+         linhasHtml = ordenado.map(([rep, quant]) =>
+         `<tr>
+         <td>${rep}</td>
+         <td style="text-align:right;">${quant}</td>
+         </tr>`
+         );
+         
+         const tabela = `
+         <table style="width:100%;border-collapse:collapse;font-size:12px;">
+         <thead>
+          <tr>
+            <th style="border:1px solid #000;padding:6px;text-align:left;">Representante</th>
+            <th style="border:1px solid #000;padding:6px;text-align:right;">Quant.</th>
+          </tr>
+         </thead>
+         <tbody>
+          ${linhasHtml.join('')}
+          <tr>
+            <td style="border:1px solid #000;padding:6px;font-weight:bold;">Total de Chamados</td>
+            <td style="border:1px solid #000;padding:6px;font-weight:bold;text-align:right;">${total}</td>
+          </tr>
+         </tbody>
+         </table>`;
+         
+         const conteudo = `
+         <header style="margin-bottom:10mm;border:1px solid #000;padding:6px;">
+         <div style="font-size:20px;font-weight:800;text-align:center;">Curva ABC de Chamados por Representante</div>
+         <div style="font-size:12px;text-align:center;margin-top:4px;">${periodo}</div>
+         </header>
+         ${tabela}
+         `;
+         return [conteudo];
          }
+         }
+         
          
          function gerarAnalitico(dados, agrupar){
            // >>> por enquanto só casca simples, igual ao sintético
