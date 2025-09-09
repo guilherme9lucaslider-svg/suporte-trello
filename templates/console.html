@@ -1549,27 +1549,31 @@
                const v = document.getElementById('fOcorrenciaRel').value;
                if (v) params.set('ocorrencia', v);
              }
-			 
-			 // GUARDA a query para exportação
-			__lastReportQuery = params.toString();
+         
+         // GUARDA a query para exportação
+         __lastReportQuery = params.toString();
          
              // 3) Buscar dados no backend
-             let dados = [];
-             try {
-               const resp = await fetch('/api/chamados?' + params.toString());
-               dados = await resp.json();
-             } catch (err) {
-               setA4Pages([`<div class="a4-page"><p>Erro ao carregar: ${err.message}</p></div>`]);
-               return;
-             }
+             let respJson = {};
+         try {
+         const resp = await fetch('/api/chamados?' + params.toString());
+         respJson = await resp.json();
+         } catch (err) {
+         setA4Pages([`<div class="a4-page"><p>Erro ao carregar: ${err.message}</p></div>`]);
+         return;
+         }
          
-             // 4) Gerar HTML conforme o tipo escolhido
-             let paginas = [];
-             if (tipoRel === 'sintetico') {
-               paginas = gerarSintetico(dados, agrupar);
-             } else {
-               paginas = gerarAnalitico(dados, agrupar);
-             }
+         // pega só a lista de chamados
+         const dados = respJson.items || [];
+         
+         // 4) Gerar HTML conforme o tipo escolhido
+         let paginas = [];
+         if (tipoRel === 'sintetico') {
+         paginas = gerarSintetico(dados, agrupar);
+         } else {
+         paginas = gerarAnalitico(dados, agrupar);
+         }
+         
          
              // 5) Mostrar no viewer A4
              setA4Pages(paginas);
@@ -1824,7 +1828,6 @@
            await carregarRepresentantes();
          });
       </script>
-      
       <script>
          async function removerRep(id) {
            // Abre o modal
