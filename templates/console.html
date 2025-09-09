@@ -295,8 +295,7 @@
          overflow:hidden;
          }
          #a4-pages {
-         transform: scale(var(--zoom));
-         transform-origin: top center;
+         transform-origin: 0 0;
          transition: transform .15s ease;
          }
          .a4-page {
@@ -329,7 +328,6 @@
          /* Pan/Zoom: origem no topo-esquerdo e nosso transform com prioridade */
          #a4-pages{
          transform-origin: 0 0;
-         transform: translate(0px, 0px) scale(1) !important; /* sobrescreve scale antigo, se houver */
          }
          /* ====== A4 REPORT – LAYOUT DO RELATÓRIO ====== */
          .rpt-header{
