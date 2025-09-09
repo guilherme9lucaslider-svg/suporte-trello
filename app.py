@@ -158,6 +158,17 @@ def _norm(s: str) -> str:
     s = "".join(ch for ch in s if unicodedata.category(ch) != "Mn")  # remove acentos
     return s.strip().lower()
 
+def _normalize_tipo(value: str) -> str:
+    """Padroniza o Tipo para: duvida, melhoria ou bug"""
+    v = _norm(value)
+    if "bug" in v:
+        return "bug"
+    if "melhoria" in v:
+        return "melhoria"
+    if "duvida" in v:
+        return "duvida"
+    return v
+
 def _infer_tipo_fallback(titulo: str, desc: str) -> str:
     """
     Tenta inferir o 'Tipo' (Dúvida/Melhoria/Bug) a partir do título/descrição,
@@ -666,7 +677,8 @@ def api_chamados():
         sistema    = _parse_sistema_from_desc(desc)
         modulo     = _parse_modulo_from_desc(desc)
         ocorrencia = _parse_ocorrencia_from_desc(desc)
-        tipo       = _parse_tipo_from_desc(desc)
+        tipo_bruto = _parse_tipo_from_desc(desc)
+        tipo       = _normalize_tipo(tipo_bruto)
 
         # >>> normalizações para filtros (minúsculas e espaços tratados)
         s_sis  = (sistema or "").strip().lower()
@@ -688,8 +700,9 @@ def api_chamados():
             continue
         if f_ocor and _norm(f_ocor) != _norm(ocorrencia):
             continue
-        if f_tipo and _norm(f_tipo) != _norm(tipo):
+        if f_tipo and _normalize_tipo(f_tipo) != tipo:
             continue
+
 
 
         # filtro por última atividade (de/ate)
@@ -959,7 +972,8 @@ def api_chamados_export():
         sistema    = _parse_sistema_from_desc(desc)
         modulo     = _parse_modulo_from_desc(desc)
         ocorrencia = _parse_ocorrencia_from_desc(desc)
-        tipo       = _parse_tipo_from_desc(desc)
+        tipo_bruto = _parse_tipo_from_desc(desc)
+        tipo       = _normalize_tipo(tipo_bruto)
 
         # filtros simples
         if f_rep and rep != f_rep:
@@ -972,7 +986,7 @@ def api_chamados_export():
             continue
         if f_ocor and _norm(f_ocor) != _norm(ocorrencia):
             continue
-        if f_tipo and _norm(f_tipo) != _norm(tipo):
+        if f_tipo and _normalize_tipo(f_tipo) != tipo:
             continue
 
 
