@@ -564,6 +564,10 @@
                <button class="btn" id="btnNextPageRel"><span class="icon">⏩</span></button>
                <button class="btn" id="btnLastPageRel"><span class="icon">⏭️</span></button>
             </div>
+            <div id="a4-info" style="margin-left:auto; font-size:13px; font-weight:600; display:flex; gap:12px; align-items:center;">
+               <span id="a4-page-info">Página 1/1</span>
+               <span id="a4-zoom-info">100%</span>
+            </div>
             <!-- Layout: painel de filtros lateral + área de visualização -->
             <div class="report-layout">
                <!-- Painel lateral de filtros -->
@@ -2407,5 +2411,35 @@
            btnXls?.addEventListener('click', () => onExportRel('xlsx')); // sua rota aceita 'xlsx'
          });
       </script>
+      <script>
+         document.getElementById('btnPdfRel')?.addEventListener('click', () => {
+           const { jsPDF } = window.jspdf;
+           const doc = new jsPDF("p", "mm", "a4");
+         
+           // pega todas as páginas A4 que estão sendo exibidas
+           const pages = document.querySelectorAll('#a4-pages .a4-page');
+           
+           let promises = [];
+         
+           pages.forEach((page, index) => {
+             promises.push(
+               html2canvas(page, { scale: 2 }).then(canvas => {
+                 const imgData = canvas.toDataURL("image/png");
+                 const imgProps = doc.getImageProperties(imgData);
+                 const pdfWidth = doc.internal.pageSize.getWidth();
+                 const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                 if (index > 0) doc.addPage();
+                 doc.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+               })
+             );
+           });
+         
+           Promise.all(promises).then(() => {
+             doc.save("relatorio.pdf"); // aqui abre a janela para salvar
+           });
+         });
+      </script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
    </body>
 </html>
