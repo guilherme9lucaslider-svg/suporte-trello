@@ -1488,8 +1488,8 @@
            // inicializa com 1 página vazia
            setA4Pages([]);
          });
-         
-         <script>
+      </script>
+      <script>
          // ===== Liga a barra de ações (Relatórios) ao viewer A4 =====
          document.getElementById('btnPrintRel')?.addEventListener('click', () => window.print());
          document.getElementById('btnZoomInRel')?.addEventListener('click', () => a4SetZoom(A4State.zoom + 0.1));
@@ -1504,35 +1504,127 @@
          if (!A4State.pages || A4State.pages.length === 0) setA4Pages([]); // mostra 1 página A4 vazia
          });
       </script>
-      // ====== Integração temporária com o botão Confirmar ======
-      // Caso você já tenha uma função carregarRelatorio() que faz fetch,
-      // aqui a gente SÓ substitui a parte de injetar HTML antigo por setA4Pages([...]).
-      (function hookConfirmarRelatorio(){
-      const btn = document.getElementById('btnConfirmarRel');
-      if (!btn) return;
-      // Se você já tem uma função carregarRelatorio(), use-a.
-      // Aqui deixo um exemplo mínimo que só mostra placeholder em A4.
-      btn.addEventListener('click', (e) => {
-      e.preventDefault();
-      // >>>> Aqui no PRÓXIMO PASSO vamos montar as páginas conforme
-      // Sintético/Analítico e Agrupamento. Agora é só o casco A4:
-      const titulo = 'Relatório';
-      const agora = new Date().toLocaleString();
-      const pagina1 = `
-      <header style="margin-bottom:10mm;">
-         <div style="font-size:18px; font-weight:700;">${titulo}</div>
-         <div style="font-size:12px; color:#64748b;">Gerado em ${agora}</div>
-      </header>
-      <section style="font-size:13px; line-height:1.5;">
-         <p>Visual A4 habilitado. No próximo passo vamos definir o conteúdo conforme:
-            <strong>Tipo de Relatório</strong> (Sintético/Analítico) e
-            <strong>Agrupamento</strong> (Cliente/Representante).
-         </p>
-      </section>
-      `;
-      setA4Pages([pagina1]); // por enquanto 1 página
-      });
-      })();
+      <script>
+         // ====== Botão Confirmar (Relatórios) ======
+         (function hookConfirmarRelatorio(){
+           const btn = document.getElementById('btnConfirmarRel');
+           if (!btn) return;
+         
+           btn.addEventListener('click', async (e) => {
+             e.preventDefault();
+         
+             // 1) Ler opções do usuário
+             const tipoRel = document.querySelector('input[name="tipoRelatorio"]:checked')?.value || 'sintetico';
+             const agrupar = document.querySelector('input[name="agruparPor"]:checked')?.value || 'cliente';
+         
+             // 2) Montar parâmetros da URL
+             const params = new URLSearchParams();
+             const inicio = document.getElementById('relInicio').value;
+             const fim = document.getElementById('relFim').value;
+             if (inicio) params.set('de', inicio);
+             if (fim) params.set('ate', fim);
+         
+             // tipo de chamado
+             const tipoChamado = document.querySelector('input[name="tipoChamado"]:checked')?.value || 'todos';
+             if (tipoChamado !== 'todos') params.set('tipo', tipoChamado);
+         
+             // filtros extras (cliente, representante, sistema, módulo, ocorrência)
+             if (document.getElementById('chkClienteRel').checked) {
+               const v = document.getElementById('fClienteRel').value;
+               if (v) params.set('cliente', v);
+             }
+             if (document.getElementById('chkRepresentanteRel').checked) {
+               const v = document.getElementById('fRepresentanteRel').value;
+               if (v) params.set('representante', v);
+             }
+             if (document.getElementById('chkSistemaRel').checked) {
+               const v = document.getElementById('fSistemaRel').value;
+               if (v) params.set('sistema', v);
+             }
+             if (document.getElementById('chkModuloRel').checked) {
+               const v = document.getElementById('fModuloRel').value;
+               if (v) params.set('modulo', v);
+             }
+             if (document.getElementById('chkOcorrenciaRel').checked) {
+               const v = document.getElementById('fOcorrenciaRel').value;
+               if (v) params.set('ocorrencia', v);
+             }
+			 
+			 // GUARDA a query para exportação
+			__lastReportQuery = params.toString();
+         
+             // 3) Buscar dados no backend
+             let dados = [];
+             try {
+               const resp = await fetch('/api/chamados?' + params.toString());
+               dados = await resp.json();
+             } catch (err) {
+               setA4Pages([`<div class="a4-page"><p>Erro ao carregar: ${err.message}</p></div>`]);
+               return;
+             }
+         
+             // 4) Gerar HTML conforme o tipo escolhido
+             let paginas = [];
+             if (tipoRel === 'sintetico') {
+               paginas = gerarSintetico(dados, agrupar);
+             } else {
+               paginas = gerarAnalitico(dados, agrupar);
+             }
+         
+             // 5) Mostrar no viewer A4
+             setA4Pages(paginas);
+           });
+         })();
+         
+         // ====== Funções auxiliares para relatórios ======
+         function gerarSintetico(dados, agrupar){
+           let grupos = {};
+           if (agrupar === 'cliente') {
+             dados.forEach(d => {
+               const key = d.cliente || 'Sem Cliente';
+               if (!grupos[key]) grupos[key] = {representante: d.representante, quant:0};
+               grupos[key].quant++;
+             });
+             // montar linhas
+             let linhas = Object.entries(grupos).map(([cliente, info]) =>
+               `<tr><td>${cliente}</td><td>${info.representante||''}</td><td>${info.quant}</td></tr>`
+             );
+             const total = Object.values(grupos).reduce((s, g) => s+g.quant, 0);
+             linhas.push(`<tr><td colspan="2" style="font-weight:bold">Total de Chamados</td><td style="font-weight:bold">${total}</td></tr>`);
+             const tabela = `<table border="1" cellspacing="0" cellpadding="4" style="width:100%;border-collapse:collapse">
+               <thead><tr><th>Cliente</th><th>Representante</th><th>Quant.</th></tr></thead>
+               <tbody>${linhas.join('')}</tbody>
+             </table>`;
+             return [`<div class="a4-page"><h2>Relatório Sintético por Cliente</h2>${tabela}</div>`];
+           } else {
+             // agrupado por representante
+             dados.forEach(d => {
+               const key = d.representante || 'Sem Representante';
+               if (!grupos[key]) grupos[key] = {quant:0};
+               grupos[key].quant++;
+             });
+             let linhas = Object.entries(grupos).map(([rep, info]) =>
+               `<tr><td>${rep}</td><td>${info.quant}</td></tr>`
+             );
+             const total = Object.values(grupos).reduce((s, g) => s+g.quant, 0);
+             linhas.push(`<tr><td style="font-weight:bold">Total de Chamados</td><td style="font-weight:bold">${total}</td></tr>`);
+             const tabela = `<table border="1" cellspacing="0" cellpadding="4" style="width:100%;border-collapse:collapse">
+               <thead><tr><th>Representante</th><th>Quant.</th></tr></thead>
+               <tbody>${linhas.join('')}</tbody>
+             </table>`;
+             return [`<div class="a4-page"><h2>Relatório Sintético por Representante</h2>${tabela}</div>`];
+           }
+         }
+         
+         function gerarAnalitico(dados, agrupar){
+           // >>> por enquanto só casca simples, igual ao sintético
+           // (no próximo passo implementamos com subtotais por cliente/representante)
+           const tabela = `<table border="1" cellspacing="0" cellpadding="4" style="width:100%;border-collapse:collapse">
+             <thead><tr><th>Sistema</th><th>Módulo</th><th>Ocorrência</th><th>Tipo</th><th>Quant.</th></tr></thead>
+             <tbody><tr><td colspan="5">Ainda vamos implementar o analítico...</td></tr></tbody>
+           </table>`;
+           return [`<div class="a4-page"><h2>Relatório Analítico (${agrupar})</h2>${tabela}</div>`];
+         }
       </script>
       <script>
          // ====== Funções do CADASTRO ======
@@ -1732,106 +1824,7 @@
            await carregarRepresentantes();
          });
       </script>
-      <script>
-         (() => {
-           const btn = document.getElementById('btnConfirmarRel');
-           const mainEl = document.querySelector('#relatorios .report-main');
-           const dtIni  = document.getElementById('relInicio');
-           const dtFim  = document.getElementById('relFim');
-           const inpCliente = document.getElementById('fClienteRel');
-           const selRepRel  = document.getElementById('fRepresentanteRel');
-         
-           function esc(s){ return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-         
-           btn?.addEventListener('click', async () => {
-             const de  = (dtIni?.value || '').trim();
-             const ate = (dtFim?.value || '').trim();
-             const cli = (inpCliente?.value || '').trim();
-         	const rep = (selRepRel?.value || '').trim();
-         
-             // >>> OBRIGATÓRIO: exigir as DUAS datas
-             if (!de || !ate) {
-               mainEl.innerHTML = `
-                 <div style="display:flex;align-items:center;justify-content:center;height:100%;">
-                   <div style="color:#7f1d1d;background:#fff3f3;border:1px solid #fecaca;padding:16px;border-radius:12px;max-width:720px;">
-                     <strong>Informe a data inicial e a data final</strong> para gerar o relatório.
-                   </div>
-                 </div>`;
-               return;
-             }
-             // <<< FIM obrigatório
-         
-             mainEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b;">Carregando cartões abertos no período…</div>';
-         
-             const qs = new URLSearchParams();
-             qs.set('de_criacao', de);
-             qs.set('ate_criacao', ate);
-             if (cli) qs.set('cliente', cli);
-         	if (rep) qs.set('representante', rep);
-         
-             const res = await fetch('/api/chamados?' + qs.toString(), { headers: { 'Accept':'application/json' }, cache:'no-store' });
-             const data = await res.json();
-             const items = Array.isArray(data) ? data : (data.items || []);
-         
-             if (!items.length) {
-               mainEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b;">Nenhum cartão encontrado no período.</div>';
-               return;
-             }
-         
-             const rows = items.map(it=>{
-               const dt = it.created_at ? new Date(it.created_at) : null;
-               const d  = dt ? dt.toLocaleString('pt-BR') : '—';
-               return `<tr><td>${esc(it.titulo)}</td><td>${esc(it.representante||'-')}</td><td>${esc(it.status||'-')}</td><td>${esc(d)}</td></tr>`;
-             }).join('');
-         
-             mainEl.innerHTML = `
-               <div style="background:#fff;border:1px solid var(--stroke);border-radius:16px;overflow:auto;">
-                 <table style="width:100%;min-width:720px;border-collapse:separate;border-spacing:0">
-                   <thead><tr>
-                     <th style="text-align:left;padding:12px 16px;border-bottom:1px solid var(--stroke);">Título</th>
-                     <th style="text-align:left;padding:12px 16px;border-bottom:1px solid var(--stroke);">Representante</th>
-                     <th style="text-align:left;padding:12px 16px;border-bottom:1px solid var(--stroke);">Status</th>
-                     <th style="text-align:left;padding:12px 16px;border-bottom:1px solid var(--stroke);">Criado em</th>
-                   </tr></thead>
-                   <tbody>${rows}</tbody>
-                 </table>
-               </div>
-               <div style="margin-top:12px;color:var(--muted);font-size:14px;">📊 <strong>${items.length}</strong> cartão(is) aberto(s) no período.</div>`;
-           });
-         
-         
-             // Export CSV/XLS do Relatório
-           async function baixar(formato){
-             const de  = (dtIni?.value || '').trim();
-             const ate = (dtFim?.value || '').trim();
-             const cli = (inpCliente?.value || '').trim();
-         
-             // >>> OBRIGATÓRIO: exigir as DUAS datas
-             if (!de || !ate) {
-               alert('Para exportar, informe a data inicial e a data final.');
-               return;
-             }
-             // <<< FIM obrigatório
-         
-             const qs  = new URLSearchParams({ format: formato });
-             qs.set('de_criacao', de);
-             qs.set('ate_criacao', ate);
-             if (cli) qs.set('cliente', cli);
-         
-             const res = await fetch('/api/chamados/export?' + qs.toString(), { cache:'no-store' });
-             if (!res.ok) throw new Error('HTTP ' + res.status);
-             let filename = `chamados.${formato==='xlsx'?'xlsx':'csv'}`;
-             const dispo = res.headers.get('Content-Disposition') || '';
-             const m = /filename="?([^";]+)"?/i.exec(dispo); if (m) filename = m[1];
-             const blob = await res.blob();
-             const url = URL.createObjectURL(blob);
-             const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
-             URL.revokeObjectURL(url);
-           }
-           document.getElementById('btnCsvRel')?.addEventListener('click', ()=>baixar('csv').catch(e=>alert(e.message)));
-           document.getElementById('btnXlsRel')?.addEventListener('click', ()=>baixar('xlsx').catch(e=>alert(e.message)));
-         })();
-      </script>
+      
       <script>
          async function removerRep(id) {
            // Abre o modal
@@ -2214,39 +2207,6 @@
            return params;
          }
          
-         // Ação do botão "Confirmar": busca os dados com os filtros atuais
-         async function onConfirmarRel() {
-           const params = getReportFiltersAsParams();
-           const url = '/api/chamados?' + params.toString();
-         
-           // Faz a busca
-           const box = document.querySelector('#relatorios .report-main');
-           try {
-             const res = await fetch(url, { credentials: 'same-origin' });
-             if (!res.ok) throw new Error('HTTP ' + res.status);
-             const data = await res.json();
-         
-             // Guarda a última query para permitir exportar depois
-             __lastReportQuery = params.toString();
-         
-             // Renderização simples: mostra um resumo no painel (você pode trocar por tabela/gráfico depois)
-             const total = (data && typeof data.total === 'number') ? data.total : (data?.items?.length || 0);
-             box.innerHTML = `
-               <div style="width:100%;min-height:200px;display:flex;align-items:center;justify-content:center;flex-direction:column;color:var(--ink);gap:8px;background:#fff;border:1px solid var(--stroke);border-radius:16px;padding:24px;">
-                 <div style="font-weight:800;font-size:20px;">Resultado do Relatório</div>
-                 <div style="color:var(--muted);">Total de chamados encontrados: <strong>${total}</strong></div>
-                 <div style="font-size:12px;color:var(--muted);margin-top:4px;">(Sistema, Módulo e Ocorrência filtram nos seus campos específicos do cartão)</div>
-               </div>
-             `;
-           } catch (e) {
-             box.innerHTML = `
-               <div style="width:100%;min-height:200px;display:flex;align-items:center;justify-content:center;color:#b91c1c;background:#fff;border:1px solid var(--stroke);border-radius:16px;padding:24px;">
-                 Erro ao buscar relatório: ${e.message}
-               </div>
-             `;
-             __lastReportQuery = null; // não deixa exportar se falhou
-           }
-         }
          
          // Exportação CSV/XLS — só permite se já houve "Confirmar" (temos __lastReportQuery)
          function onExportRel(format) {
@@ -2266,7 +2226,6 @@
            const btnCsv = document.getElementById('btnCsvRel');
            const btnXls = document.getElementById('btnXlsRel');
          
-           btnConfirm?.addEventListener('click', onConfirmarRel);
            btnCsv?.addEventListener('click', () => onExportRel('csv'));
            btnXls?.addEventListener('click', () => onExportRel('xlsx')); // sua rota aceita 'xlsx'
          });
