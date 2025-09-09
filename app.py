@@ -158,6 +158,20 @@ def _norm(s: str) -> str:
     s = "".join(ch for ch in s if unicodedata.category(ch) != "Mn")  # remove acentos
     return s.strip().lower()
 
+def _infer_tipo_fallback(titulo: str, desc: str) -> str:
+    """
+    Tenta inferir o 'Tipo' (Dúvida/Melhoria/Bug) a partir do título/descrição,
+    quando o campo **Tipo:** não está presente no card.
+    """
+    base = _norm((titulo or "") + " " + (desc or ""))
+    if "bug" in base:
+        return "Bug"
+    if "melhoria" in base:
+        return "Melhoria"
+    if "duvida" in base:  # 'dúvida' vira 'duvida' pelo _norm
+        return "Dúvida"
+    return ""
+
 
 
 def admin_logged():
@@ -1291,6 +1305,9 @@ def salvar():
         )
 
     titulo = f"{nome} - {sistema} ({ocorrencia})"
+    
+    tipo = (data.get("tipo") or data.get("tipoChamado") or "").strip()
+
     desc = (
         f"**Cliente:** {nome}\n"
         f"**Whatsapp:** {whatsapp}\n"
@@ -1299,6 +1316,7 @@ def salvar():
         f"**Sistema:** {sistema}\n"
         f"**Módulo:** {modulo}\n"
         f"**Ocorrência:** {ocorrencia}\n"
+        f"**Tipo:** {tipo}\n"
         f"**Prioridade:** {prioridade}\n\n"
         f"**Descrição/Solicitação:**\n{descricao or '-'}\n\n"
         f"**Observação:**\n{observacao or '-'}\n"

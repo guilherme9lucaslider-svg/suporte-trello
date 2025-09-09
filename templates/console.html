@@ -544,19 +544,41 @@
          <section id="relatorios" class="view" role="tabpanel" aria-label="Relatórios">
             <!-- Barra de ações do relatório -->
             <div class="report-actions">
-               <button class="btn" id="btnPdfRel"><span class="icon">📄</span> PDF</button>
-               <button class="btn" id="btnCsvRel"><span class="icon">🧾</span> CSV</button>
-               <button class="btn" id="btnXlsRel"><span class="icon">📊</span> XLS</button>
-               <button class="btn" id="btnPrintRel"><span class="icon">🖨️</span> Imprimir</button>
-               <button class="btn" id="btnEmailRel"><span class="icon">✉️</span> E‑mail</button>
+               <button class="btn" id="btnPdfRel" aria-label="Exportar relatório em PDF">
+               <span class="icon" aria-hidden="true">📄</span> PDF
+               </button>
+               <button class="btn" id="btnCsvRel" aria-label="Exportar relatório em CSV">
+               <span class="icon" aria-hidden="true">🧾</span> CSV
+               </button>
+               <button class="btn" id="btnXlsRel" aria-label="Exportar relatório em XLSX">
+               <span class="icon" aria-hidden="true">📊</span> XLSX
+               </button>
+               <button class="btn" id="btnPrintRel" aria-label="Imprimir relatório">
+               <span class="icon" aria-hidden="true">🖨️</span> Imprimir
+               </button>
+               <button class="btn" id="btnEmailRel" aria-label="Enviar relatório por e-mail">
+               <span class="icon" aria-hidden="true">✉️</span> E-mail
+               </button>
                <div class="separator"></div>
-               <button class="btn" id="btnZoomInRel"><span class="icon">➕</span> Zoom +</button>
-               <button class="btn" id="btnZoomOutRel"><span class="icon">➖</span> Zoom −</button>
+               <button class="btn" id="btnZoomInRel" aria-label="Aumentar zoom">
+               <span class="icon" aria-hidden="true">➕</span> Zoom
+               </button>
+               <button class="btn" id="btnZoomOutRel" aria-label="Diminuir zoom">
+               <span class="icon" aria-hidden="true">➖</span> Zoom
+               </button>
                <div class="separator"></div>
-               <button class="btn" id="btnFirstPageRel"><span class="icon">⏮️</span></button>
-               <button class="btn" id="btnPrevPageRel"><span class="icon">⏪</span></button>
-               <button class="btn" id="btnNextPageRel"><span class="icon">⏩</span></button>
-               <button class="btn" id="btnLastPageRel"><span class="icon">⏭️</span></button>
+               <button class="btn" id="btnFirstPageRel" aria-label="Primeira página">
+               <span class="icon" aria-hidden="true">⏮️</span>
+               </button>
+               <button class="btn" id="btnPrevPageRel" aria-label="Página anterior">
+               <span class="icon" aria-hidden="true">⏪</span>
+               </button>
+               <button class="btn" id="btnNextPageRel" aria-label="Próxima página">
+               <span class="icon" aria-hidden="true">⏩</span>
+               </button>
+               <button class="btn" id="btnLastPageRel" aria-label="Última página">
+               <span class="icon" aria-hidden="true">⏭️</span>
+               </button>
             </div>
             <div id="a4-info" style="margin-left:auto; font-size:13px; font-weight:600; display:flex; gap:12px; align-items:center;">
                <span id="a4-page-info">Página 1/1</span>
@@ -1630,7 +1652,11 @@
          
              // tipo de chamado
              const tipoChamado = document.querySelector('input[name="tipoChamado"]:checked')?.value || 'todos';
-             if (tipoChamado !== 'todos') params.set('tipo', tipoChamado);
+              if (tipoChamado !== 'todos') {
+                const mapTipo = { duvida: 'Dúvida', melhoria: 'Melhoria', bug: 'Bug' };
+                params.set('tipo', mapTipo[tipoChamado] || tipoChamado);
+              }
+
          
              // filtros extras (cliente, representante, sistema, módulo, ocorrência)
              if (document.getElementById('chkClienteRel').checked) {
