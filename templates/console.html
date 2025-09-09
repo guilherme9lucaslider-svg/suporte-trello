@@ -1489,38 +1489,50 @@
            setA4Pages([]);
          });
          
-         // ====== Integração temporária com o botão Confirmar ======
-         // Caso você já tenha uma função carregarRelatorio() que faz fetch,
-         // aqui a gente SÓ substitui a parte de injetar HTML antigo por setA4Pages([...]).
-         (function hookConfirmarRelatorio(){
-           const btn = document.getElementById('btnConfirmarRel');
-           if (!btn) return;
+         <script>
+         // ===== Liga a barra de ações (Relatórios) ao viewer A4 =====
+         document.getElementById('btnPrintRel')?.addEventListener('click', () => window.print());
+         document.getElementById('btnZoomInRel')?.addEventListener('click', () => a4SetZoom(A4State.zoom + 0.1));
+         document.getElementById('btnZoomOutRel')?.addEventListener('click', () => a4SetZoom(A4State.zoom - 0.1));
+         document.getElementById('btnFirstPageRel')?.addEventListener('click', () => a4ShowPage(1));
+         document.getElementById('btnPrevPageRel')?.addEventListener('click', () => a4ShowPage(A4State.current - 1));
+         document.getElementById('btnNextPageRel')?.addEventListener('click', () => a4ShowPage(A4State.current + 1));
+         document.getElementById('btnLastPageRel')?.addEventListener('click', () => a4ShowPage(A4State.pages.length || 1));
          
-           // Se você já tem uma função carregarRelatorio(), use-a.
-           // Aqui deixo um exemplo mínimo que só mostra placeholder em A4.
-           btn.addEventListener('click', (e) => {
-             e.preventDefault();
-         
-             // >>>> Aqui no PRÓXIMO PASSO vamos montar as páginas conforme
-             // Sintético/Analítico e Agrupamento. Agora é só o casco A4:
-             const titulo = 'Relatório';
-             const agora = new Date().toLocaleString();
-         
-             const pagina1 = `
-               <header style="margin-bottom:10mm;">
-                 <div style="font-size:18px; font-weight:700;">${titulo}</div>
-                 <div style="font-size:12px; color:#64748b;">Gerado em ${agora}</div>
-               </header>
-               <section style="font-size:13px; line-height:1.5;">
-                 <p>Visual A4 habilitado. No próximo passo vamos definir o conteúdo conforme:
-                 <strong>Tipo de Relatório</strong> (Sintético/Analítico) e
-                 <strong>Agrupamento</strong> (Cliente/Representante).</p>
-               </section>
-             `;
-         
-             setA4Pages([pagina1]); // por enquanto 1 página
-           });
-         })();
+         // Ao entrar na aba Relatórios, garante A4 visível (sem “lista antiga”)
+         document.querySelector('[data-target="#relatorios"]')?.addEventListener('click', () => {
+         if (!A4State.pages || A4State.pages.length === 0) setA4Pages([]); // mostra 1 página A4 vazia
+         });
+      </script>
+      // ====== Integração temporária com o botão Confirmar ======
+      // Caso você já tenha uma função carregarRelatorio() que faz fetch,
+      // aqui a gente SÓ substitui a parte de injetar HTML antigo por setA4Pages([...]).
+      (function hookConfirmarRelatorio(){
+      const btn = document.getElementById('btnConfirmarRel');
+      if (!btn) return;
+      // Se você já tem uma função carregarRelatorio(), use-a.
+      // Aqui deixo um exemplo mínimo que só mostra placeholder em A4.
+      btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      // >>>> Aqui no PRÓXIMO PASSO vamos montar as páginas conforme
+      // Sintético/Analítico e Agrupamento. Agora é só o casco A4:
+      const titulo = 'Relatório';
+      const agora = new Date().toLocaleString();
+      const pagina1 = `
+      <header style="margin-bottom:10mm;">
+         <div style="font-size:18px; font-weight:700;">${titulo}</div>
+         <div style="font-size:12px; color:#64748b;">Gerado em ${agora}</div>
+      </header>
+      <section style="font-size:13px; line-height:1.5;">
+         <p>Visual A4 habilitado. No próximo passo vamos definir o conteúdo conforme:
+            <strong>Tipo de Relatório</strong> (Sintético/Analítico) e
+            <strong>Agrupamento</strong> (Cliente/Representante).
+         </p>
+      </section>
+      `;
+      setA4Pages([pagina1]); // por enquanto 1 página
+      });
+      })();
       </script>
       <script>
          // ====== Funções do CADASTRO ======
