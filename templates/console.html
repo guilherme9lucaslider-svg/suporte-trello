@@ -295,7 +295,6 @@
          overflow:hidden;
          }
          #a4-pages {
-         transform-origin: 0 0;
          transition: transform .15s ease;
          }
          .a4-page {
@@ -319,15 +318,10 @@
          @media print {
          #a4-toolbar { display:none !important; }
          #a4-viewer-wrap { overflow:visible; }
-         #a4-pages { transform:none !important; }
          .a4-page {
          box-shadow:none; border:0; margin:0 auto; page-break-after: always;
          }
          .a4-page:last-child { page-break-after: auto; }
-         }
-         /* Pan/Zoom: origem no topo-esquerdo e nosso transform com prioridade */
-         #a4-pages{
-         transform-origin: 0 0;
          }
          /* ====== A4 REPORT – LAYOUT DO RELATÓRIO ====== */
          .rpt-header{
