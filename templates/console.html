@@ -643,7 +643,6 @@
                </div>
                <!-- Área principal onde o relatório será exibido -->
                <div class="report-main">
-                 
                   <!-- Viewer A4 -->
                   <div id="a4-viewer-wrap">
                      <div id="a4-pages"></div>
@@ -1470,12 +1469,21 @@
          }
          
          function a4SetZoom(z) {
-           // trava zoom entre 50% e 200%
-           A4State.zoom = Math.min(2, Math.max(.5, z));
-           const wrap = document.getElementById('a4-viewer-wrap');
-           wrap.style.setProperty('--zoom', String(A4State.zoom));
-           a4UpdateToolbar();
+         // trava zoom entre 50% e 300%
+         A4State.zoom = Math.min(3, Math.max(.5, z));
+         
+         // Se o PAN estiver carregado, delega para ele aplicar o transform
+         if (window.a4PanSetZoom) {
+         window.a4PanSetZoom(A4State.zoom);
+         } else {
+         // fallback antigo: variável CSS
+         const wrap = document.getElementById('a4-viewer-wrap');
+         wrap.style.setProperty('--zoom', String(A4State.zoom));
          }
+         
+         a4UpdateToolbar();
+         }
+         
          
          function a4BindButtons() {
            document.getElementById('a4-print')?.addEventListener('click', () => window.print());
@@ -1527,55 +1535,64 @@
       <script>
          // ====== PAN (ARRASTAR) NO A4 ======
          (function(){
-           const wrap  = document.getElementById('a4-viewer-wrap');
-           const pages = document.getElementById('a4-pages');
-           let zoom = 1, panX = 0, panY = 0;
-           let isPanning = false, startX = 0, startY = 0, startPanX = 0, startPanY = 0;
+         const wrap  = document.getElementById('a4-viewer-wrap');
+         const pages = document.getElementById('a4-pages');
          
-           function updateZoom(z){
-             zoom = z;
-             pages.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
-             if (zoom > 1) {
-               wrap.classList.add('a4-can-pan');
-             } else {
-               wrap.classList.remove('a4-can-pan','a4-panning');
-               panX = 0; panY = 0;
-               pages.style.transform = `translate(0px, 0px) scale(${zoom})`;
-             }
-             const zi = document.getElementById('a4-zoom-info');
-             if (zi) zi.textContent = Math.round(zoom*100) + '%';
-           }
+         let zoom = 1;
+         let panX = 0, panY = 0;
+         let isPanning = false, startX = 0, startY = 0, startPanX = 0, startPanY = 0;
          
-           document.getElementById('a4-zoom-in')?.addEventListener('click', ()=>updateZoom(zoom + 0.1));
-           document.getElementById('a4-zoom-out')?.addEventListener('click', ()=>updateZoom(zoom - 0.1));
+         function apply() {
+         pages.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+         }
          
-           wrap.addEventListener('mousedown', (e)=>{
-             if (zoom <= 1) return;
-             if (!e.target.closest('.a4-page') && e.target !== wrap) return;
-             isPanning = true;
-             wrap.classList.add('a4-panning');
-             startX = e.clientX; startY = e.clientY;
-             startPanX = panX; startPanY = panY;
-             e.preventDefault();
-           });
-           window.addEventListener('mousemove', (e)=>{
-             if (!isPanning) return;
-             const dx = e.clientX - startX;
-             const dy = e.clientY - startY;
-             panX = startPanX + dx;
-             panY = startPanY + dy;
-             pages.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
-           });
-           window.addEventListener('mouseup', ()=>{
-             if (!isPanning) return;
-             isPanning = false;
-             wrap.classList.remove('a4-panning');
-           });
-           wrap.addEventListener('mouseleave', ()=>{
-             if (!isPanning) return;
-             isPanning = false;
-             wrap.classList.remove('a4-panning');
-           });
+         // >>> FUNÇÃO GLOBAL: chamada pelo a4SetZoom <<<
+         window.a4PanSetZoom = function(z){
+         zoom = Math.max(0.5, Math.min(3, z));
+         if (zoom > 1) {
+         wrap.classList.add('a4-can-pan');
+         } else {
+         wrap.classList.remove('a4-can-pan','a4-panning');
+         panX = 0; panY = 0;            // volta pro centro ao retornar ao zoom 1
+         }
+         apply();
+         const zi = document.getElementById('a4-zoom-info');
+         if (zi) zi.textContent = Math.round(zoom*100) + '%';
+         };
+         
+         // (REMOVA os listeners antigos de #a4-zoom-in e #a4-zoom-out)
+         
+         // PAN com o mouse
+         wrap.addEventListener('mousedown', (e)=>{
+         if (zoom <= 1) return;
+         if (!e.target.closest('.a4-page') && e.target !== wrap) return;
+         isPanning = true;
+         wrap.classList.add('a4-panning');
+         startX = e.clientX; startY = e.clientY;
+         startPanX = panX;   startPanY = panY;
+         e.preventDefault();
+         });
+         window.addEventListener('mousemove', (e)=>{
+         if (!isPanning) return;
+         panX = startPanX + (e.clientX - startX);
+         panY = startPanY + (e.clientY - startY);
+         apply();
+         });
+         window.addEventListener('mouseup', ()=>{
+         if (!isPanning) return;
+         isPanning = false;
+         wrap.classList.remove('a4-panning');
+         });
+         wrap.addEventListener('mouseleave', ()=>{
+         if (!isPanning) return;
+         isPanning = false;
+         wrap.classList.remove('a4-panning');
+         });
+         
+         // Estado inicial
+         window.addEventListener('DOMContentLoaded', ()=> window.a4PanSetZoom(1));
+         })();
+         
          
            updateZoom(1);
          })();
