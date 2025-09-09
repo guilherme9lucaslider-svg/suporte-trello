@@ -579,8 +579,23 @@ def _parse_modulo_from_desc(desc: str) -> str:
 def _parse_ocorrencia_from_desc(desc: str) -> str:
     return _parse_field_from_desc(desc, "Ocorrência")
     
+# regex que aceita "Tipo:" ou "Tipo de Chamado:"
+_TIPO_REGEX = re.compile(
+    r'(?:\*\*)?\s*tipo(?:\s*de\s*chamado)?\s*:\s*(.+)',
+    re.IGNORECASE
+)
+
 def _parse_tipo_from_desc(desc: str) -> str:
-    return _parse_field_from_desc(desc, "Tipo")
+    """
+    Tenta extrair o Tipo da descrição do cartão.
+    Aceita tanto 'Tipo:' quanto 'Tipo de Chamado:'.
+    """
+    if not desc:
+        return ""
+    m = _TIPO_REGEX.search(desc)
+    if not m:
+        return ""
+    return m.group(1).strip()
 
 
 
