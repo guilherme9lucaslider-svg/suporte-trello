@@ -326,6 +326,52 @@
          }
          .a4-page:last-child { page-break-after: auto; }
          }
+         /* ====== A4 REPORT – LAYOUT DO RELATÓRIO ====== */
+         .rpt-header{
+         margin-bottom: 10mm;
+         border: 1px solid #000;
+         padding: 6mm 6mm 4mm;
+         }
+         .rpt-header .rpt-title{
+         font-size: 20px;
+         font-weight: 800;
+         text-align: center;
+         }
+         .rpt-header .rpt-period{
+         margin-top: 2mm;
+         font-size: 12px;
+         text-align: center;
+         }
+         .rpt-table{
+         width: 100%;
+         border-collapse: collapse;
+         font-size: 12px;
+         }
+         .rpt-table th, .rpt-table td{
+         border: 1px solid #000;
+         padding: 4px 6px;
+         }
+         .rpt-table thead th{
+         background: #f3f4f6; /* cinza claro */
+         text-transform: none;
+         font-weight: 700;
+         }
+         .rpt-table .num{
+         text-align: right;
+         white-space: nowrap;
+         }
+         .rpt-table tbody tr:nth-child(even) td{
+         background: #f7f7f9; /* “zebra” igual aos prints */
+         }
+         .rpt-total td{
+         font-weight: 700;
+         background: #fff;
+         }
+		 /* Cursor de “mão” ao poder arrastar e “segurando” enquanto arrasta */
+		 #a4-viewer-wrap.a4-can-pan { cursor: grab; }
+		 #a4-viewer-wrap.a4-panning { cursor: grabbing; }
+
+		 
       </style>
    </head>
    <body>
@@ -679,8 +725,8 @@
          // Use the universal API URL to avoid browser/OS restrictions on the whatsapp:// protocol.
          const url = 'https://api.whatsapp.com/send?phone=' + phone + q;
          // Open in a new tab or the same tab depending on browser preference.
-         try { window.open(url, '_blank'); } catch { window.location.href = url; }
-         }
+         <!-- try { window.open(url, '_blank'); } catch { window.location.href = url; }
+         } -->
          window.openWhatsApp = openWhatsApp;
       </script>
       <!-- ===== App principal ===== -->
@@ -1489,6 +1535,63 @@
            setA4Pages([]);
          });
       </script>
+      </script>   <!-- fecha o bloco atual do A4 Viewer -->
+      <script>
+         // ====== PAN (ARRASTAR) NO A4 ======
+         (function(){
+           const wrap  = document.getElementById('a4-viewer-wrap');
+           const pages = document.getElementById('a4-pages');
+           let zoom = 1, panX = 0, panY = 0;
+           let isPanning = false, startX = 0, startY = 0, startPanX = 0, startPanY = 0;
+         
+           function updateZoom(z){
+             zoom = z;
+             pages.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+             if (zoom > 1) {
+               wrap.classList.add('a4-can-pan');
+             } else {
+               wrap.classList.remove('a4-can-pan','a4-panning');
+               panX = 0; panY = 0;
+               pages.style.transform = `translate(0px, 0px) scale(${zoom})`;
+             }
+             const zi = document.getElementById('a4-zoom-info');
+             if (zi) zi.textContent = Math.round(zoom*100) + '%';
+           }
+         
+           document.getElementById('a4-zoom-in')?.addEventListener('click', ()=>updateZoom(zoom + 0.1));
+           document.getElementById('a4-zoom-out')?.addEventListener('click', ()=>updateZoom(zoom - 0.1));
+         
+           wrap.addEventListener('mousedown', (e)=>{
+             if (zoom <= 1) return;
+             if (!e.target.closest('.a4-page') && e.target !== wrap) return;
+             isPanning = true;
+             wrap.classList.add('a4-panning');
+             startX = e.clientX; startY = e.clientY;
+             startPanX = panX; startPanY = panY;
+             e.preventDefault();
+           });
+           window.addEventListener('mousemove', (e)=>{
+             if (!isPanning) return;
+             const dx = e.clientX - startX;
+             const dy = e.clientY - startY;
+             panX = startPanX + dx;
+             panY = startPanY + dy;
+             pages.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+           });
+           window.addEventListener('mouseup', ()=>{
+             if (!isPanning) return;
+             isPanning = false;
+             wrap.classList.remove('a4-panning');
+           });
+           wrap.addEventListener('mouseleave', ()=>{
+             if (!isPanning) return;
+             isPanning = false;
+             wrap.classList.remove('a4-panning');
+           });
+         
+           updateZoom(1);
+         })();
+      </script>
       <script>
          // ===== Liga a barra de ações (Relatórios) ao viewer A4 =====
          document.getElementById('btnPrintRel')?.addEventListener('click', () => window.print());
@@ -1590,111 +1693,107 @@
          const [yyyy, mm, dd] = d.split('-');
          return `${dd}/${mm}/${yyyy}`;
          }
-         // ====== Funções auxiliares para relatórios ======
+         
          function gerarSintetico(dados, agrupar){
-         // título e período (sem hora), exatamente como você pediu
+         // Cabeçalho
          const ini = document.getElementById('relInicio').value;
          const fim = document.getElementById('relFim').value;
-         const periodo = (ini || fim) ? `Período de ${fmtData(ini||fim)} a ${fmtData(fim||ini)}` : '';
+         const periodo = (ini || fim) ? `Período de ${fmtData(ini || fim)} a ${fmtData(fim || ini)}` : '';
          
-         // Agrupa e conta
-         let linhasHtml = [];
-         let total = 0;
+         // Helpers
+         const header = (titulo) => `
+         <div class="rpt-header">
+         <div class="rpt-title">${titulo}</div>
+         <div class="rpt-period">${periodo}</div>
+         </div>
+         `;
          
+         // Vai gerar exatamente duas variações:
          if (agrupar === 'cliente') {
-         // mapa: cliente -> { representante: (último visto), quant: N }
+         // cliente -> { representante, quant }
          const mapa = {};
          dados.forEach(d => {
-         const cliente = d.cliente || 'Sem Cliente';
-         const rep = (d.representante || '').trim();  // se vier ausente, fica vazio
-         if (!mapa[cliente]) mapa[cliente] = { representante: rep || '—', quant: 0 };
-         mapa[cliente].quant += 1;
+         const cli = d.cliente || 'Sem Cliente';
+         const rep = (d.representante || '').trim() || '—';
+         if (!mapa[cli]) mapa[cli] = { representante: rep, quant: 0 };
+         mapa[cli].quant++;
          });
-         total = Object.values(mapa).reduce((s, g) => s + g.quant, 0);
          
-         // ordena por cliente (opcional)
-         const ordenado = Object.entries(mapa).sort((a,b) => a[0].localeCompare(b[0], 'pt-BR'));
-         linhasHtml = ordenado.map(([cliente, info]) =>
-         `<tr>
-         <td>${cliente}</td>
-         <td>${info.representante}</td>
-         <td style="text-align:right;">${info.quant}</td>
-         </tr>`
-         );
+         const linhas = Object
+         .entries(mapa)
+         .sort((a,b) => a[0].localeCompare(b[0], 'pt-BR'))
+         .map(([cliente, info]) => `
+         <tr>
+          <td>${cliente}</td>
+          <td>${info.representante}</td>
+          <td class="num">${info.quant}</td>
+         </tr>
+         `);
          
-         // monta a tabela
+         const total = Object.values(mapa).reduce((s, g) => s + g.quant, 0);
+         
          const tabela = `
-         <table style="width:100%;border-collapse:collapse;font-size:12px;">
+         <table class="rpt-table">
          <thead>
           <tr>
-            <th style="border:1px solid #000;padding:6px;text-align:left;">Cliente</th>
-            <th style="border:1px solid #000;padding:6px;text-align:left;">Representante</th>
-            <th style="border:1px solid #000;padding:6px;text-align:right;">Quant.</th>
+            <th>Cliente</th>
+            <th>Representante</th>
+            <th class="num">Quant.</th>
           </tr>
          </thead>
          <tbody>
-          ${linhasHtml.join('')}
-          <tr>
-            <td colspan="2" style="border:1px solid #000;padding:6px;font-weight:bold;">Total de Chamados</td>
-            <td style="border:1px solid #000;padding:6px;font-weight:bold;text-align:right;">${total}</td>
+          ${linhas.join('')}
+          <tr class="rpt-total">
+            <td colspan="2">Total de Chamados</td>
+            <td class="num">${total}</td>
           </tr>
          </tbody>
-         </table>`;
-         
-         // conteúdo da página (sem <div class="a4-page">)
-         const conteudo = `
-         <header style="margin-bottom:10mm;border:1px solid #000;padding:6px;">
-         <div style="font-size:20px;font-weight:800;text-align:center;">Curva ABC de Chamados por Cliente</div>
-         <div style="font-size:12px;text-align:center;margin-top:4px;">${periodo}</div>
-         </header>
-         ${tabela}
+         </table>
          `;
-         return [conteudo];
          
-         } else {
-         // agrupado por REPRESENTANTE
-         const mapa = {};
-         dados.forEach(d => {
-         const rep = (d.representante || 'Sem Representante').trim() || 'Sem Representante';
-         if (!mapa[rep]) mapa[rep] = 0;
-         mapa[rep] += 1;
-         });
-         total = Object.values(mapa).reduce((s, n) => s + n, 0);
-         
-         const ordenado = Object.entries(mapa).sort((a,b) => a[0].localeCompare(b[0], 'pt-BR'));
-         linhasHtml = ordenado.map(([rep, quant]) =>
-         `<tr>
-         <td>${rep}</td>
-         <td style="text-align:right;">${quant}</td>
-         </tr>`
-         );
-         
-         const tabela = `
-         <table style="width:100%;border-collapse:collapse;font-size:12px;">
-         <thead>
-          <tr>
-            <th style="border:1px solid #000;padding:6px;text-align:left;">Representante</th>
-            <th style="border:1px solid #000;padding:6px;text-align:right;">Quant.</th>
-          </tr>
-         </thead>
-         <tbody>
-          ${linhasHtml.join('')}
-          <tr>
-            <td style="border:1px solid #000;padding:6px;font-weight:bold;">Total de Chamados</td>
-            <td style="border:1px solid #000;padding:6px;font-weight:bold;text-align:right;">${total}</td>
-          </tr>
-         </tbody>
-         </table>`;
-         
-         const conteudo = `
-         <header style="margin-bottom:10mm;border:1px solid #000;padding:6px;">
-         <div style="font-size:20px;font-weight:800;text-align:center;">Curva ABC de Chamados por Representante</div>
-         <div style="font-size:12px;text-align:center;margin-top:4px;">${periodo}</div>
-         </header>
-         ${tabela}
-         `;
+         const conteudo = header('Curva ABC de Chamados por Cliente') + tabela;
          return [conteudo];
          }
+         
+         // agrupado por REPRESENTANTE
+         const mapaRep = {};
+         dados.forEach(d => {
+         const rep = (d.representante || '').trim() || 'Sem Representante';
+         mapaRep[rep] = (mapaRep[rep] || 0) + 1;
+         });
+         
+         const linhasRep = Object
+         .entries(mapaRep)
+         .sort((a,b) => a[0].localeCompare(b[0], 'pt-BR'))
+         .map(([rep, q]) => `
+         <tr>
+         <td>${rep}</td>
+         <td class="num">${q}</td>
+         </tr>
+         `);
+         
+         const totalRep = Object.values(mapaRep).reduce((s, n) => s + n, 0);
+         
+         const tabelaRep = `
+         <table class="rpt-table">
+         <thead>
+         <tr>
+          <th>Representante</th>
+          <th class="num">Quant.</th>
+         </tr>
+         </thead>
+         <tbody>
+         ${linhasRep.join('')}
+         <tr class="rpt-total">
+          <td>Total de Chamados</td>
+          <td class="num">${totalRep}</td>
+         </tr>
+         </tbody>
+         </table>
+         `;
+         
+         const conteudoRep = header('Curva ABC de Chamados por Representante') + tabelaRep;
+         return [conteudoRep];
          }
          
          
