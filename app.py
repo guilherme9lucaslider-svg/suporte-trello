@@ -553,6 +553,10 @@ def _parse_modulo_from_desc(desc: str) -> str:
 
 def _parse_ocorrencia_from_desc(desc: str) -> str:
     return _parse_field_from_desc(desc, "Ocorrência")
+    
+def _parse_tipo_from_desc(desc: str) -> str:
+    return _parse_field_from_desc(desc, "Tipo")
+
 
 
 
@@ -576,6 +580,7 @@ def api_chamados():
     f_ocor    = (request.args.get("ocorrencia") or "").strip().lower()
     f_rep = (request.args.get("representante") or "").strip()
     f_stat = (request.args.get("status") or "").strip()
+    f_tipo = (request.args.get("tipo") or "").strip().lower()
     f_de = _iso_date_only(request.args.get("de") or "")
     f_ate = _iso_date_only(request.args.get("ate") or "")
     f_q = (request.args.get("q") or "").strip().lower()
@@ -647,6 +652,7 @@ def api_chamados():
         sistema    = _parse_sistema_from_desc(desc)
         modulo     = _parse_modulo_from_desc(desc)
         ocorrencia = _parse_ocorrencia_from_desc(desc)
+        tipo       = _parse_tipo_from_desc(desc)
 
         # >>> normalizações para filtros (minúsculas e espaços tratados)
         s_sis  = (sistema or "").strip().lower()
@@ -667,6 +673,8 @@ def api_chamados():
         if f_modulo and _norm(f_modulo) != _norm(modulo):
             continue
         if f_ocor and _norm(f_ocor) != _norm(ocorrencia):
+            continue
+        if f_tipo and _norm(f_tipo) != _norm(tipo):
             continue
 
 
@@ -719,6 +727,7 @@ def api_chamados():
             "sistema": sistema or None,
             "modulo": modulo or None,
             "ocorrencia": ocorrencia or None,
+            "tipo": tipo or None,
         })
 
     total = len(items)
@@ -897,6 +906,7 @@ def api_chamados_export():
     f_sistema = (request.args.get("sistema") or "").strip()
     f_modulo  = (request.args.get("modulo") or "").strip()
     f_ocor    = (request.args.get("ocorrencia") or "").strip()
+    f_tipo = (request.args.get("tipo") or "").strip().lower()
 
 
     # força representante para não-admin
@@ -935,6 +945,7 @@ def api_chamados_export():
         sistema    = _parse_sistema_from_desc(desc)
         modulo     = _parse_modulo_from_desc(desc)
         ocorrencia = _parse_ocorrencia_from_desc(desc)
+        tipo       = _parse_tipo_from_desc(desc)
 
         # filtros simples
         if f_rep and rep != f_rep:
@@ -946,6 +957,8 @@ def api_chamados_export():
         if f_modulo and _norm(f_modulo) != _norm(modulo):
             continue
         if f_ocor and _norm(f_ocor) != _norm(ocorrencia):
+            continue
+        if f_tipo and _norm(f_tipo) != _norm(tipo):
             continue
 
 
@@ -1000,7 +1013,7 @@ def api_chamados_export():
             "ultima_atividade": dt_raw,
             "whatsapp": whats,
             "created_at": created_at,
-            
+            "tipo": tipo or None,
         })
 
     # gerar arquivo
@@ -1010,7 +1023,7 @@ def api_chamados_export():
         output = io.StringIO()
         fieldnames = [
             "id","titulo","descricao","cliente","representante","lista",
-            "status","url","ultima_atividade","whatsapp","created_at",
+            "status","url","ultima_atividade","whatsapp","created_at", "tipo",
         ]
         writer = csv.DictWriter(output, fieldnames=fieldnames)
         writer.writeheader()

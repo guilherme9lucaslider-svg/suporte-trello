@@ -251,6 +251,81 @@
          table td.actions .btn{
          display:inline-flex; align-items:center; justify-content:center;
          }
+         /* Botão de monitoramento com efeito de pulso quando ligado */
+         #painel .btn--live { 
+         background: linear-gradient(135deg,#10b981 0%,#059669 100%); 
+         color:#fff; 
+         border-color:#059669; 
+         }
+         #painel .btn--live.is-on {
+         animation: pulse 2s infinite;
+         box-shadow: 0 0 0 4px rgba(16,185,129,.3);
+         }
+         #painel .btn--live.is-on::after{
+         content:'';
+         width:8px; height:8px; border-radius:50%;
+         background:#10b981; margin-left:6px; display:inline-block;
+         box-shadow:0 0 0 0 rgba(16,185,129,.6);
+         animation: pulseDot 1.6s infinite;
+         }
+         @keyframes pulse{
+         0%,100%{ box-shadow:0 0 0 4px rgba(248,113,113,.3); }
+         50%    { box-shadow:0 0 0 8px rgba(248,113,113,.1); }
+         }
+         @keyframes pulseDot{ 
+         to { box-shadow:0 0 0 10px rgba(248,113,113,.0); } 
+         }
+         /* ====== A4 REPORT VIEWER ====== */
+         #a4-toolbar {
+         display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+         justify-content:flex-start; margin-bottom:12px;
+         }
+         #a4-toolbar .btn {
+         padding:8px 10px; font-size:12px; border-radius:10px;
+         }
+         #a4-toolbar .sep { width:1px; height:22px; background:var(--stroke,#e2e8f0); margin:0 4px; }
+         #a4-info {
+         margin-left:auto; display:flex; gap:12px; font-size:12px; color:var(--muted,#64748b);
+         }
+         #a4-viewer-wrap {
+         --zoom: 1;
+         background:transparent;
+         display:flex; justify-content:center; align-items:flex-start;
+         min-height:420px; /* espaço mínimo do painel */
+         overflow:hidden;
+         }
+         #a4-pages {
+         transform: scale(var(--zoom));
+         transform-origin: top center;
+         transition: transform .15s ease;
+         }
+         .a4-page {
+         width: 210mm;
+         min-height: 297mm;
+         background:#fff; color:#111;
+         box-shadow: 0 8px 24px rgba(0,0,0,.08);
+         border-radius: 6px;
+         margin: 0 auto 16mm auto; /* espaçamento entre páginas */
+         position:relative; overflow:hidden;
+         padding: 18mm 16mm;
+         }
+         .a4-page[hidden] { display:none; }
+         .a4-empty {
+         display:flex; align-items:center; justify-content:center;
+         min-height: calc(297mm - 36mm);
+         color: var(--muted,#64748b);
+         text-align:center;
+         }
+         /* Impressão: mostrar todas as páginas em tamanho real, sem sombras/bordas */
+         @media print {
+         #a4-toolbar { display:none !important; }
+         #a4-viewer-wrap { overflow:visible; }
+         #a4-pages { transform:none !important; }
+         .a4-page {
+         box-shadow:none; border:0; margin:0 auto; page-break-after: always;
+         }
+         .a4-page:last-child { page-break-after: auto; }
+         }
       </style>
    </head>
    <body>
@@ -519,9 +594,25 @@
                </div>
                <!-- Área principal onde o relatório será exibido -->
                <div class="report-main">
-                  <!-- Espaço reservado para a visualização do relatório -->
-                  <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);">
-                     <p>Visualização do relatório virá aqui</p>
+                  <!-- Toolbar A4 -->
+                  <div id="a4-toolbar">
+                     <button type="button" class="btn" id="a4-print">Imprimir</button>
+                     <span class="sep"></span>
+                     <button type="button" class="btn" id="a4-zoom-out">Zoom −</button>
+                     <button type="button" class="btn" id="a4-zoom-in">Zoom +</button>
+                     <span class="sep"></span>
+                     <button type="button" class="btn" id="a4-first">⟪</button>
+                     <button type="button" class="btn" id="a4-prev">◀</button>
+                     <button type="button" class="btn" id="a4-next">▶</button>
+                     <button type="button" class="btn" id="a4-last">⟫</button>
+                     <div id="a4-info">
+                        <span id="a4-page-info">Página 1/1</span>
+                        <span id="a4-zoom-info">100%</span>
+                     </div>
+                  </div>
+                  <!-- Viewer A4 -->
+                  <div id="a4-viewer-wrap">
+                     <div id="a4-pages"></div>
                   </div>
                </div>
             </div>
@@ -798,7 +889,7 @@
          } catch(e){}
          
          btnRealtime.classList.add('is-on');
-         btnRealtime.textContent = 'Parar Monitoramento';
+         btnRealtime.textContent = '⏹ Parar Monitoramento';
          
          // Limpa quaisquer conexões anteriores (por segurança)
          cleanupRealTime();
@@ -1317,6 +1408,119 @@
          } catch(e){}
          });
            })();
+      </script>
+      <script>
+         // ====== A4 Viewer State ======
+         const A4State = {
+           pages: [],      // array de strings HTML, cada item = 1 página
+           current: 1,     // página atual (1..N)
+           zoom: 1         // 1 = 100%
+         };
+         
+         function a4UpdateToolbar() {
+           const pageInfo = document.getElementById('a4-page-info');
+           const zoomInfo = document.getElementById('a4-zoom-info');
+           const total = Math.max(1, A4State.pages.length);
+           pageInfo.textContent = `Página ${A4State.current}/${total}`;
+           zoomInfo.textContent = `${Math.round(A4State.zoom*100)}%`;
+         }
+         
+         function a4ShowPage(n) {
+           const total = Math.max(1, A4State.pages.length);
+           A4State.current = Math.min(Math.max(1, n), total);
+           const pages = document.querySelectorAll('#a4-pages .a4-page');
+           pages.forEach((pg, i) => {
+             pg.hidden = (i !== (A4State.current - 1));
+           });
+           a4UpdateToolbar();
+         }
+         
+         function a4SetZoom(z) {
+           // trava zoom entre 50% e 200%
+           A4State.zoom = Math.min(2, Math.max(.5, z));
+           const wrap = document.getElementById('a4-viewer-wrap');
+           wrap.style.setProperty('--zoom', String(A4State.zoom));
+           a4UpdateToolbar();
+         }
+         
+         function a4BindButtons() {
+           document.getElementById('a4-print')?.addEventListener('click', () => window.print());
+           document.getElementById('a4-zoom-in')?.addEventListener('click', () => a4SetZoom(A4State.zoom + 0.1));
+           document.getElementById('a4-zoom-out')?.addEventListener('click', () => a4SetZoom(A4State.zoom - 0.1));
+           document.getElementById('a4-first')?.addEventListener('click', () => a4ShowPage(1));
+           document.getElementById('a4-prev')?.addEventListener('click', () => a4ShowPage(A4State.current - 1));
+           document.getElementById('a4-next')?.addEventListener('click', () => a4ShowPage(A4State.current + 1));
+           document.getElementById('a4-last')?.addEventListener('click', () => a4ShowPage(A4State.pages.length || 1));
+         }
+         
+         // API: define as páginas do relatório (cada item do array é o HTML de uma página)
+         function setA4Pages(pagesHTMLArray) {
+           const host = document.getElementById('a4-pages');
+           host.innerHTML = '';
+           A4State.pages = Array.isArray(pagesHTMLArray) ? pagesHTMLArray : [];
+         
+           if (A4State.pages.length === 0) {
+             // página vazia padrão
+             const empty = document.createElement('div');
+             empty.className = 'a4-page';
+             empty.innerHTML = `<div class="a4-empty">
+               <div>
+                 <h3 style="margin:0 0 8px 0;">Relatório</h3>
+                 <p>Nenhum conteúdo definido ainda.</p>
+               </div>
+             </div>`;
+             host.appendChild(empty);
+           } else {
+             A4State.pages.forEach(html => {
+               const pg = document.createElement('div');
+               pg.className = 'a4-page';
+               pg.innerHTML = html;
+               host.appendChild(pg);
+             });
+           }
+           A4State.current = 1;
+           a4ShowPage(1);
+         }
+         
+         document.addEventListener('DOMContentLoaded', () => {
+           a4BindButtons();
+           a4SetZoom(1);
+           // inicializa com 1 página vazia
+           setA4Pages([]);
+         });
+         
+         // ====== Integração temporária com o botão Confirmar ======
+         // Caso você já tenha uma função carregarRelatorio() que faz fetch,
+         // aqui a gente SÓ substitui a parte de injetar HTML antigo por setA4Pages([...]).
+         (function hookConfirmarRelatorio(){
+           const btn = document.getElementById('btnConfirmarRel');
+           if (!btn) return;
+         
+           // Se você já tem uma função carregarRelatorio(), use-a.
+           // Aqui deixo um exemplo mínimo que só mostra placeholder em A4.
+           btn.addEventListener('click', (e) => {
+             e.preventDefault();
+         
+             // >>>> Aqui no PRÓXIMO PASSO vamos montar as páginas conforme
+             // Sintético/Analítico e Agrupamento. Agora é só o casco A4:
+             const titulo = 'Relatório';
+             const agora = new Date().toLocaleString();
+         
+             const pagina1 = `
+               <header style="margin-bottom:10mm;">
+                 <div style="font-size:18px; font-weight:700;">${titulo}</div>
+                 <div style="font-size:12px; color:#64748b;">Gerado em ${agora}</div>
+               </header>
+               <section style="font-size:13px; line-height:1.5;">
+                 <p>Visual A4 habilitado. No próximo passo vamos definir o conteúdo conforme:
+                 <strong>Tipo de Relatório</strong> (Sintético/Analítico) e
+                 <strong>Agrupamento</strong> (Cliente/Representante).</p>
+               </section>
+             `;
+         
+             setA4Pages([pagina1]); // por enquanto 1 página
+           });
+         })();
       </script>
       <script>
          // ====== Funções do CADASTRO ======
