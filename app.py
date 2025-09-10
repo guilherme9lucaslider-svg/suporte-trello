@@ -1258,16 +1258,20 @@ def login():
     username = (request.form.get("username") or "").strip()
     password = (request.form.get("password") or "").strip()
 
+    # >>> FORÇAR MAIÚSCULAS <<<
+    username = username.upper()
+
     user = User.query.filter_by(username=username).first()
     if user and user.check_password(password):
         session.clear()
-        session["user"] = username
-        # Store the representative's name ('nome') in session to prefill forms.
-        session["representante"] = user.representative.nome
-        session["fresh_cadastro"] = True
-        if app.debug:
-            print(f"[AUTH] login OK: {username}")
-        return redirect(url_for("index"))
+    session["user"] = username  # já vem MAIÚSCULO
+
+    # Store the representative's name ('nome') in session to prefill forms.
+    session["representante"] = user.representative.nome
+    session["fresh_cadastro"] = True
+    if app.debug:
+        print(f"[AUTH] login OK: {username}")
+    return redirect(url_for("index"))
 
     if app.debug:
         print(f"[AUTH] login FAIL: {username}")
@@ -1502,6 +1506,9 @@ def admin_user_new():
 
     username = (request.form.get("username") or "").strip()
     password = (request.form.get("password") or "").strip()
+
+    # >>> FORÇAR MAIÚSCULAS <<<
+    username = username.upper()
 
     # Aceita tanto 'representative_id' quanto 'representante_id' (compatibilidade)
     rep_id = request.form.get("representative_id") or request.form.get("representante_id")

@@ -342,7 +342,9 @@
     
     <form method="post" action="/login" autocomplete="off">
       <label>Usuário</label>
-      <input name="username" autocomplete="username" required>
+      <input name="username" required placeholder="Usuário"
+       style="text-transform: uppercase"
+       oninput="this.value = this.value.toUpperCase()">
       <label>Senha</label>
       <input type="password" name="password" autocomplete="current-password" required>
       <button type="submit">Entrar</button>

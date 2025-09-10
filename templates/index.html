@@ -704,6 +704,7 @@
 
       const prioridade=(document.querySelector('input[name="prioridade"]:checked')||{}).value;
       const form = new FormData();
+      const tipo = document.getElementById('tipo').value;
       form.set('nome', cap(nomeInp.value.trim()));
       form.set('whatsapp', whatsappInp.value.trim());
       const repValue2 = representanteLogado || (repSelect ? repSelect.value : '');

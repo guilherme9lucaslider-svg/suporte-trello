@@ -495,7 +495,9 @@
                      <option value="{{ r.id }}">{{ r.nome }}</option>
                      {% endfor %}
                   </select>
-                  <input name="username" required placeholder="Nome de usuário">
+                  <input name="username" required placeholder="Nome de usuário"
+                        style="text-transform: uppercase"
+                        oninput="this.value = this.value.toUpperCase()">
                   <input name="password" type="password" required placeholder="Senha">
                   <button class="btn" type="submit">Adicionar Usuário</button>
                </form>
@@ -1890,6 +1892,7 @@
          function criarUser(e) {
            e.preventDefault();
            const formData = new FormData(e.target);
+           
            fetch('/admin/user/new', {
              method: 'POST',
              body: formData,
