@@ -1653,27 +1653,28 @@
              const fim    = document.getElementById('relFim').value;
          
              // >>> VALIDAR obrigatoriedade das datas (mantenha só ESSE bloco) <<<
-             if (!inicio || !fim) {
-               // destaca visualmente os campos faltando
-               const deEl  = document.getElementById('relInicio');
-               const ateEl = document.getElementById('relFim');
-               [deEl, ateEl].forEach(el => {
-                 if (!el) return;
-                 el.style.borderColor = (!el.value ? '#ef4444' : 'var(--stroke)');
-                 el.style.boxShadow   = (!el.value ? '0 0 0 3px rgba(239,68,68,.25)' : 'none');
-               });
-         
-               // mensagem no viewer A4
-               setA4Pages([`
-                 <div class="a4-page">
-                   <div style="padding:12mm; font: 14px/1.6 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;">
-                     <h2 style="margin:0 0 8px 0; color:#b91c1c;">Datas obrigatórias</h2>
-                     <p>Preencha <strong>Data Inicial</strong> e <strong>Data Final</strong> para gerar o relatório.</p>
-                   </div>
-                 </div>
-               `]);
-               return; // não faz a chamada
-             }
+              if (!inicio || !fim) {
+                // destaca visualmente os campos faltando
+                const deEl  = document.getElementById('relInicio');
+                const ateEl = document.getElementById('relFim');
+                [deEl, ateEl].forEach(el => {
+                  if (!el) return;
+                  el.style.borderColor = (!el.value ? '#ef4444' : 'var(--stroke)');
+                  el.style.boxShadow   = (!el.value ? '0 0 0 3px rgba(239,68,68,.25)' : 'none');
+                });
+
+                // mensagem no viewer A4
+                setA4Pages([`
+                  <div class="a4-page">
+                    <div style="padding:12mm; font: 14px/1.6 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;">
+                      <h2 style="margin:0 0 8px 0; color:#b91c1c;">Datas obrigatórias</h2>
+                      <p>Preencha <strong>Data Inicial</strong> e <strong>Data Final</strong> para gerar o relatório.</p>
+                    </div>
+                  </div>
+                `]);
+                return; // não faz a chamada
+              }
+
          
              // remove destaque se já corrigiu
              ['relInicio','relFim'].forEach(id=>{
