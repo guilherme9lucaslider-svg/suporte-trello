@@ -593,16 +593,17 @@ _TIPO_REGEX = re.compile(
 
 def _parse_tipo_from_desc(desc: str) -> str:
     """
-    Pega a linha '**Tipo:** AlgumaCoisa' da descrição do card.
+    Pega a linha '**Tipo:** ...' ou '**Tipo de Chamado:** ...' da descrição do card.
     Retorna normalizado: 'duvida' | 'melhoria' | 'bug' | ''.
     """
     if not desc:
         return ""
-    m = _TIPO_RE.search(desc)
+    m = _TIPO_REGEX.search(desc)  # usa o regex mais abrangente
     if not m:
         return ""
-    bruto = m.group(1).strip()
+    bruto = (m.group(1) or "").strip()
     return _normalize_tipo(bruto)
+
 
 
 
@@ -627,6 +628,7 @@ def api_chamados():
     f_ocor    = (request.args.get("ocorrencia") or "").strip().lower()
     f_rep = (request.args.get("representante") or "").strip()
     f_stat = (request.args.get("status") or "").strip()
+    f_tipo = (request.args.get("tipo") or "").strip()
     f_tipo_norm = _normalize_tipo(f_tipo)
     f_de = _iso_date_only(request.args.get("de") or "")
     f_ate = _iso_date_only(request.args.get("ate") or "")
@@ -699,37 +701,31 @@ def api_chamados():
         sistema    = _parse_sistema_from_desc(desc)
         modulo     = _parse_modulo_from_desc(desc)
         ocorrencia = _parse_ocorrencia_from_desc(desc)
-        tipo_bruto = _parse_tipo_from_desc(desc)
-        tipo_norm = _parse_tipo_from_desc(desc)
 
-        # >>> normalizações para filtros (minúsculas e espaços tratados)
-        s_sis  = (sistema or "").strip().lower()
-        s_mod  = (modulo or "").strip().lower()
-        s_ocor = (ocorrencia or "").strip().lower()
+        # --- Tipo (normalizado) ---
+        # 1) extrai da descrição (**Tipo:** ...) e normaliza
+        tipo_bruto = _parse_tipo_from_desc(desc)
+        tipo = _normalize_tipo(tipo_bruto)
+        # 2) se vazio, tenta deduzir e normaliza
+        if not tipo:
+            tipo = _normalize_tipo(_infer_tipo_fallback(titulo, desc))
+        # 3) filtro de tipo
+        if f_tipo_norm and tipo != f_tipo_norm:
+            continue
 
         # filtros
         if f_rep and representante != f_rep:
             continue
         if f_stat and status != f_stat:
             continue
-        # cliente: somente pelo campo 'cliente' extraído da descrição
         if f_cliente and f_cliente not in (cliente or "").lower():
             continue
-        # filtros por sistema/módulo/ocorrência (comparação já normalizada)
         if f_sistema and _norm(f_sistema) != _norm(sistema):
             continue
         if f_modulo and _norm(f_modulo) != _norm(modulo):
             continue
         if f_ocor and _norm(f_ocor) != _norm(ocorrencia):
             continue
-        if f_tipo and _normalize_tipo(f_tipo) != tipo:
-            continue
-        if not tipo_norm:
-            tipo_norm = _infer_tipo_fallback(titulo, desc)
-        if f_tipo_norm and tipo_norm != f_tipo_norm:
-            continue
-
-
 
         # filtro por última atividade (de/ate)
         if (f_de or f_ate) and dt_raw:
@@ -780,7 +776,7 @@ def api_chamados():
             "sistema": sistema or None,
             "modulo": modulo or None,
             "ocorrencia": ocorrencia or None,
-            "tipo": tipo_norm,
+            "tipo": tipo or None,
         })
 
     total = len(items)
@@ -794,6 +790,7 @@ def api_chamados():
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
     return response
+
 
 
 
