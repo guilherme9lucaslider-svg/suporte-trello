@@ -1252,30 +1252,26 @@ def api_trello_new_cards():
 # -----------------------------------------------------------------------------
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    error = None
     if request.method == "POST":
-        return render_template("login.html", error=None)
+        username = (request.form.get("username") or "").strip().upper()
+        password = (request.form.get("password") or "").strip()
 
-    username = (request.form.get("username") or "").strip().upper()
-    password = (request.form.get("password") or "").strip()
+        # busca sempre em MAIÚSCULO
+        user = User.query.filter_by(username=username).first()
+        if user and user.check_password(password):
+            session.clear()
+            session["user"] = username
+            session["representante"] = user.representative.nome if user.representative else ""
+            session["fresh_cadastro"] = True
+            if app.debug:
+                print(f"[AUTH] login OK: {username}")
+            return redirect(url_for("index"))
+        else:
+            error = "Usuário ou senha inválidos."
 
-    # >>> FORÇAR MAIÚSCULAS <<<
-    username = username.upper()
+    return render_template("login.html", error=error)
 
-    user = User.query.filter_by(username=username).first()
-    if user and user.check_password(password):
-        session.clear()
-    session["user"] = username  # já vem MAIÚSCULO
-
-    # Store the representative's name ('nome') in session to prefill forms.
-    session["representante"] = user.representative.nome
-    session["fresh_cadastro"] = True
-    if app.debug:
-        print(f"[AUTH] login OK: {username}")
-    return redirect(url_for("index"))
-
-    if app.debug:
-        print(f"[AUTH] login FAIL: {username}")
-    return render_template("login.html", error="Usuário ou senha inválidos.")
 
 
 @app.route("/logout")
@@ -1304,7 +1300,6 @@ def salvar():
     descricao = (data.get("descricao") or "").strip()
     observacao = (data.get("observacao") or "").strip()
     prioridade = (data.get("prioridade") or "").strip()
-    tipo = (data.get("tipo") or data.get("tipoChamado") or "").strip()
 
     # ---- Melhor mensagem de erro: listar faltantes
     labels = {
