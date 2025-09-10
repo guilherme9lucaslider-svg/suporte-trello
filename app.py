@@ -1300,6 +1300,7 @@ def salvar():
     descricao = (data.get("descricao") or "").strip()
     observacao = (data.get("observacao") or "").strip()
     prioridade = (data.get("prioridade") or "").strip()
+    tipo = (data.get("tipo") or data.get("tipoChamado") or "").strip()
 
     # ---- Melhor mensagem de erro: listar faltantes
     labels = {
