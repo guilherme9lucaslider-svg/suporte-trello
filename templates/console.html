@@ -1684,6 +1684,7 @@
              // agora que validou, grava as datas nos params
              params.set('de',  inicio);
              params.set('ate', fim);
+             params.set('require_dates', '1');
          
              // tipo de chamado
              const tipoChamado = document.querySelector('input[name="tipoChamado"]:checked')?.value || 'todos';

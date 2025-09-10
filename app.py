@@ -637,11 +637,6 @@ def api_chamados():
     f_ate_criacao = _iso_date_only(request.args.get("ate_criacao") or "")
 
     # paginação
-    if not f_de or not f_ate:
-        return jsonify(
-            success=False,
-            message="Selecione um período"
-        ), 400
 
     try:
         offset = int(request.args.get("offset", "0"))
