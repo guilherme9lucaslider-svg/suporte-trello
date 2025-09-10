@@ -1653,8 +1653,7 @@
              // tipo de chamado
              const tipoChamado = document.querySelector('input[name="tipoChamado"]:checked')?.value || 'todos';
               if (tipoChamado !== 'todos') {
-                const mapTipo = { duvida: 'Dúvida', melhoria: 'Melhoria', bug: 'Bug' };
-                params.set('tipo', mapTipo[tipoChamado] || tipoChamado);
+              params.set('tipo', tipoChamado);
               }
 
          

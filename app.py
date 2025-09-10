@@ -158,29 +158,35 @@ def _norm(s: str) -> str:
     s = "".join(ch for ch in s if unicodedata.category(ch) != "Mn")  # remove acentos
     return s.strip().lower()
 
-def _normalize_tipo(value: str) -> str:
-    """Padroniza o Tipo para: duvida, melhoria ou bug"""
-    v = _norm(value)
-    if "bug" in v:
-        return "bug"
-    if "melhoria" in v:
-        return "melhoria"
-    if "duvida" in v:
-        return "duvida"
-    return v
+def _strip_accents(s: str) -> str:
+    s = s or ""
+    return unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode("ascii")
 
-def _infer_tipo_fallback(titulo: str, desc: str) -> str:
+def _normalize_tipo(s: str) -> str:
+    # retorna: 'duvida', 'melhoria', 'bug' ou ''
+    s = _strip_accents(s).strip().lower()
+    if s in ("duvida",):
+        return "duvida"
+    if s in ("melhoria",):
+        return "melhoria"
+    if s in ("bug",):
+        return "bug"
+    return ""
+
+_TIPO_RE = re.compile(r"^\*\*Tipo:\*\*\s*(.+)$", re.MULTILINE)
+
+def _infer_tipo_fallback(titulo: str, descricao: str) -> str:
     """
-    Tenta inferir o 'Tipo' (Dúvida/Melhoria/Bug) a partir do título/descrição,
-    quando o campo **Tipo:** não está presente no card.
+    Se a linha '**Tipo:**' não existir (ou vier vazia), tenta deduzir
+    por palavras-chave no título/descrição.
     """
-    base = _norm((titulo or "") + " " + (desc or ""))
-    if "bug" in base:
-        return "Bug"
+    base = _strip_accents(f"{titulo} {descricao}".lower())
+    if "duvida" in base:
+        return "duvida"
     if "melhoria" in base:
-        return "Melhoria"
-    if "duvida" in base:  # 'dúvida' vira 'duvida' pelo _norm
-        return "Dúvida"
+        return "melhoria"
+    if "bug" in base:
+        return "bug"
     return ""
 
 
@@ -587,15 +593,16 @@ _TIPO_REGEX = re.compile(
 
 def _parse_tipo_from_desc(desc: str) -> str:
     """
-    Tenta extrair o Tipo da descrição do cartão.
-    Aceita tanto 'Tipo:' quanto 'Tipo de Chamado:'.
+    Pega a linha '**Tipo:** AlgumaCoisa' da descrição do card.
+    Retorna normalizado: 'duvida' | 'melhoria' | 'bug' | ''.
     """
     if not desc:
         return ""
-    m = _TIPO_REGEX.search(desc)
+    m = _TIPO_RE.search(desc)
     if not m:
         return ""
-    return m.group(1).strip()
+    bruto = m.group(1).strip()
+    return _normalize_tipo(bruto)
 
 
 
@@ -620,7 +627,7 @@ def api_chamados():
     f_ocor    = (request.args.get("ocorrencia") or "").strip().lower()
     f_rep = (request.args.get("representante") or "").strip()
     f_stat = (request.args.get("status") or "").strip()
-    f_tipo = (request.args.get("tipo") or "").strip().lower()
+    f_tipo_norm = _normalize_tipo(f_tipo)
     f_de = _iso_date_only(request.args.get("de") or "")
     f_ate = _iso_date_only(request.args.get("ate") or "")
     f_q = (request.args.get("q") or "").strip().lower()
@@ -693,7 +700,7 @@ def api_chamados():
         modulo     = _parse_modulo_from_desc(desc)
         ocorrencia = _parse_ocorrencia_from_desc(desc)
         tipo_bruto = _parse_tipo_from_desc(desc)
-        tipo       = _normalize_tipo(tipo_bruto)
+        tipo_norm = _parse_tipo_from_desc(desc)
 
         # >>> normalizações para filtros (minúsculas e espaços tratados)
         s_sis  = (sistema or "").strip().lower()
@@ -716,6 +723,10 @@ def api_chamados():
         if f_ocor and _norm(f_ocor) != _norm(ocorrencia):
             continue
         if f_tipo and _normalize_tipo(f_tipo) != tipo:
+            continue
+        if not tipo_norm:
+        tipo_norm = _infer_tipo_fallback(titulo, desc)
+        if f_tipo_norm and tipo_norm != f_tipo_norm:
             continue
 
 
@@ -769,7 +780,7 @@ def api_chamados():
             "sistema": sistema or None,
             "modulo": modulo or None,
             "ocorrencia": ocorrencia or None,
-            "tipo": tipo or None,
+            "tipo": tipo_norm,
         })
 
     total = len(items)
