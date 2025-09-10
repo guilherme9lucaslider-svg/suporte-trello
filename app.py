@@ -1252,10 +1252,10 @@ def api_trello_new_cards():
 # -----------------------------------------------------------------------------
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    if request.method == "GET":
+    if request.method == "POST":
         return render_template("login.html", error=None)
 
-    username = (request.form.get("username") or "").strip()
+    username = (request.form.get("username") or "").strip().upper()
     password = (request.form.get("password") or "").strip()
 
     # >>> FORÇAR MAIÚSCULAS <<<
@@ -1504,7 +1504,7 @@ def admin_user_new():
         # se não estiver logado, retorna erro em JSON
         return jsonify(ok=False, created=False, message="Sessão expirada, faça login novamente."), 401
 
-    username = (request.form.get("username") or "").strip()
+    username = (request.form.get("username") or "").strip().upper()
     password = (request.form.get("password") or "").strip()
 
     # >>> FORÇAR MAIÚSCULAS <<<
