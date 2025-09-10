@@ -725,7 +725,7 @@ def api_chamados():
         if f_tipo and _normalize_tipo(f_tipo) != tipo:
             continue
         if not tipo_norm:
-        tipo_norm = _infer_tipo_fallback(titulo, desc)
+            tipo_norm = _infer_tipo_fallback(titulo, desc)
         if f_tipo_norm and tipo_norm != f_tipo_norm:
             continue
 
