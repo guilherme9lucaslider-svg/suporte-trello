@@ -1635,141 +1635,149 @@
          });
       </script>
       <script>
-         <script>
          // ====== Botão Confirmar (Relatórios) ======
          (function hookConfirmarRelatorio(){
-         const btn = document.getElementById('btnConfirmarRel');
-         if (!btn) return;
+           const btn = document.getElementById('btnConfirmarRel');
+           if (!btn) return;
          
-         btn.addEventListener('click', async (e) => {
-         e.preventDefault();
+           btn.addEventListener('click', async (e) => {
+             e.preventDefault();
          
-         // 1) Ler opções do usuário
-         const tipoRel = document.querySelector('input[name="tipoRelatorio"]:checked')?.value || 'sintetico';
-         const agrupar = document.querySelector('input[name="agruparPor"]:checked')?.value || 'cliente';
+             // 1) Ler opções do usuário
+             const tipoRel = document.querySelector('input[name="tipoRelatorio"]:checked')?.value || 'sintetico';
+             const agrupar = document.querySelector('input[name="agruparPor"]:checked')?.value || 'cliente';
          
-         // 2) Datas (obrigatórias para RELATÓRIO)
-         const inicio = document.getElementById('relInicio')?.value || '';
-         const fim    = document.getElementById('relFim')?.value || '';
+             // 2) Montar parâmetros da URL + datas
+             const params = new URLSearchParams();
+             const inicio = document.getElementById('relInicio').value;
+             const fim    = document.getElementById('relFim').value;
          
-         // >>> Se faltar data, pinta campos e mostra mensagem
-         if (!inicio || !fim) {
-         ['relInicio','relFim'].forEach(id=>{
-         const el = document.getElementById(id);
-         if (el) {
-          el.style.borderColor = (!el.value ? '#ef4444' : 'var(--stroke)');
-          el.style.boxShadow   = (!el.value ? '0 0 0 3px rgba(239,68,68,.25)' : 'none');
-         }
-         });
+             // >>> BLOQUEIA se as datas não estiverem preenchidas <<<
+              if (!inicio || !fim) {
+                // pinta de vermelho os campos vazios
+                ['relInicio','relFim'].forEach(id=>{
+                  const el = document.getElementById(id);
+                  if (el) {
+                    el.style.borderColor = (!el.value ? '#ef4444' : 'var(--stroke)');
+                    el.style.boxShadow   = (!el.value ? '0 0 0 3px rgba(239,68,68,.25)' : 'none');
+                  }
+                });
+
+                // exibe mensagem dentro do relatório (A4 viewer)
+                setA4Pages([`
+                  <div class="a4-page">
+                    <div style="padding:12mm; font:14px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;">
+                      <h2 style="margin:0 0 8px 0; color:#b91c1c;">Datas obrigatórias</h2>
+                      <p>Preencha <strong>Data Inicial</strong> e <strong>Data Final</strong> para gerar o relatório.</p>
+                    </div>
+                  </div>
+                `]);
+
+                return; // não continua
+              }
+
+
          
-         // Modal (aviso rápido)
-         if (typeof openModal === 'function') {
-         openModal(
-          'Datas obrigatórias',
-          'Preencha <strong>Data Inicial</strong> e <strong>Data Final</strong> para gerar o relatório.'
-         );
-         }
+             // remove destaque se já corrigiu
+             ['relInicio','relFim'].forEach(id=>{
+               const el = document.getElementById(id);
+               if (el) { el.style.borderColor = 'var(--stroke)'; el.style.boxShadow = 'none'; }
+             });
          
-         // Mensagem dentro do A4 (sem .a4-page aninhado!)
-         setA4Pages([`
-         <div style="padding:12mm; font:14px/1.6 system-ui,-apple-system, Segoe UI, Roboto, sans-serif;">
-          <h2 style="margin:0 0 8px 0; color:#b91c1c;">Datas obrigatórias</h2>
-          <p>Preencha <strong>Data Inicial</strong> e <strong>Data Final</strong> para gerar o relatório.</p>
-         </div>
-         `]);
-         return; // não continua
-         }
+             // agora que validou, grava as datas nos params
+             params.set('de',  inicio);
+             params.set('ate', fim);
+             params.set('require_dates', '1');
          
-         // remove destaque caso tenha sido corrigido
-         ['relInicio','relFim'].forEach(id=>{
-         const el = document.getElementById(id);
-         if (el) { el.style.borderColor = 'var(--stroke)'; el.style.boxShadow = 'none'; }
-         });
+             // tipo de chamado
+             const tipoChamado = document.querySelector('input[name="tipoChamado"]:checked')?.value || 'todos';
+             if (tipoChamado !== 'todos') {
+               params.set('tipo', tipoChamado);
+             }
          
-         // 3) Monta os parâmetros da URL (agora que já validou as datas)
-         const params = new URLSearchParams();
-         params.set('de',  inicio);
-         params.set('ate', fim);
+             // filtros extras (cliente, representante, sistema, módulo, ocorrência)
+             if (document.getElementById('chkClienteRel').checked) {
+               const v = document.getElementById('fClienteRel').value;
+               if (v) params.set('cliente', v);
+             }
+             if (document.getElementById('chkRepresentanteRel').checked) {
+               const v = document.getElementById('fRepresentanteRel').value;
+               if (v) params.set('representante', v);
+             }
+             if (document.getElementById('chkSistemaRel').checked) {
+               const v = document.getElementById('fSistemaRel').value;
+               if (v) params.set('sistema', v);
+             }
+             if (document.getElementById('chkModuloRel').checked) {
+               const v = document.getElementById('fModuloRel').value;
+               if (v) params.set('modulo', v);
+             }
+             if (document.getElementById('chkOcorrenciaRel').checked) {
+               const v = document.getElementById('fOcorrenciaRel').value;
+               if (v) params.set('ocorrencia', v);
+             }
          
-         // tipo de chamado
-         const tipoChamado = document.querySelector('input[name="tipoChamado"]:checked')?.value || 'todos';
-         if (tipoChamado !== 'todos') params.set('tipo', tipoChamado);
+             // GUARDA a query para exportação (agora sim, depois da validação)
+             __lastReportQuery = params.toString();
          
-         // filtros extras (cliente, representante, sistema, módulo, ocorrência)
-         if (document.getElementById('chkClienteRel')?.checked) {
-         const v = document.getElementById('fClienteRel').value;
-         if (v) params.set('cliente', v);
-         }
-         if (document.getElementById('chkRepresentanteRel')?.checked) {
-         const v = document.getElementById('fRepresentanteRel').value;
-         if (v) params.set('representante', v);
-         }
-         if (document.getElementById('chkSistemaRel')?.checked) {
-         const v = document.getElementById('fSistemaRel').value;
-         if (v) params.set('sistema', v);
-         }
-         if (document.getElementById('chkModuloRel')?.checked) {
-         const v = document.getElementById('fModuloRel').value;
-         if (v) params.set('modulo', v);
-         }
-         if (document.getElementById('chkOcorrenciaRel')?.checked) {
-         const v = document.getElementById('fOcorrenciaRel').value;
-         if (v) params.set('ocorrencia', v);
-         }
+             // 3) Faz a chamada
+             let respJson = {};
+             try {
+               const resp = await fetch('/api/chamados?' + params.toString(), {
+                 credentials: 'same-origin',
+                 cache: 'no-store',
+                 headers: { 'Accept': 'application/json' }
+               });
          
-         // guarda a query para exportação (PDF/CSV/XLS)
-         window.__lastReportQuery = params.toString();
+               // Se o backend retornou erro (ex.: 400) tratamos aqui
+               if (!resp.ok) {
+                 let msg = 'Erro ao buscar dados do relatório.';
+                 try {
+                   const errJson = await resp.json();
+                   if (errJson && (errJson.message || errJson.error)) {
+                     msg = errJson.message || errJson.error;
+                   }
+                 } catch(_) { /* mantém msg padrão */ }
          
-         // 4) Busca no backend
-         let respJson = {};
-         try {
-         const resp = await fetch('/api/chamados?' + params.toString(), {
-         credentials: 'same-origin',
-         cache: 'no-store',
-         headers: { 'Accept': 'application/json' }
-         });
+                 setA4Pages([`
+                   <div class="a4-page">
+                     <div style="padding:12mm; font: 14px/1.6 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;">
+                       <h2 style="margin:0 0 8px 0; color:#b91c1c;">Não foi possível gerar o relatório</h2>
+                       <p>${msg}</p>
+                     </div>
+                   </div>
+                 `]);
+                 return;
+               }
          
-         if (!resp.ok) {
-         // Lê mensagem de erro do backend (ex.: 400)
-         let msg = 'Erro ao buscar dados do relatório.';
-         try {
-          const errJson = await resp.json();
-          if (errJson && (errJson.message || errJson.error)) {
-            msg = errJson.message || errJson.error;
-          }
-         } catch(_) {}
-         setA4Pages([`
-          <div style="padding:12mm; font:14px/1.6 system-ui,-apple-system, Segoe UI, Roboto, sans-serif;">
-            <h2 style="margin:0 0 8px 0; color:#b91c1c;">Não foi possível gerar o relatório</h2>
-            <p>${msg}</p>
-          </div>
-         `]);
-         return;
-         }
+               respJson = await resp.json();
+             } catch (err) {
+               setA4Pages([`
+                 <div class="a4-page">
+                   <div style="padding:12mm; font: 14px/1.6 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;">
+                     <h2 style="margin:0 0 8px 0; color:#b91c1c;">Erro de conexão</h2>
+                     <p>${(err && err.message) ? err.message : 'Falha ao consultar o servidor.'}</p>
+                   </div>
+                 </div>
+               `]);
+               return;
+             }
          
-         respJson = await resp.json();
-         } catch (err) {
-         setA4Pages([`
-         <div style="padding:12mm; font:14px/1.6 system-ui,-apple-system, Segoe UI, Roboto, sans-serif;">
-          <h2 style="margin:0 0 8px 0; color:#b91c1c;">Erro de conexão</h2>
-          <p>${(err && err.message) ? err.message : 'Falha ao consultar o servidor.'}</p>
-         </div>
-         `]);
-         return;
-         }
+             // 4) Pega só a lista de chamados
+             const dados = respJson.items || [];
+             console.log("Dados recebidos no relatório:", dados);
          
-         // 5) Gera páginas conforme tipo escolhido
-         const dados = respJson.items || [];
-         let paginas = [];
-         if (tipoRel === 'sintetico') {
-         paginas = gerarSintetico(dados, agrupar);
-         } else {
-         paginas = gerarAnalitico(dados, agrupar);
-         }
+             // 5) Gerar HTML conforme o tipo escolhido
+             let paginas = [];
+             if (tipoRel === 'sintetico') {
+               paginas = gerarSintetico(dados, agrupar);
+             } else {
+               paginas = gerarAnalitico(dados, agrupar);
+             }
          
-         // 6) Exibe no viewer A4
-         setA4Pages(paginas);
-         });
+             // 6) Mostrar no viewer A4
+             setA4Pages(paginas);
+           });
          })();
          
          // Util: formata AAAA-MM-DD -> DD/MM/AAAA
