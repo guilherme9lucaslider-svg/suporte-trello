@@ -496,7 +496,7 @@
                      {% endfor %}
                   </select>
                   <input name="username" required placeholder="Nome de usuário"
-                        oninput="this.value = this.value.toUpperCase()">
+                     oninput="this.value = this.value.toUpperCase()">
                   <input name="password" type="password" required placeholder="Senha">
                   <button class="btn" type="submit">Adicionar Usuário</button>
                </form>
@@ -1647,19 +1647,49 @@
              const tipoRel = document.querySelector('input[name="tipoRelatorio"]:checked')?.value || 'sintetico';
              const agrupar = document.querySelector('input[name="agruparPor"]:checked')?.value || 'cliente';
          
-             // 2) Montar parâmetros da URL
+             // 2) Montar parâmetros da URL + datas
              const params = new URLSearchParams();
              const inicio = document.getElementById('relInicio').value;
-             const fim = document.getElementById('relFim').value;
-             if (inicio) params.set('de', inicio);
-             if (fim) params.set('ate', fim);
+             const fim    = document.getElementById('relFim').value;
+         
+             // >>> VALIDAR obrigatoriedade das datas (mantenha só ESSE bloco) <<<
+             if (!inicio || !fim) {
+               // destaca visualmente os campos faltando
+               const deEl  = document.getElementById('relInicio');
+               const ateEl = document.getElementById('relFim');
+               [deEl, ateEl].forEach(el => {
+                 if (!el) return;
+                 el.style.borderColor = (!el.value ? '#ef4444' : 'var(--stroke)');
+                 el.style.boxShadow   = (!el.value ? '0 0 0 3px rgba(239,68,68,.25)' : 'none');
+               });
+         
+               // mensagem no viewer A4
+               setA4Pages([`
+                 <div class="a4-page">
+                   <div style="padding:12mm; font: 14px/1.6 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;">
+                     <h2 style="margin:0 0 8px 0; color:#b91c1c;">Datas obrigatórias</h2>
+                     <p>Preencha <strong>Data Inicial</strong> e <strong>Data Final</strong> para gerar o relatório.</p>
+                   </div>
+                 </div>
+               `]);
+               return; // não faz a chamada
+             }
+         
+             // remove destaque se já corrigiu
+             ['relInicio','relFim'].forEach(id=>{
+               const el = document.getElementById(id);
+               if (el) { el.style.borderColor = 'var(--stroke)'; el.style.boxShadow = 'none'; }
+             });
+         
+             // agora que validou, grava as datas nos params
+             params.set('de',  inicio);
+             params.set('ate', fim);
          
              // tipo de chamado
              const tipoChamado = document.querySelector('input[name="tipoChamado"]:checked')?.value || 'todos';
-              if (tipoChamado !== 'todos') {
-              params.set('tipo', tipoChamado);
-              }
-         
+             if (tipoChamado !== 'todos') {
+               params.set('tipo', tipoChamado);
+             }
          
              // filtros extras (cliente, representante, sistema, módulo, ocorrência)
              if (document.getElementById('chkClienteRel').checked) {
@@ -1683,153 +1713,205 @@
                if (v) params.set('ocorrencia', v);
              }
          
-         // GUARDA a query para exportação
-         __lastReportQuery = params.toString();
+             // GUARDA a query para exportação (agora sim, depois da validação)
+             __lastReportQuery = params.toString();
          
-             // 3) Buscar dados no backend
+             // 3) Faz a chamada
              let respJson = {};
-         try {
-         const resp = await fetch('/api/chamados?' + params.toString());
-         respJson = await resp.json();
-         } catch (err) {
-         setA4Pages([`<div class="a4-page"><p>Erro ao carregar: ${err.message}</p></div>`]);
-         return;
-         }
+             try {
+               const resp = await fetch('/api/chamados?' + params.toString(), {
+                 credentials: 'same-origin',
+                 cache: 'no-store',
+                 headers: { 'Accept': 'application/json' }
+               });
          
-         // pega só a lista de chamados
-         const dados = respJson.items || [];
+               // Se o backend retornou erro (ex.: 400) tratamos aqui
+               if (!resp.ok) {
+                 let msg = 'Erro ao buscar dados do relatório.';
+                 try {
+                   const errJson = await resp.json();
+                   if (errJson && (errJson.message || errJson.error)) {
+                     msg = errJson.message || errJson.error;
+                   }
+                 } catch(_) { /* mantém msg padrão */ }
          
-         console.log("Dados recebidos no relatório:", dados);
+                 setA4Pages([`
+                   <div class="a4-page">
+                     <div style="padding:12mm; font: 14px/1.6 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;">
+                       <h2 style="margin:0 0 8px 0; color:#b91c1c;">Não foi possível gerar o relatório</h2>
+                       <p>${msg}</p>
+                     </div>
+                   </div>
+                 `]);
+                 return;
+               }
          
+               respJson = await resp.json();
+             } catch (err) {
+               setA4Pages([`
+                 <div class="a4-page">
+                   <div style="padding:12mm; font: 14px/1.6 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;">
+                     <h2 style="margin:0 0 8px 0; color:#b91c1c;">Erro de conexão</h2>
+                     <p>${(err && err.message) ? err.message : 'Falha ao consultar o servidor.'}</p>
+                   </div>
+                 </div>
+               `]);
+               return;
+             }
          
-         // 4) Gerar HTML conforme o tipo escolhido
-         let paginas = [];
-         if (tipoRel === 'sintetico') {
-         paginas = gerarSintetico(dados, agrupar);
-         } else {
-         paginas = gerarAnalitico(dados, agrupar);
-         }
+             // 4) Pega só a lista de chamados
+             const dados = respJson.items || [];
+             console.log("Dados recebidos no relatório:", dados);
          
+             // 5) Gerar HTML conforme o tipo escolhido
+             let paginas = [];
+             if (tipoRel === 'sintetico') {
+               paginas = gerarSintetico(dados, agrupar);
+             } else {
+               paginas = gerarAnalitico(dados, agrupar);
+             }
          
-             // 5) Mostrar no viewer A4
+             // 6) Mostrar no viewer A4
              setA4Pages(paginas);
            });
          })();
          
-         
-         // Formata AAAA-MM-DD -> DD/MM/AAAA
+         // Util: formata AAAA-MM-DD -> DD/MM/AAAA
          function fmtData(d) {
-         if (!d) return '';
-         const [yyyy, mm, dd] = d.split('-');
-         return `${dd}/${mm}/${yyyy}`;
+           if (!d) return '';
+           const [yyyy, mm, dd] = d.split('-');
+           return `${dd}/${mm}/${yyyy}`;
          }
          
          function gerarSintetico(dados, agrupar){
-         // Cabeçalho
-         const ini = document.getElementById('relInicio').value;
-         const fim = document.getElementById('relFim').value;
-         const periodo = (ini || fim) ? `Período de ${fmtData(ini || fim)} a ${fmtData(fim || ini)}` : '';
+           const ini = document.getElementById('relInicio').value;
+           const fim = document.getElementById('relFim').value;
+           const periodo = (ini || fim) ? `Período de ${fmtData(ini || fim)} a ${fmtData(fim || ini)}` : '';
          
-         // Helpers
-         const header = (titulo) => `
-         <div class="rpt-header">
-         <div class="rpt-title">${titulo}</div>
-         <div class="rpt-period">${periodo}</div>
-         </div>
-         `;
+           const header = (titulo) => `
+             <div class="rpt-header">
+               <div class="rpt-title">${titulo}</div>
+               <div class="rpt-period">${periodo}</div>
+             </div>
+           `;
          
-         // Vai gerar exatamente duas variações:
-         if (agrupar === 'cliente') {
-         // cliente -> { representante, quant }
-         const mapa = {};
-         dados.forEach(d => {
-         const cli = d.cliente || 'Sem Cliente';
-         const rep = (d.representante || '').trim() || '—';
-         if (!mapa[cli]) mapa[cli] = { representante: rep, quant: 0 };
-         mapa[cli].quant++;
-         });
+           if (agrupar === 'cliente') {
+             const mapa = {};
+             dados.forEach(d => {
+               const cli = d.cliente || 'Sem Cliente';
+               const rep = (d.representante || '').trim() || '—';
+               if (!mapa[cli]) mapa[cli] = { representante: rep, quant: 0 };
+               mapa[cli].quant++;
+             });
          
-         const linhas = Object
-         .entries(mapa)
-         .sort((a,b) => a[0].localeCompare(b[0], 'pt-BR'))
-         .map(([cliente, info]) => `
-         <tr>
-          <td>${cliente}</td>
-          <td>${info.representante}</td>
-          <td class="num">${info.quant}</td>
-         </tr>
-         `);
+             const linhas = Object.entries(mapa)
+               .sort((a,b) => a[0].localeCompare(b[0], 'pt-BR'))
+               .map(([cliente, info]) => `
+                 <tr>
+                   <td>${cliente}</td>
+                   <td>${info.representante}</td>
+                   <td class="num">${info.quant}</td>
+                 </tr>
+               `);
          
-         const total = Object.values(mapa).reduce((s, g) => s + g.quant, 0);
+             const total = Object.values(mapa).reduce((s, g) => s + g.quant, 0);
          
-         const tabela = `
-         <table class="rpt-table">
-         <thead>
-         <tr>
-         <th>Cliente</th>
-         <th>Representante</th>
-         <th class="num">Quant.</th>
-         </tr>
-         </thead>
-         <tbody>
-         ${linhas.join('')}
-         </tbody>
-         </table>
-         `;
-         const totalSolto = `<div class="rpt-total-inline">Quantidade de Chamados: <span class="num">${total}</span></div>`;
-         const conteudo = header('Curva ABC de Chamados por Cliente') + tabela + totalSolto;
-         return [conteudo];
+             const tabela = `
+               <table class="rpt-table">
+                 <thead>
+                   <tr>
+                     <th>Cliente</th>
+                     <th>Representante</th>
+                     <th class="num">Quant.</th>
+                   </tr>
+                 </thead>
+                 <tbody>
+                   ${linhas.join('')}
+                 </tbody>
+               </table>
+             `;
+             const totalSolto = `<div class="rpt-total-inline">Quantidade de Chamados: <span class="num">${total}</span></div>`;
+             const conteudo = header('Curva ABC de Chamados por Cliente') + tabela + totalSolto;
+             return [conteudo];
+           }
          
+           // agrupado por REPRESENTANTE
+           const mapaRep = {};
+           dados.forEach(d => {
+             const rep = (d.representante || '').trim() || 'Sem Representante';
+             mapaRep[rep] = (mapaRep[rep] || 0) + 1;
+           });
+         
+           const linhasRep = Object.entries(mapaRep)
+             .sort((a,b) => a[0].localeCompare(b[0], 'pt-BR'))
+             .map(([rep, q]) => `
+               <tr>
+                 <td>${rep}</td>
+                 <td class="num">${q}</td>
+               </tr>
+             `);
+         
+           const totalRep = Object.values(mapaRep).reduce((s, n) => s + n, 0);
+         
+           const tabelaRep = `
+             <table class="rpt-table">
+               <thead>
+                 <tr>
+                   <th>Representante</th>
+                   <th class="num">Quant.</th>
+                 </tr>
+               </thead>
+               <tbody>
+                 ${linhasRep.join('')}
+               </tbody>
+             </table>
+           `;
+           const totalSoltoRep = `<div class="rpt-total-inline">Quantidade de Chamados: <span class="num">${totalRep}</span></div>`;
+           const conteudoRep = header('Curva ABC de Chamados por Representante') + tabelaRep + totalSoltoRep;
+           return [conteudoRep];
          }
-         
-         // agrupado por REPRESENTANTE
-         const mapaRep = {};
-         dados.forEach(d => {
-         const rep = (d.representante || '').trim() || 'Sem Representante';
-         mapaRep[rep] = (mapaRep[rep] || 0) + 1;
-         });
-         
-         const linhasRep = Object
-         .entries(mapaRep)
-         .sort((a,b) => a[0].localeCompare(b[0], 'pt-BR'))
-         .map(([rep, q]) => `
-         <tr>
-         <td>${rep}</td>
-         <td class="num">${q}</td>
-         </tr>
-         `);
-         
-         const totalRep = Object.values(mapaRep).reduce((s, n) => s + n, 0);
-         
-         const tabelaRep = `
-         <table class="rpt-table">
-         <thead>
-         <tr>
-         <th>Representante</th>
-         <th class="num">Quant.</th>
-         </tr>
-         </thead>
-         <tbody>
-         ${linhasRep.join('')}
-         </tbody>
-         </table>
-         `;
-         const totalSoltoRep = `<div class="rpt-total-inline">Quantidade de Chamados: <span class="num">${totalRep}</span></div>`;
-         const conteudoRep = header('Curva ABC de Chamados por Representante') + tabelaRep + totalSoltoRep;
-         return [conteudoRep];
-         
-         }
-         
          
          function gerarAnalitico(dados, agrupar){
-           // >>> por enquanto só casca simples, igual ao sintético
-           // (no próximo passo implementamos com subtotais por cliente/representante)
-           const tabela = `<table border="1" cellspacing="0" cellpadding="4" style="width:100%;border-collapse:collapse">
-             <thead><tr><th>Sistema</th><th>Módulo</th><th>Ocorrência</th><th>Tipo</th><th>Quant.</th></tr></thead>
-             <tbody><tr><td colspan="5">Ainda vamos implementar o analítico...</td></tr></tbody>
-           </table>`;
-           return [`<div class="a4-page"><h2>Relatório Analítico (${agrupar})</h2>${tabela}</div>`];
+           // placeholder SEM a <div class="a4-page"> (o setA4Pages já cria)
+           const ini = document.getElementById('relInicio').value;
+           const fim = document.getElementById('relFim').value;
+           const periodo = (ini || fim) ? `Período de ${fmtData(ini || fim)} a ${fmtData(fim || ini)}` : '';
+         
+           const header = (titulo) => `
+             <div class="rpt-header">
+               <div class="rpt-title">${titulo}</div>
+               <div class="rpt-period">${periodo}</div>
+             </div>
+           `;
+         
+           const tabela = `
+             <table class="rpt-table">
+               <thead>
+                 <tr><th>Sistema</th><th>Módulo</th><th>Ocorrência</th><th>Tipo</th><th>Quant.</th></tr>
+               </thead>
+               <tbody>
+                 <tr><td colspan="5">Ainda vamos implementar o analítico...</td></tr>
+               </tbody>
+             </table>
+           `;
+           return [ header(`Relatório Analítico (${agrupar})`) + tabela ];
          }
+         
+         // Amarra min/max entre as datas
+         (function bindDateBounds(){
+           const ini = document.getElementById('relInicio');
+           const fim = document.getElementById('relFim');
+           if (!ini || !fim) return;
+         
+           ini.addEventListener('change', () => {
+             if (ini.value) fim.min = ini.value;
+             if (fim.value && ini.value && fim.value < ini.value) fim.value = ini.value;
+           });
+           fim.addEventListener('change', () => {
+             if (fim.value) ini.max = fim.value;
+             if (ini.value && fim.value && ini.value > fim.value) ini.value = fim.value;
+           });
+         })();
       </script>
       <script>
          // ====== Funções do CADASTRO ======
