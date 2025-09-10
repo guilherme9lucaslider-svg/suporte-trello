@@ -728,15 +728,18 @@
            return '55' + n;
          }
          function openWhatsApp(rawPhone, text){
-         // Normalize to Brazilian format and build a WhatsApp web URL (fallback to https instead of custom protocol).
-         const phone = normalizeBRPhone(rawPhone);
-         const q = text ? ('&text=' + encodeURIComponent(text)) : '';
-         // Use the universal API URL to avoid browser/OS restrictions on the whatsapp:// protocol.
-         const url = 'https://api.whatsapp.com/send?phone=' + phone + q;
-         // Open in a new tab or the same tab depending on browser preference.
-         <!-- try { window.open(url, '_blank'); } catch { window.location.href = url; }
-         } -->
+           const phone = normalizeBRPhone(rawPhone);
+           const q = text ? ('&text=' + encodeURIComponent(text)) : '';
+           const url = 'https://api.whatsapp.com/send?phone=' + phone + q;
+           try { 
+             window.open(url, '_blank'); 
+           } catch { 
+             window.location.href = url; 
+           }
+         }
          window.openWhatsApp = openWhatsApp;
+         
+         
       </script>
       <!-- ===== App principal ===== -->
       <script>
@@ -1655,7 +1658,7 @@
               if (tipoChamado !== 'todos') {
               params.set('tipo', tipoChamado);
               }
-
+         
          
              // filtros extras (cliente, representante, sistema, módulo, ocorrência)
              if (document.getElementById('chkClienteRel').checked) {
