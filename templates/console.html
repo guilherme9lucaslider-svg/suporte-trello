@@ -342,44 +342,42 @@
          .rpt-table{
          border-collapse: collapse;
          width:100%;
-         border: .6px solid #333;         /* linhas mais finas */
+         border: .4px solid #333;         /* mais fino */
+         table-layout: fixed;             /* largura fixa por coluna */
          }
          .rpt-table th,
          .rpt-table td{
-         border: .6px solid #333;         /* linhas mais finas */
-         padding: 4px 6px;                /* espaço interno */
+         border: .4px solid #333;         /* mais fino */
+         padding: 4px 6px;
          font-size: 12px;
+         overflow: hidden;                /* evita “estourar” a coluna */
+         text-overflow: ellipsis;
+         word-wrap: break-word;
          }
          .rpt-table thead th{
          background:#f2f4f7;
          font-weight:700;
          }
-         /* linha com o nome do Cliente/Representante acima do cabeçalho */
+         .rpt-table .num{ text-align:right; }
+         /* 1ª linha do grupo (nome do cliente/representante acima do cabeçalho) */
          .rpt-group-name{
          text-align:center;
          font-weight:700;
          background:#eaecef;
          }
-         /* subtotal por grupo */
-         .rpt-subtotal td{
+         /* subtotal “solto” (fora da tabela) */
+         .rpt-subtotal-inline{
+         margin: 6px 0 10px 0;
          font-weight:700;
          }
-         /* total geral com separador acima (linha) */
+         /* total geral “solto” com linha separando */
          .rpt-total-inline{
          margin-top:8px;
          font-weight:700;
          }
          .rpt-total-inline.rpt-with-sep{
-         border-top:.6px solid #333;      /* linha separando o total geral */
+         border-top:.4px solid #333;
          padding-top:6px;
-         }
-         /* Cursor de “mão” ao poder arrastar e “segurando” enquanto arrasta */
-         #a4-viewer-wrap.a4-can-pan { cursor: grab; }
-         #a4-viewer-wrap.a4-panning { cursor: grabbing;
-         }
-         /* total solto abaixo da tabela */
-         .rpt-total-inline{ margin-top:6px; font-weight:700; font-size:12px; }
-         .rpt-total-inline .num{ display:inline-block; min-width:24px; text-align:right; 
          }
       </style>
    </head>
@@ -1901,13 +1899,13 @@
          </div>
          `;
          
-         // agrupamento: por cliente OU por representante
+         // agrupamento
          const key = (agrupar === 'representante') ? 'representante' : 'cliente';
          const tituloRel = (agrupar === 'representante')
          ? 'Relação de Chamados por Representantes'
          : 'Relação de Chamados por Cliente';
          
-         // monta { grupo: [chamados...] }
+         // grupos
          const grupos = {};
          dados.forEach(d => {
          const k = (d[key] || (agrupar==='representante' ? 'Sem Representante' : 'Sem Cliente')).trim();
@@ -1918,25 +1916,31 @@
          // contador total geral
          let totalGeral = 0;
          
-         // para cada grupo, gera uma “tabela” com:
-         //  - 1a linha: NOME DO GRUPO centralizado (colspan)
-         //  - cabeçalho (Sistema/Módulo/Ocorrência/Tipo/Quant.)
-         //  - linhas (uma por chamado) com Quant.=1
-         //  - subtotal “Quantidade de Chamados: X”
+         // largura FIXA das colunas (soma ~100%)
+         // (com table-layout: fixed, o navegador respeita esse colgroup)
+         const colgroup = `
+         <colgroup>
+         <col style="width:20%">
+         <col style="width:20%">
+         <col style="width:30%">
+         <col style="width:20%">
+         <col style="width:10%">
+         </colgroup>
+         `;
+         
+         // para cada grupo, tabela + subtotal “solto”
          const blocos = Object
          .entries(grupos)
          .sort((a,b) => a[0].localeCompare(b[0], 'pt-BR'))
          .map(([grupoNome, items]) => {
-         // subtotal do grupo
          const subtotal = items.length;
          totalGeral += subtotal;
          
-         // linhas do corpo (uma linha por chamado)
          const linhas = items.map(it => {
-         // Tipo com inicial maiúscula (Auxilio, Melhoria, Bug…)
          const tipoRaw = (it.tipo || '').toString();
-         const tipoFmt = tipoRaw ? (tipoRaw.charAt(0).toUpperCase() + tipoRaw.slice(1).toLowerCase()) : '';
-         
+         const tipoFmt = tipoRaw
+          ? (tipoRaw.charAt(0).toUpperCase() + tipoRaw.slice(1).toLowerCase())
+          : '';
          return `
           <tr>
             <td>${it.sistema || ''}</td>
@@ -1948,10 +1952,11 @@
          `;
          }).join('');
          
+         // tabela do grupo + subtotal FORA da tabela
          return `
          <table class="rpt-table" style="margin-top:10px;">
+          ${colgroup}
           <thead>
-            <!-- NOME DO GRUPO acima dos títulos das colunas -->
             <tr><th class="rpt-group-name" colspan="5">${grupoNome}</th></tr>
             <tr>
               <th>Sistema</th>
@@ -1963,17 +1968,15 @@
           </thead>
           <tbody>
             ${linhas}
-            <tr class="rpt-subtotal">
-              <td colspan="4">Quantidade de Chamados:</td>
-              <td class="num">${subtotal}</td>
-            </tr>
           </tbody>
          </table>
+         <div class="rpt-subtotal-inline">
+          Quantidade de Chamados: <span class="num">${subtotal}</span>
+         </div>
          `;
          });
          
-         // monta página única (como no sintético):
-         //   título geral + blocos (um por grupo) + total geral com linha separando
+         // título geral + blocos + total geral com linha
          const conteudo =
          header(tituloRel) +
          blocos.join('') +
