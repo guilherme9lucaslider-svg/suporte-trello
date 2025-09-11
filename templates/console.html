@@ -1662,7 +1662,7 @@
                     el.style.boxShadow   = (!el.value ? '0 0 0 3px rgba(239,68,68,.25)' : 'none');
                   }
                 });
-
+         
                 // exibe mensagem dentro do relatório (A4 viewer)
                 setA4Pages([`
                   <div class="a4-page">
@@ -1672,11 +1672,11 @@
                     </div>
                   </div>
                 `]);
-
+         
                 return; // não continua
               }
-
-
+         
+         
          
              // remove destaque se já corrigiu
              ['relInicio','relFim'].forEach(id=>{
@@ -1876,29 +1876,123 @@
          }
          
          function gerarAnalitico(dados, agrupar){
-           // placeholder SEM a <div class="a4-page"> (o setA4Pages já cria)
-           const ini = document.getElementById('relInicio').value;
-           const fim = document.getElementById('relFim').value;
-           const periodo = (ini || fim) ? `Período de ${fmtData(ini || fim)} a ${fmtData(fim || ini)}` : '';
+         // Cabeçalho (mesmo padrão do sintético)
+         const ini = document.getElementById('relInicio')?.value || '';
+         const fim = document.getElementById('relFim')?.value || '';
+         const fmt = d => {
+         if (!d) return '';
+         const [y,m,dd] = d.split('-');
+         return `${dd}/${m}/${y}`;
+         };
+         const periodo = (ini || fim) ? `Período de ${fmt(ini || fim)} a ${fmt(fim || ini)}` : '';
          
-           const header = (titulo) => `
-             <div class="rpt-header">
-               <div class="rpt-title">${titulo}</div>
-               <div class="rpt-period">${periodo}</div>
-             </div>
-           `;
+         // Função de título/periodo (sem depender do gerarSintetico)
+         const header = (titulo) => `
+         <div class="rpt-header">
+         <div class="rpt-title">${titulo}</div>
+         <div class="rpt-period">${periodo}</div>
+         </div>
+         `;
          
-           const tabela = `
-             <table class="rpt-table">
-               <thead>
-                 <tr><th>Sistema</th><th>Módulo</th><th>Ocorrência</th><th>Tipo</th><th>Quant.</th></tr>
-               </thead>
-               <tbody>
-                 <tr><td colspan="5">Ainda vamos implementar o analítico...</td></tr>
-               </tbody>
-             </table>
-           `;
-           return [ header(`Relatório Analítico (${agrupar})`) + tabela ];
+         // Normaliza texto para evitar "undefined"
+         const safe = v => (v == null ? '' : String(v));
+         
+         // Prepara agrupamento
+         // agrupar === 'cliente'  ->  bloco por cliente
+         // agrupar === 'representante' -> bloco por representante
+         const chaveTopo = (d) => {
+         if (agrupar === 'cliente')       return safe(d.cliente) || 'Sem Cliente';
+         if (agrupar === 'representante') return safe(d.representante) || 'Sem Representante';
+         return 'Geral';
+         };
+         
+         // Mapa: topo -> linhas detalhadas (sistema/módulo/ocorrência/tipo)
+         const grupos = {};
+         dados.forEach(d => {
+         const top = chaveTopo(d);
+         if (!grupos[top]) grupos[top] = [];
+         grupos[top].push({
+         sistema:     safe(d.sistema)     || '—',
+         modulo:      safe(d.modulo)      || '—',
+         ocorrencia:  safe(d.ocorrencia)  || '—',
+         tipo:        safe(d.tipo)        || '—'
+         });
+         });
+         
+         // Monta o HTML de cada grupo com subtotais
+         const blocos = Object.entries(grupos)
+         // ordena alfabeticamente pelo nome do grupo
+         .sort((a,b) => a[0].localeCompare(b[0], 'pt-BR'))
+         .map(([topo, linhas]) => {
+         // agrega por (sistema, módulo, ocorrência, tipo)
+         const mapa = {};
+         linhas.forEach(l => {
+         const key = `${l.sistema}||${l.modulo}||${l.ocorrencia}||${l.tipo}`;
+         mapa[key] = (mapa[key] || 0) + 1;
+         });
+         
+         // transforma em linhas de tabela
+         const rows = Object.entries(mapa)
+         .map(([key, q]) => {
+          const [sis, mod, oc, tp] = key.split('||');
+          return `<tr>
+            <td>${sis}</td>
+            <td>${mod}</td>
+            <td>${oc}</td>
+            <td>${tp}</td>
+            <td class="num">${q}</td>
+          </tr>`;
+         })
+         // ordena por sistema, depois módulo, depois ocorrência, depois tipo
+         .sort((ra, rb) => ra.localeCompare(rb, 'pt-BR'));
+         
+         const subtotal = linhas.length;
+         
+         const tabela = `
+         <table class="rpt-table">
+          <thead>
+            <tr>
+              <th>Sistema</th>
+              <th>Módulo</th>
+              <th>Ocorrência</th>
+              <th>Tipo</th>
+              <th class="num">Quant.</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.join('')}
+            <tr>
+              <td colspan="4" style="font-weight:600;text-align:right;">Subtotal</td>
+              <td class="num" style="font-weight:600;">${subtotal}</td>
+            </tr>
+          </tbody>
+         </table>
+         `;
+         
+         const tituloGrupo = (agrupar === 'cliente')
+         ? `Relatório Analítico — Cliente: ${topo}`
+         : `Relatório Analítico — Representante: ${topo}`;
+         
+         return `
+         <div class="rpt-block">
+          ${header(tituloGrupo)}
+          ${tabela}
+         </div>
+         `;
+         });
+         
+         // Total geral
+         const totalGeral = dados.length;
+         const totalHtml = `
+         <div class="rpt-total-inline" style="margin-top:12px">
+         Total Geral de Chamados: <span class="num">${totalGeral}</span>
+         </div>
+         `;
+         
+         // Retorna uma única “página” (o viewer já embrulha com .a4-page)
+         // Se desejar forçar uma página por grupo no futuro, dá pra quebrar o array aqui.
+         const conteudo = blocos.join('') + totalHtml;
+         return [conteudo];
          }
          
          // Amarra min/max entre as datas
