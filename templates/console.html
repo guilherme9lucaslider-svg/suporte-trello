@@ -342,41 +342,30 @@
          .rpt-table{
          border-collapse: collapse;
          width:100%;
-         border: .4px solid #333;         /* mais fino */
-         table-layout: fixed;             /* largura fixa por coluna */
+         border: .2px solid #333;         /* deixou mais fino */
+         table-layout: fixed;
          }
          .rpt-table th,
          .rpt-table td{
-         border: .4px solid #333;         /* mais fino */
+         border: .2px solid #333;         /* deixou mais fino */
          padding: 4px 6px;
          font-size: 12px;
-         overflow: hidden;                /* evita “estourar” a coluna */
+         overflow: hidden;
          text-overflow: ellipsis;
          word-wrap: break-word;
          }
-         .rpt-table thead th{
-         background:#f2f4f7;
-         font-weight:700;
-         }
-         .rpt-table .num{ text-align:right; }
-         /* 1ª linha do grupo (nome do cliente/representante acima do cabeçalho) */
-         .rpt-group-name{
-         text-align:center;
-         font-weight:700;
-         background:#eaecef;
-         }
-         /* subtotal “solto” (fora da tabela) */
          .rpt-subtotal-inline{
          margin: 6px 0 10px 0;
-         font-weight:700;
+         font-weight:600;                 /* menos “pesado” */
+         font-size: 11px;                 /* menor */
          }
-         /* total geral “solto” com linha separando */
          .rpt-total-inline{
          margin-top:8px;
-         font-weight:700;
+         font-weight:600;
+         font-size: 11px;                 /* menor */
          }
          .rpt-total-inline.rpt-with-sep{
-         border-top:.4px solid #333;
+         border-top:.2px solid #333;      /* linha também mais fina */
          padding-top:6px;
          }
       </style>
