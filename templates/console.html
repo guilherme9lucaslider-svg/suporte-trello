@@ -342,18 +342,26 @@
          .rpt-table{
          border-collapse: collapse;
          width:100%;
-         border: .2px solid #333;         /* deixou mais fino */
+-        border: .2px solid #333;         /* deixou mais fino */
++        border: 1px solid rgba(0,0,0,.35); /* visual leve, aparenta mais fino */
          table-layout: fixed;
          }
          .rpt-table th,
          .rpt-table td{
-         border: .2px solid #333;         /* deixou mais fino */
+-        border: .2px solid #333;         /* deixou mais fino */
++        border: 1px solid rgba(0,0,0,.35);
          padding: 4px 6px;
          font-size: 12px;
          overflow: hidden;
          text-overflow: ellipsis;
          word-wrap: break-word;
          }
++        @media (min-resolution: 2dppx){
++          .rpt-table, .rpt-table th, .rpt-table td{ border-width: .5px; }
++        }
++        @media print{
++          .rpt-table, .rpt-table th, .rpt-table td{ border-width: .5px; }
++        }
          .rpt-subtotal-inline{
          margin: 6px 0 10px 0;
          font-weight:600;                 /* menos "pesado" */
@@ -1661,15 +1669,17 @@
                   }
                 });
          
-                // exibe mensagem dentro do relatório (A4 viewer)
-                setA4Pages([`
-                  <div class="a4-page">
-                    <div style="padding:12mm; font:14px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;">
-                      <h2 style="margin:0 0 8px 0; color:#b91c1c;">Datas obrigatórias</h2>
-                      <p>Preencha <strong>Data Inicial</strong> e <strong>Data Final</strong> para gerar o relatório.</p>
-                    </div>
-                  </div>
-                `]);
+                // abre modal de aviso
+                const modal = document.getElementById('requireDatesModal');
+                if (modal) modal.style.display = 'flex';
+         
+                // rola e foca no primeiro campo vazio
+                const targetId = !inicio ? 'relInicio' : 'relFim';
+                const targetEl = document.getElementById(targetId);
+                if (targetEl){
+                  targetEl.scrollIntoView({behavior:'smooth', block:'center'});
+                  setTimeout(()=> targetEl.focus(), 300);
+                }
          
                 return; // não continua
               }
@@ -2489,6 +2499,13 @@
            } catch (e) {
              console.error("Erro ao configurar selects encadeados do relatório:", e);
            }
++          const btnOk = document.getElementById('btnOkRequireDates');
++          if (btnOk){
++            btnOk.onclick = () => {
++              const m = document.getElementById('requireDatesModal');
++              if (m) m.style.display = 'none';
++            };
++          }
          });
       </script>
       <!-- Modal: Remover representante -->
@@ -2515,6 +2532,18 @@
             <div class="confirm__actions">
                <button class="btn btn--secondary" id="btnConfirmDeleteUser">Sim, quero remover</button>
                <button class="btn btn--ghost" id="btnCancelDeleteUser">Cancelar</button>
+            </div>
+         </div>
+      </div>
+      <!-- Modal: Datas obrigatórias para relatório -->
+      <div class="confirm-modal" id="requireDatesModal" style="display:none;">
+         <div class="confirm__box">
+            <div class="confirm__title">Datas obrigatórias</div>
+            <div class="confirm__msg">
+               Selecione <strong>Data Inicial</strong> e <strong>Data Final</strong> para gerar o relatório.
+            </div>
+            <div class="confirm__actions">
+               <button id="btnOkRequireDates" class="btn btn--primary" type="button">OK</button>
             </div>
          </div>
       </div>

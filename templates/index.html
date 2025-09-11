@@ -202,8 +202,8 @@
     .btn:hover::before{ opacity:1; animation: shimmer .6s ease; }
     .btn--ghost{ background:var(--surface); border:2px solid var(--stroke); color:var(--ink); }
     .btn--ghost:hover{ border-color:var(--primary); background:var(--surface-alt); transform:translateY(-2px); box-shadow:var(--shadow-sm); }
-    .btn--primary{ background:var(--gradient-primary); color:#fff; box-shadow:0 4px 16px rgba(0,96,86,.3); }
-    .btn--primary:hover{ transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,96,86,.4); }
+    .btn--primary{ background:var(--gradient-primary); color:#fff; box-shadow:0 4px 16px rgba(0,96,86,.30); }
+    .btn--primary:hover{ transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,96,86,.40); }
     .btn--primary:active{ transform:translateY(0); }
     .btn--secondary{ background:var(--gradient-secondary); color:#fff; box-shadow:0 4px 16px rgba(255,126,0,.3); }
     .btn--secondary:hover{ transform:translateY(-2px); box-shadow:0 8px 24px rgba(255,126,0,.4); }
@@ -216,7 +216,7 @@
       animation:shake .4s ease-in-out;
     }
     @keyframes shake {0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)}}
-    .field-hint{ font-size:12px; color:#e74c3c; margin-top:8px; display:none; font-weight:500; }
+    .field-hint{ font-size:12px; color:#b91c1c; margin-top:8px; display:none; font-weight:600; }
     .field-hint.show{ display:block; animation:fadeIn .3s ease; }
     @keyframes fadeIn{ from{opacity:0; transform:translateY(-8px)} to{opacity:1; transform:translateY(0)} }
 
@@ -235,6 +235,17 @@
     .success__title{ font-size:28px; font-weight:800; color:var(--primary); margin-bottom:12px; letter-spacing:-.5px; }
     .success__msg{ color:var(--muted); margin-bottom:32px; line-height:1.6; font-size:16px; }
     .success__actions{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+
+    /* Botão "Abrir novo chamado" mais laranja (accent) */
+    #btnNovo{
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+      color:#fff;
+      box-shadow:0 4px 16px rgba(250,104,39,.30);
+    }
+    #btnNovo:hover{
+      transform:translateY(-2px);
+      box-shadow:0 8px 24px rgba(250,104,39,.40);
+    }
 
     /* Loading overlay */
     .loading-overlay{
@@ -255,7 +266,7 @@
     @media (max-width:768px){
       .wrap{ padding:20px 16px; }
       .card__header{ padding:20px 24px; }
-      .card__body{ padding:24px 20px; gap:20px; }
+      .card__body{ padding:20px 16px; gap:16px; }
       .actions{ padding:20px 24px; flex-direction:column-reverse; }
       .mr-auto{ margin-right:0; }
       .btn{ width:100%; justify-content:center; }
