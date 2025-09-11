@@ -943,39 +943,40 @@
          console.log('🔄 Toggle realtime:', !isRealTimeActive);
          
          if (!isRealTimeActive) {
-         // ===== ATIVANDO (mantenha seu bloco atual como está) =====
+         // ===== ATIVANDO =====
          isRealTimeActive = true;
          
+         // força “Em aberto” (sem mexer nos outros filtros visuais)
          try {
-         // Força filtro “Em aberto”
          statusSelect.value = 'Em aberto';
-         deInput.value = '';
-         ateInput.value = '';
-         qInput.value = '';
          if (typeof applyStatusSelectColors === 'function') applyStatusSelectColors();
          } catch(e){}
          
          btnRealtime.classList.add('is-on');
          btnRealtime.textContent = '⏹ Parar Monitoramento';
          
-         // Limpa quaisquer conexões anteriores (por segurança)
+         // limpa qualquer conexão/poll anterior
          cleanupRealTime();
          
-         page = 0;
+         // NÃO zera paginação nem cache — assim os itens antigos continuam visíveis
+         // page = 0;  ← NÃO FAZER
+         // cache permanece como está
          
-         // Carrega e depois inicia o polling
+         // 1) atualiza a tabela uma vez (modo silencioso para não piscar)
          try {
-         await load({ silent: false });
+         await load({ silent: true });
+         } catch (err) {
+         console.error('Erro no primeiro load do monitoramento:', err);
+         }
+         
+         // 2) inicia o polling leve (a cada 2,5s). Só recarrega se NÃO estiver editando status
          if (isRealTimeActive) {
          realTimeInterval = setInterval(() => {
           if (!isEditingStatus) {
-         load({ silent: true });
-         fetchNewTrelloCards();
-         }
+            load({ silent: true });
+            fetchNewTrelloCards?.();
+          }
          }, 2500);
-         }
-         } catch (err) {
-         console.error('Erro ao carregar para monitoramento:', err);
          }
          
          } else {
@@ -985,14 +986,13 @@
          btnRealtime.classList.remove('is-on');
          btnRealtime.innerHTML = '<span class="dot"></span> Monitoramento em Tempo Real';
          
-         // 1) Limpa TUDO (polling/SSE/fetch)
+         // 1) para polling/SSE/fetch
          cleanupRealTime();
          
-         // 2) Aguarda um micro-intervalo para o abort propagar
+         // 2) pequena pausa para garantir que nenhum fetch abortado “vaze”
          await new Promise(r => setTimeout(r, 50));
          
-         // 3) Reseta paginação e recarrega “normal”
-         page = 0;
+         // 3) recarrega respeitando os filtros atuais (sem forçar “Em aberto”)
          try {
          await load({ silent: false });
          console.log('✅ Monitoramento desativado e dados recarregados');
@@ -1001,6 +1001,7 @@
          }
          }
          }
+         
          
          
          function startSSEConnection(){
