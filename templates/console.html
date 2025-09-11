@@ -338,30 +338,40 @@
          font-size: 12px;
          text-align: center;
          }
+         /* ===== Relatório (analítico e sintético) ===== */
          .rpt-table{
-         width: 100%;
          border-collapse: collapse;
+         width:100%;
+         border: .6px solid #333;         /* linhas mais finas */
+         }
+         .rpt-table th,
+         .rpt-table td{
+         border: .6px solid #333;         /* linhas mais finas */
+         padding: 4px 6px;                /* espaço interno */
          font-size: 12px;
          }
-         .rpt-table th, .rpt-table td{
-         border: 1px solid #000;
-         padding: 4px 6px;
-         }
          .rpt-table thead th{
-         background: #f3f4f6; /* cinza claro */
-         text-transform: none;
-         font-weight: 700;
+         background:#f2f4f7;
+         font-weight:700;
          }
-         .rpt-table .num{
-         text-align: right;
-         white-space: nowrap;
+         /* linha com o nome do Cliente/Representante acima do cabeçalho */
+         .rpt-group-name{
+         text-align:center;
+         font-weight:700;
+         background:#eaecef;
          }
-         .rpt-table tbody tr:nth-child(even) td{
-         background: #f7f7f9; /* “zebra” igual aos prints */
+         /* subtotal por grupo */
+         .rpt-subtotal td{
+         font-weight:700;
          }
-         .rpt-total td{
-         font-weight: 700;
-         background: #fff;
+         /* total geral com separador acima (linha) */
+         .rpt-total-inline{
+         margin-top:8px;
+         font-weight:700;
+         }
+         .rpt-total-inline.rpt-with-sep{
+         border-top:.6px solid #333;      /* linha separando o total geral */
+         padding-top:6px;
          }
          /* Cursor de “mão” ao poder arrastar e “segurando” enquanto arrasta */
          #a4-viewer-wrap.a4-can-pan { cursor: grab; }
@@ -1876,10 +1886,14 @@
          }
          
          function gerarAnalitico(dados, agrupar){
+         // período no cabeçalho
          const ini = document.getElementById('relInicio').value;
          const fim = document.getElementById('relFim').value;
-         const periodo = (ini || fim) ? `Período de ${fmtData(ini || fim)} a ${fmtData(fim || ini)}` : '';
+         const periodo = (ini || fim)
+         ? `Período de ${fmtData(ini || fim)} a ${fmtData(fim || ini)}`
+         : '';
          
+         // cabeçalho do relatório (igual ao sintético)
          const header = (titulo) => `
          <div class="rpt-header">
          <div class="rpt-title">${titulo}</div>
@@ -1887,68 +1901,85 @@
          </div>
          `;
          
-         // Função para montar uma tabela de chamados
-         function tabelaChamados(lista){
-         return `
-         <table class="rpt-table">
-         <thead>
-          <tr>
-            <th>Sistema</th>
-            <th>Módulo</th>
-            <th>Ocorrência</th>
-            <th>Tipo</th>
-            <th class="num">Quant.</th>
-          </tr>
-         </thead>
-         <tbody>
-          ${lista.map(ch => `
-            <tr>
-              <td>${ch.sistema || ''}</td>
-              <td>${ch.modulo || ''}</td>
-              <td>${ch.ocorrencia || ''}</td>
-              <td>${ch.tipo || ''}</td>
-              <td class="num">1</td>
-            </tr>
-          `).join('')}
-         </tbody>
-         </table>
-         `;
-         }
+         // agrupamento: por cliente OU por representante
+         const key = (agrupar === 'representante') ? 'representante' : 'cliente';
+         const tituloRel = (agrupar === 'representante')
+         ? 'Relação de Chamados por Representantes'
+         : 'Relação de Chamados por Cliente';
          
-         // Agrupar dinamicamente
+         // monta { grupo: [chamados...] }
          const grupos = {};
          dados.forEach(d => {
-         const chave = agrupar === 'cliente'
-         ? (d.cliente || 'Sem Cliente')
-         : (d.representante || 'Sem Representante');
-         if (!grupos[chave]) grupos[chave] = [];
-         grupos[chave].push(d);
+         const k = (d[key] || (agrupar==='representante' ? 'Sem Representante' : 'Sem Cliente')).trim();
+         if (!grupos[k]) grupos[k] = [];
+         grupos[k].push(d);
          });
          
+         // contador total geral
          let totalGeral = 0;
-         const blocos = Object.entries(grupos)
-         .sort((a,b)=>a[0].localeCompare(b[0], 'pt-BR'))
-         .map(([nome, lista])=>{
-         const subtotal = lista.length;
+         
+         // para cada grupo, gera uma “tabela” com:
+         //  - 1a linha: NOME DO GRUPO centralizado (colspan)
+         //  - cabeçalho (Sistema/Módulo/Ocorrência/Tipo/Quant.)
+         //  - linhas (uma por chamado) com Quant.=1
+         //  - subtotal “Quantidade de Chamados: X”
+         const blocos = Object
+         .entries(grupos)
+         .sort((a,b) => a[0].localeCompare(b[0], 'pt-BR'))
+         .map(([grupoNome, items]) => {
+         // subtotal do grupo
+         const subtotal = items.length;
          totalGeral += subtotal;
+         
+         // linhas do corpo (uma linha por chamado)
+         const linhas = items.map(it => {
+         // Tipo com inicial maiúscula (Auxilio, Melhoria, Bug…)
+         const tipoRaw = (it.tipo || '').toString();
+         const tipoFmt = tipoRaw ? (tipoRaw.charAt(0).toUpperCase() + tipoRaw.slice(1).toLowerCase()) : '';
+         
          return `
-         <h3 style="margin:12px 0 4px 0;">${nome}</h3>
-         ${tabelaChamados(lista)}
-         <div class="rpt-total-inline">Quantidade de Chamados: <span class="num">${subtotal}</span></div>
+          <tr>
+            <td>${it.sistema || ''}</td>
+            <td>${it.modulo || ''}</td>
+            <td>${it.ocorrencia || ''}</td>
+            <td>${tipoFmt}</td>
+            <td class="num">1</td>
+          </tr>
+         `;
+         }).join('');
+         
+         return `
+         <table class="rpt-table" style="margin-top:10px;">
+          <thead>
+            <!-- NOME DO GRUPO acima dos títulos das colunas -->
+            <tr><th class="rpt-group-name" colspan="5">${grupoNome}</th></tr>
+            <tr>
+              <th>Sistema</th>
+              <th>Módulo</th>
+              <th>Ocorrência</th>
+              <th>Tipo</th>
+              <th class="num">Quantidade</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${linhas}
+            <tr class="rpt-subtotal">
+              <td colspan="4">Quantidade de Chamados:</td>
+              <td class="num">${subtotal}</td>
+            </tr>
+          </tbody>
+         </table>
          `;
          });
          
-         const conteudoFinal = `
-         ${header(agrupar === 'cliente'
-         ? 'Relação de Chamados por Cliente'
-         : 'Relação de Chamados por Representante')}
-         ${blocos.join('<hr style="margin:16px 0;">')}
-         <div class="rpt-total-inline" style="margin-top:16px; font-weight:bold;">
-         Total de Chamados: <span class="num">${totalGeral}</span>
-         </div>
-         `;
+         // monta página única (como no sintético):
+         //   título geral + blocos (um por grupo) + total geral com linha separando
+         const conteudo =
+         header(tituloRel) +
+         blocos.join('') +
+         `<div class="rpt-total-inline rpt-with-sep">Total de Chamados: <span class="num">${totalGeral}</span></div>`;
          
-         return [conteudoFinal];
+         return [conteudo];
          }
          
          
