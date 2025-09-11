@@ -341,6 +341,7 @@
     {% endif %}
     
     <form method="post" action="/login" autocomplete="off">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <label>Usuário</label>
       <input name="username"
        oninput="this.value = this.value.toUpperCase()">
