@@ -154,7 +154,13 @@ class User(db.Model):
         self.password = raw_password  # grava a senha original na nova coluna
 
     def check_password(self, raw_password: str) -> bool:
-        return check_password_hash(self.password_hash, raw_password)
+        try:
+            if not self.password_hash:
+                return False
+            return check_password_hash(self.password_hash, raw_password)
+        except Exception:
+            # Em caso de hash corrompido ou formato inválido, falha fechada
+            return False
 
 
 def _no_store(resp):
