@@ -342,38 +342,42 @@
          .rpt-table{
          border-collapse: collapse;
          width:100%;
--        border: .2px solid #333;         /* deixou mais fino */
-+        border: 1px solid rgba(0,0,0,.35); /* visual leve, aparenta mais fino */
+         border: 1px solid rgba(0,0,0,.55);
          table-layout: fixed;
          }
          .rpt-table th,
          .rpt-table td{
--        border: .2px solid #333;         /* deixou mais fino */
-+        border: 1px solid rgba(0,0,0,.35);
+         border: 1px solid rgba(0,0,0,.55);
          padding: 4px 6px;
          font-size: 12px;
          overflow: hidden;
          text-overflow: ellipsis;
          word-wrap: break-word;
          }
-+        @media (min-resolution: 2dppx){
-+          .rpt-table, .rpt-table th, .rpt-table td{ border-width: .5px; }
-+        }
-+        @media print{
-+          .rpt-table, .rpt-table th, .rpt-table td{ border-width: .5px; }
-+        }
+         .rpt-table thead th{
+           background: #f3f4f6;
+           border-bottom: 2px solid rgba(0,0,0,.7);
+         }
+         .rpt-table tbody tr:nth-child(odd) td{ background: #fafbff; }
+         .rpt-table tbody tr:nth-child(even) td{ background: #ffffff; }
+         @media (min-resolution: 2dppx){
+           .rpt-table, .rpt-table th, .rpt-table td{ border-width: 1px; }
+         }
+         @media print{
+           .rpt-table, .rpt-table th, .rpt-table td{ border-width: 1px; }
+         }
          .rpt-subtotal-inline{
          margin: 6px 0 10px 0;
-         font-weight:600;                 /* menos "pesado" */
-         font-size: 11px;                 /* menor */
+         font-weight:600;
+         font-size: 11px;
          }
          .rpt-total-inline{
          margin-top:8px;
          font-weight:600;
-         font-size: 11px;                 /* menor */
+         font-size: 11px;
          }
          .rpt-total-inline.rpt-with-sep{
-         border-top:.2px solid #333;      /* linha também mais fina */
+         border-top:1px solid rgba(0,0,0,.55);
          padding-top:6px;
          }
       </style>
@@ -2499,13 +2503,13 @@
            } catch (e) {
              console.error("Erro ao configurar selects encadeados do relatório:", e);
            }
-+          const btnOk = document.getElementById('btnOkRequireDates');
-+          if (btnOk){
-+            btnOk.onclick = () => {
-+              const m = document.getElementById('requireDatesModal');
-+              if (m) m.style.display = 'none';
-+            };
-+          }
+           const btnOk = document.getElementById('btnOkRequireDates');
+           if (btnOk){
+             btnOk.onclick = () => {
+               const m = document.getElementById('requireDatesModal');
+               if (m) m.style.display = 'none';
+             };
+           }
          });
       </script>
       <!-- Modal: Remover representante -->
