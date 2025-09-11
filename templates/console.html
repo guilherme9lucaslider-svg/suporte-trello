@@ -2670,78 +2670,81 @@
       <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
       <script>
          // Utilitário: quebra um HTML longo em múltiplas páginas A4
-+        function paginateHtmlToA4(innerHTML){
-+          // cria um container temporário para medir
-+          const temp = document.createElement('div');
-+          temp.style.position = 'absolute';
-+          temp.style.left = '-99999px';
-+          temp.style.top = '0';
-+          temp.style.width = '210mm';
-+          temp.style.padding = '18mm 16mm';
-+          temp.style.boxSizing = 'border-box';
-+          temp.innerHTML = innerHTML;
-+          document.body.appendChild(temp);
-+
-+          const pageHeightPx = (() => {
-+            // cria uma página A4 real para medir altura interna disponível
-+            const probe = document.createElement('div');
-+            probe.className = 'a4-page';
-+            probe.style.visibility = 'hidden';
-+            document.body.appendChild(probe);
-+            const innerHeight = probe.clientHeight - parseFloat(getComputedStyle(probe).paddingTop) - parseFloat(getComputedStyle(probe).paddingBottom);
-+            document.body.removeChild(probe);
-+            return innerHeight;
-+          })();
-+
-+          const pages = [];
-+          let current = document.createElement('div');
-+          current.style.height = pageHeightPx + 'px';
-+          current.style.boxSizing = 'border-box';
-+          current.style.overflow = 'hidden';
-+
-+          const children = Array.from(temp.childNodes);
-+          const pushPage = () => {
-+            pages.push('<div class="a4-page"><div class="a4-inner">' + current.innerHTML + '</div></div>');
-+            current = document.createElement('div');
-+            current.style.height = pageHeightPx + 'px';
-+            current.style.boxSizing = 'border-box';
-+            current.style.overflow = 'hidden';
-+          };
-+
-+          const willOverflow = () => {
-+            // mede usando um wrapper invisível
-+            const wrap = document.createElement('div');
-+            wrap.style.position = 'absolute';
-+            wrap.style.left = '-99999px';
-+            wrap.style.top = '0';
-+            wrap.style.width = '210mm';
-+            wrap.style.padding = '18mm 16mm';
-+            wrap.style.boxSizing = 'border-box';
-+            wrap.innerHTML = current.innerHTML;
-+            document.body.appendChild(wrap);
-+            const h = wrap.scrollHeight;
-+            document.body.removeChild(wrap);
-+            return h > pageHeightPx;
-+          };
-+
-+          for (const node of children){
-+            const holder = document.createElement('div');
-+            holder.appendChild(node.cloneNode(true));
-+            current.innerHTML += holder.innerHTML;
-+            if (willOverflow()){
-+              // remove o último bloco e empurra para próxima página
-+              current.innerHTML = current.innerHTML.slice(0, current.innerHTML.length - holder.innerHTML.length);
-+              pushPage();
-+              current.innerHTML += holder.innerHTML;
-+            }
-+          }
-+          // última página
-+          if (current.innerHTML.trim()) pushPage();
-+
-+          document.body.removeChild(temp);
-+          // remove o wrapper interno usado no markup
-+          return pages.map(p => p.replace('<div class=\"a4-inner\">','').replace('</div></div>','</div>'));
-+        }
+         function paginateHtmlToA4(innerHTML){
+           // cria um container temporário para medir
+           const temp = document.createElement('div');
+           temp.style.position = 'absolute';
+           temp.style.left = '-99999px';
+           temp.style.top = '0';
+           temp.style.width = '210mm';
+           temp.style.padding = '18mm 16mm';
+           temp.style.boxSizing = 'border-box';
+           temp.innerHTML = innerHTML;
+           document.body.appendChild(temp);
+
+           const pageHeightPx = (() => {
+             // cria uma página A4 real para medir altura interna disponível
+             const probe = document.createElement('div');
+             probe.className = 'a4-page';
+             probe.style.visibility = 'hidden';
+             document.body.appendChild(probe);
+             const innerHeight = probe.clientHeight - parseFloat(getComputedStyle(probe).paddingTop) - parseFloat(getComputedStyle(probe).paddingBottom);
+             document.body.removeChild(probe);
+             return innerHeight;
+           })();
+
+           const pages = [];
+           let current = document.createElement('div');
+           current.style.height = pageHeightPx + 'px';
+           current.style.boxSizing = 'border-box';
+           current.style.overflow = 'hidden';
+
+           const children = Array.from(temp.childNodes);
+           const pushPage = () => {
+             pages.push('<div class="a4-page"><div class="a4-inner">' + current.innerHTML + '</div></div>');
+             current = document.createElement('div');
+             current.style.height = pageHeightPx + 'px';
+             current.style.boxSizing = 'border-box';
+             current.style.overflow = 'hidden';
+           };
+
+           const willOverflow = () => {
+             // mede usando um wrapper invisível
+             const wrap = document.createElement('div');
+             wrap.style.position = 'absolute';
+             wrap.style.left = '-99999px';
+             wrap.style.top = '0';
+             wrap.style.width = '210mm';
+             wrap.style.padding = '18mm 16mm';
+             wrap.style.boxSizing = 'border-box';
+             wrap.innerHTML = current.innerHTML;
+             document.body.appendChild(wrap);
+             const h = wrap.scrollHeight;
+             document.body.removeChild(wrap);
+             return h > pageHeightPx;
+           };
+
+           for (const node of children){
+             const holder = document.createElement('div');
+             holder.appendChild(node.cloneNode(true));
+             current.innerHTML += holder.innerHTML;
+             if (willOverflow()){
+               // remove o último bloco e empurra para próxima página
+               current.innerHTML = current.innerHTML.slice(0, current.innerHTML.length - holder.innerHTML.length);
+               pushPage();
+               current.innerHTML += holder.innerHTML;
+             }
+           }
+           // última página
+           if (current.innerHTML.trim()) pushPage();
+
+           document.body.removeChild(temp);
+           // remove o wrapper interno usado no markup
+           const result = pages.map(p => p.replace('<div class=\"a4-inner\">','').replace('</div></div>','</div>'));
+           return result;
+         }
+         // expõe global
+         window.paginateHtmlToA4 = paginateHtmlToA4;
       </script>
    </body>
 </html>
