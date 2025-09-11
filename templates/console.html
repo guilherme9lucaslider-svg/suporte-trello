@@ -1876,17 +1876,10 @@
          }
          
          function gerarAnalitico(dados, agrupar){
-         // Cabeçalho (mesmo padrão do sintético)
-         const ini = document.getElementById('relInicio')?.value || '';
-         const fim = document.getElementById('relFim')?.value || '';
-         const fmt = d => {
-         if (!d) return '';
-         const [y,m,dd] = d.split('-');
-         return `${dd}/${m}/${y}`;
-         };
-         const periodo = (ini || fim) ? `Período de ${fmt(ini || fim)} a ${fmt(fim || ini)}` : '';
+         const ini = document.getElementById('relInicio').value;
+         const fim = document.getElementById('relFim').value;
+         const periodo = (ini || fim) ? `Período de ${fmtData(ini || fim)} a ${fmtData(fim || ini)}` : '';
          
-         // Função de título/periodo (sem depender do gerarSintetico)
          const header = (titulo) => `
          <div class="rpt-header">
          <div class="rpt-title">${titulo}</div>
@@ -1894,106 +1887,70 @@
          </div>
          `;
          
-         // Normaliza texto para evitar "undefined"
-         const safe = v => (v == null ? '' : String(v));
-         
-         // Prepara agrupamento
-         // agrupar === 'cliente'  ->  bloco por cliente
-         // agrupar === 'representante' -> bloco por representante
-         const chaveTopo = (d) => {
-         if (agrupar === 'cliente')       return safe(d.cliente) || 'Sem Cliente';
-         if (agrupar === 'representante') return safe(d.representante) || 'Sem Representante';
-         return 'Geral';
-         };
-         
-         // Mapa: topo -> linhas detalhadas (sistema/módulo/ocorrência/tipo)
-         const grupos = {};
-         dados.forEach(d => {
-         const top = chaveTopo(d);
-         if (!grupos[top]) grupos[top] = [];
-         grupos[top].push({
-         sistema:     safe(d.sistema)     || '—',
-         modulo:      safe(d.modulo)      || '—',
-         ocorrencia:  safe(d.ocorrencia)  || '—',
-         tipo:        safe(d.tipo)        || '—'
-         });
-         });
-         
-         // Monta o HTML de cada grupo com subtotais
-         const blocos = Object.entries(grupos)
-         // ordena alfabeticamente pelo nome do grupo
-         .sort((a,b) => a[0].localeCompare(b[0], 'pt-BR'))
-         .map(([topo, linhas]) => {
-         // agrega por (sistema, módulo, ocorrência, tipo)
-         const mapa = {};
-         linhas.forEach(l => {
-         const key = `${l.sistema}||${l.modulo}||${l.ocorrencia}||${l.tipo}`;
-         mapa[key] = (mapa[key] || 0) + 1;
-         });
-         
-         // transforma em linhas de tabela
-         const rows = Object.entries(mapa)
-         .map(([key, q]) => {
-          const [sis, mod, oc, tp] = key.split('||');
-          return `<tr>
-            <td>${sis}</td>
-            <td>${mod}</td>
-            <td>${oc}</td>
-            <td>${tp}</td>
-            <td class="num">${q}</td>
-          </tr>`;
-         })
-         // ordena por sistema, depois módulo, depois ocorrência, depois tipo
-         .sort((ra, rb) => ra.localeCompare(rb, 'pt-BR'));
-         
-         const subtotal = linhas.length;
-         
-         const tabela = `
+         // Função para montar uma tabela de chamados
+         function tabelaChamados(lista){
+         return `
          <table class="rpt-table">
-          <thead>
+         <thead>
+          <tr>
+            <th>Sistema</th>
+            <th>Módulo</th>
+            <th>Ocorrência</th>
+            <th>Tipo</th>
+            <th class="num">Quant.</th>
+          </tr>
+         </thead>
+         <tbody>
+          ${lista.map(ch => `
             <tr>
-              <th>Sistema</th>
-              <th>Módulo</th>
-              <th>Ocorrência</th>
-              <th>Tipo</th>
-              <th class="num">Quant.</th>
+              <td>${ch.sistema || ''}</td>
+              <td>${ch.modulo || ''}</td>
+              <td>${ch.ocorrencia || ''}</td>
+              <td>${ch.tipo || ''}</td>
+              <td class="num">1</td>
             </tr>
-          </thead>
-          <tbody>
-            ${rows.join('')}
-            <tr>
-              <td colspan="4" style="font-weight:600;text-align:right;">Subtotal</td>
-              <td class="num" style="font-weight:600;">${subtotal}</td>
-            </tr>
-          </tbody>
+          `).join('')}
+         </tbody>
          </table>
          `;
+         }
          
-         const tituloGrupo = (agrupar === 'cliente')
-         ? `Relatório Analítico — Cliente: ${topo}`
-         : `Relatório Analítico — Representante: ${topo}`;
+         // Agrupar dinamicamente
+         const grupos = {};
+         dados.forEach(d => {
+         const chave = agrupar === 'cliente'
+         ? (d.cliente || 'Sem Cliente')
+         : (d.representante || 'Sem Representante');
+         if (!grupos[chave]) grupos[chave] = [];
+         grupos[chave].push(d);
+         });
          
+         let totalGeral = 0;
+         const blocos = Object.entries(grupos)
+         .sort((a,b)=>a[0].localeCompare(b[0], 'pt-BR'))
+         .map(([nome, lista])=>{
+         const subtotal = lista.length;
+         totalGeral += subtotal;
          return `
-         <div class="rpt-block">
-          ${header(tituloGrupo)}
-          ${tabela}
-         </div>
+         <h3 style="margin:12px 0 4px 0;">${nome}</h3>
+         ${tabelaChamados(lista)}
+         <div class="rpt-total-inline">Quantidade de Chamados: <span class="num">${subtotal}</span></div>
          `;
          });
          
-         // Total geral
-         const totalGeral = dados.length;
-         const totalHtml = `
-         <div class="rpt-total-inline" style="margin-top:12px">
-         Total Geral de Chamados: <span class="num">${totalGeral}</span>
+         const conteudoFinal = `
+         ${header(agrupar === 'cliente'
+         ? 'Relação de Chamados por Cliente'
+         : 'Relação de Chamados por Representante')}
+         ${blocos.join('<hr style="margin:16px 0;">')}
+         <div class="rpt-total-inline" style="margin-top:16px; font-weight:bold;">
+         Total de Chamados: <span class="num">${totalGeral}</span>
          </div>
          `;
          
-         // Retorna uma única “página” (o viewer já embrulha com .a4-page)
-         // Se desejar forçar uma página por grupo no futuro, dá pra quebrar o array aqui.
-         const conteudo = blocos.join('') + totalHtml;
-         return [conteudo];
+         return [conteudoFinal];
          }
+         
          
          // Amarra min/max entre as datas
          (function bindDateBounds(){
