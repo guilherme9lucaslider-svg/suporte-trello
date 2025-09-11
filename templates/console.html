@@ -242,7 +242,7 @@
          }
          .btn-eye:hover{ background:var(--surface-hover) !important; }
          .eye-icon{ width:16px; height:16px; display:inline-block; }
-         /* Célula de ações deve continuar como célula de tabela (evita “risquinho” torto) */
+         /* Célula de ações deve continuar como célula de tabela (evita "risquinho" torto) */
          table td.actions{
          display:table-cell !important;
          vertical-align:middle !important;
@@ -356,7 +356,7 @@
          }
          .rpt-subtotal-inline{
          margin: 6px 0 10px 0;
-         font-weight:600;                 /* menos “pesado” */
+         font-weight:600;                 /* menos "pesado" */
          font-size: 11px;                 /* menor */
          }
          .rpt-total-inline{
@@ -935,7 +935,7 @@
          // ===== ATIVANDO =====
          isRealTimeActive = true;
          
-         // força “Em aberto” (sem mexer nos outros filtros visuais)
+         // força "Em aberto" (sem mexer nos outros filtros visuais)
          try {
          statusSelect.value = 'Em aberto';
          if (typeof applyStatusSelectColors === 'function') applyStatusSelectColors();
@@ -978,10 +978,10 @@
          // 1) para polling/SSE/fetch
          cleanupRealTime();
          
-         // 2) pequena pausa para garantir que nenhum fetch abortado “vaze”
+         // 2) pequena pausa para garantir que nenhum fetch abortado "vaze"
          await new Promise(r => setTimeout(r, 50));
          
-         // 3) recarrega respeitando os filtros atuais (sem forçar “Em aberto”)
+         // 3) recarrega respeitando os filtros atuais (sem forçar "Em aberto")
          try {
          await load({ silent: false });
          console.log('✅ Monitoramento desativado e dados recarregados');
@@ -1627,7 +1627,7 @@
          document.getElementById('btnNextPageRel')?.addEventListener('click', () => a4ShowPage(A4State.current + 1));
          document.getElementById('btnLastPageRel')?.addEventListener('click', () => a4ShowPage(A4State.pages.length || 1));
          
-         // Ao entrar na aba Relatórios, garante A4 visível (sem “lista antiga”)
+         // Ao entrar na aba Relatórios, garante A4 visível (sem "lista antiga")
          document.querySelector('[data-target="#relatorios"]')?.addEventListener('click', () => {
          if (!A4State.pages || A4State.pages.length === 0) setA4Pages([]); // mostra 1 página A4 vazia
          });
@@ -1918,7 +1918,7 @@
          </colgroup>
          `;
          
-         // para cada grupo, tabela + subtotal “solto”
+         // para cada grupo, tabela + subtotal "solto"
          const blocos = Object
          .entries(grupos)
          .sort((a,b) => a[0].localeCompare(b[0], 'pt-BR'))
@@ -1994,9 +1994,14 @@
       </script>
       <script>
          // ====== Funções do CADASTRO ======
+         function getCsrfToken(){
+           const m = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
+           return m ? decodeURIComponent(m[1]) : '';
+         }
          function criarRep(e) {
            e.preventDefault();
            const formData = new FormData(e.target);
+           formData.append('csrf_token', getCsrfToken());
            fetch('/admin/rep/new', {
              method: 'POST',
              body: formData,
@@ -2052,6 +2057,7 @@
          function criarUser(e) {
            e.preventDefault();
            const formData = new FormData(e.target);
+           formData.append('csrf_token', getCsrfToken());
            
            fetch('/admin/user/new', {
              method: 'POST',
@@ -2203,7 +2209,7 @@
              try {
                const res = await fetch('/admin/rep/' + id + '/delete', {
                  method: 'POST',
-                 headers: { 'Content-Type': 'application/json' },
+                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
                  credentials: 'same-origin',
                  body: JSON.stringify({ confirm: true })
                });
@@ -2260,7 +2266,7 @@
              try {
                const res = await fetch('/admin/user/' + id + '/delete', {
                  method: 'POST',
-                 headers: { 'Content-Type': 'application/json' },
+                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
                  credentials: 'same-origin'
                });
                const data = await res.json();

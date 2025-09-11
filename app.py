@@ -26,6 +26,7 @@ from flask import (
     url_for,
 )
 from flask_sqlalchemy import SQLAlchemy
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 from urllib.parse import quote_plus
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -50,6 +51,10 @@ BASE_DIR = Path(__file__).resolve().parent
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB
 
+# CSRF
+csrf = CSRFProtect()
+csrf.init_app(app)
+
 # ==== Mostrar/ocultar botão "Baixar aplicativo" ====
 def _compute_show_download(req=None):
     """Retorna True se o botão 'Baixar aplicativo' deve aparecer."""
@@ -69,6 +74,21 @@ def _compute_show_download(req=None):
 @app.context_processor
 def inject_show_download():
     return {"show_download": _compute_show_download()}
+
+@app.context_processor
+def inject_csrf_token():
+    # Permite usar {{ csrf_token() }} nos templates
+    return {"csrf_token": generate_csrf}
+
+@app.after_request
+def set_csrf_cookie(resp):
+    # Fornece o token também via cookie para facilitar uso em fetch (JS)
+    try:
+        token = generate_csrf()
+        resp.set_cookie("csrf_token", token, httponly=False, samesite="Lax")
+    except Exception:
+        pass
+    return resp
 
 
 app.secret_key = os.getenv("APP_SECRET", "super-secret-key")  # troque em produção
@@ -149,8 +169,8 @@ def _no_store(resp):
 # -----------------------------------------------------------------------------
 # Admin helpers
 # -----------------------------------------------------------------------------
-ADMIN_USER = os.getenv("ADMIN_USER", "lider")
-ADMIN_PASS = os.getenv("ADMIN_PASS", "2018")
+ADMIN_USER = os.getenv("ADMIN_USER")
+ADMIN_PASS = os.getenv("ADMIN_PASS")
 
 def _norm(s: str) -> str:
     s = s or ""
@@ -826,6 +846,7 @@ def api_diagnostico():
 # Endpoint para mudar o status (lista) de um card específico. Recebe JSON com
 # {"status": "Novo Status"} e move o card para a lista correspondente no
 # Trello. Apenas usuários autenticados podem realizar esta ação.
+@csrf.exempt
 @app.route("/api/chamados/<card_id>/status", methods=["POST"])
 def api_chamados_change_status(card_id: str):
     if not card_id:
@@ -1286,6 +1307,7 @@ def logout():
 # -----------------------------------------------------------------------------
 # Salvar chamado (formulário)
 # -----------------------------------------------------------------------------
+@csrf.exempt
 @app.route("/salvar", methods=["POST"])
 def salvar():
     data = request.form if request.form else (request.json or {})

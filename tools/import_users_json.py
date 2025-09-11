@@ -7,9 +7,9 @@ USERS_FILE = BASE / "users.json"
 with app.app_context():
     data = json.loads(USERS_FILE.read_text(encoding="utf-8"))
     for rep_name, obj in data.items():
-        rep = Representative.query.filter_by(name=rep_name).first()
+        rep = Representative.query.filter_by(nome=rep_name).first()
         if not rep:
-            rep = Representative(name=rep_name)
+            rep = Representative(nome=rep_name)
             db.session.add(rep)
             db.session.commit()
         for item in obj.get("users", []):

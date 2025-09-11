@@ -9,8 +9,14 @@ window.WA = (function(){
     return d.length === 10 || d.length === 11;
   }
   function toE164BR(digits){
-    const d = onlyDigits(digits);
-    return d.startsWith('55') ? '+'+d : '+55'+d;
+    let d = onlyDigits(digits);
+    if (d.length === 10 || d.length === 11) {
+      d = '55' + d;
+    }
+    if (!d.startsWith('55')) {
+      d = '55' + d;
+    }
+    return '+' + d;
   }
   function maskBR(input){
     let d = onlyDigits(input.value);
@@ -39,8 +45,9 @@ window.WA = (function(){
   }
   function digitsBR(input){ return onlyDigits(input.value); }
   function waLinkFromDigits(digits, text){
-    const d = onlyDigits(digits);
-    return `https://wa.me/55${d}?text=${encodeURIComponent(text||'Olá!')}`;
+    const e164 = toE164BR(digits).replace('+','');
+    return `https://wa.me/${e164}?text=${encodeURIComponent(text||'Olá!')}`;
   }
-  return { onlyDigits, isValidBR, toE164BR, maskBR, digitsBR: digitsBR = digitsBR = function(i){return onlyDigits(i.value)}, waLinkFromDigits };
+  function digitsBR(input){ return onlyDigits(input.value); }
+  return { onlyDigits, isValidBR, toE164BR, maskBR, digitsBR, waLinkFromDigits };
 })();

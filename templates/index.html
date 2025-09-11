@@ -159,7 +159,7 @@
     .priority-chip:hover{ transform:translateY(-2px); box-shadow:var(--shadow-sm); }
     .priority-chip input{ position:absolute; opacity:0; pointer-events:none; }
     .priority-chip[data-color="Alta"]{ --color:#e74c3c; }
-    .priority-chip[data-color="MÃ©dia"]{ --color:var(--secondary); }
+    .priority-chip[data-color="Média"]{ --color:#eab308; }
     .priority-chip[data-color="Baixa"]{ --color:#27ae60; }
     .priority-chip input:checked + span{
       background:var(--color); color:#fff; border-radius:10px; padding:14px 10px; display:block;
@@ -704,7 +704,6 @@
 
       const prioridade=(document.querySelector('input[name="prioridade"]:checked')||{}).value;
       const form = new FormData();
-      const tipo = document.getElementById('tipo').value;
       form.set('nome', cap(nomeInp.value.trim()));
       form.set('whatsapp', whatsappInp.value.trim());
       const repValue2 = representanteLogado || (repSelect ? repSelect.value : '');

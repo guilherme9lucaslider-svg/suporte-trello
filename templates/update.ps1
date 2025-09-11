@@ -1,20 +1,28 @@
-cd D:\Projetos\suporte-trello 
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
 
-git init 
+Set-Location -Path 'D:\Projetos\suporte-trello'
 
-# garante que está na branch main 
-git branch -M main 
+# Inicializa repositÃ³rio se necessÃ¡rio
+if (-not (Test-Path '.git')) {
+  git init | Out-Null
+}
 
-# adiciona todos os arquivos novos e modificados 
-git add . 
+# Garante branch main
+git branch -M main | Out-Null
 
-# cria um commit 
-git commit -m "Atualização" 
+# Adiciona arquivos
+git add -A
 
-# garante que o remoto está configurado 
-git remote remove origin 2>$null git remote add origin https://github.com/guilherme9lucaslider-svg/suporte-trello.git 
+# Cria commit (mensagem sem acentos para evitar problemas de encoding)
+$msg = "Atualizacao $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+git commit -m $msg
 
-# envia para o GitHub na branch main (forçando a substituir o conteúdo antigo) 
-git push -u origin main --force 
+# Configura remoto de forma idempotente
+try { git remote remove origin | Out-Null } catch {}
+git remote add origin 'https://github.com/guilherme9lucaslider-svg/suporte-trello.git'
 
-exit
+# Push forÃ§ado (cuidado: sobrescreve remoto)
+git push -u origin main --force
+
+exit 0

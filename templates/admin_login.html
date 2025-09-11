@@ -464,6 +464,7 @@
       {% endif %}
 
       <form method="post" action="/admin/login" class="form" id="loginForm" autocomplete="off">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="field-group">
           <label for="username">👤 Usuário</label>
           <div class="input-wrapper">
