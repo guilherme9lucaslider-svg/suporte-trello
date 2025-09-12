@@ -12,3 +12,5 @@ xlsxwriter>=3.1.2
 psycopg2-binary>=2.9.10
 # Worker for SSE-friendly concurrency
 gevent>=24.2.1
+python-dotenv>=1.0.0
+python-dotenv>=1.0.0

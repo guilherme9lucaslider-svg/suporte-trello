@@ -1,41 +1,39 @@
 # app.py
 
+# --- Standard Library ---
 import os
-import sys
 import re
 import time
 import json
+import io
+import csv
 import unicodedata
 import hashlib
 from pathlib import Path
 from datetime import datetime, timezone
-from functools import wraps
+from urllib.parse import quote_plus
 
-
+# --- Third-Party ---
+from dotenv import load_dotenv
 from flask import (
     Flask,
     Response,
-    abort,
     jsonify,
     make_response,
     render_template,
     request,
-    send_from_directory,
     session,
     redirect,
     url_for,
 )
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect, generate_csrf
-from urllib.parse import quote_plus
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import requests
-
-# For exports
-import io
-import csv
 import pandas as pd
+
+load_dotenv()
 
 # -----------------------------------------------------------------------------
 # Add
@@ -91,7 +89,9 @@ def set_csrf_cookie(resp):
     return resp
 
 
-app.secret_key = os.getenv("APP_SECRET", "super-secret-key")  # troque em produção
+app.secret_key = os.getenv("APP_SECRET")
+if not app.secret_key:
+    raise RuntimeError("APP_SECRET não definido no ambiente.")
 # Não manter sessões permanentes: o usuário deverá fazer login novamente
 app.config["SESSION_PERMANENT"] = False
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -103,14 +103,29 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 # contain special characters such as '@', so we percent‑encode it to form
 # a valid URI.
 db_uri = os.getenv("DATABASE_URL")
+sslmode = os.getenv("DB_SSLMODE")
+
 if not db_uri:
-    db_user = os.getenv("DB_USER", "postgres")
-    db_password = os.getenv("DB_PASS", "@PGl2013A")
-    db_host = os.getenv("DB_HOST", "52.86.225.143")
-    db_name = os.getenv("DB_NAME", "suporte_trello")
+    db_user = os.getenv("DB_USER")
+    db_password = os.getenv("DB_PASS")
+    db_host = os.getenv("DB_HOST")
+    db_name = os.getenv("DB_NAME")
+    db_port = os.getenv("DB_PORT", "5432")
+
+    missing = [k for k, v in {
+        "DB_USER": db_user,
+        "DB_PASS": db_password,
+        "DB_HOST": db_host,
+        "DB_NAME": db_name,
+    }.items() if not v]
+    if missing:
+        raise RuntimeError(f"Variáveis ausentes: {', '.join(missing)}")
+
     # Percent‑encode special characters in the password.
     db_password_quoted = quote_plus(db_password)
-    db_uri = f"postgresql://{db_user}:{db_password_quoted}@{db_host}/{db_name}"
+    db_uri = f"postgresql://{db_user}:{db_password_quoted}@{db_host}:{db_port}/{db_name}"
+if sslmode and "sslmode=" not in db_uri:
+    db_uri += ("&" if "?" in db_uri else "?") + f"sslmode={sslmode}"
 app.config["SQLALCHEMY_DATABASE_URI"] = db_uri
 db = SQLAlchemy(app)
 
@@ -1439,7 +1454,7 @@ def admin_login():
         return render_template("admin_login.html", error=None)
     u = (request.form.get("username", "") or "").strip().upper()
     p = (request.form.get("password", "") or "").strip()
-    if u == ADMIN_USER.upper() and p == ADMIN_PASS:
+    if u == (ADMIN_USER or "").upper() and p == (ADMIN_PASS or ""):
         session.clear()
         session["admin"] = True
         session["fresh_admin"] = True
