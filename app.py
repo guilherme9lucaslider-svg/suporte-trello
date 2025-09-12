@@ -847,6 +847,9 @@ def api_chamados():
             "tipo": tipo or None,
         })
 
+    # Ordena por última atividade em ordem decrescente (mais recentes primeiro)
+    items.sort(key=lambda x: x.get("ultima_atividade", ""), reverse=True)
+    
     total = len(items)
     paginated = items if not limit else items[offset: offset + limit]
 
@@ -1305,8 +1308,8 @@ def api_trello_new_cards():
                 }
             )
 
-        # Ordena por criação (opcional) e retorna
-        new_cards.sort(key=lambda x: x.get("created_at"))
+        # Ordena por criação em ordem decrescente (mais recentes primeiro)
+        new_cards.sort(key=lambda x: x.get("created_at"), reverse=True)
         # A resposta é um array simples (sem metadata) para facilitar o front‑end
         return jsonify(new_cards)
 
