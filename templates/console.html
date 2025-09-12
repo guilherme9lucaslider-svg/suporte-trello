@@ -1296,18 +1296,14 @@
          // page = 0;  ← NÃO FAZER
          // cache permanece como está
          
-         // 1) atualiza a tabela uma vez (modo silencioso para não piscar)
-         try {
-         await load({ silent: true });
-         } catch (err) {
-         console.error('Erro no primeiro load do monitoramento:', err);
-         }
+         // 1) APENAS inicia o polling sem fazer load inicial
+         // Isso preserva os dados já carregados na tela
          
          // 2) inicia o polling leve (a cada 2,5s). Só recarrega se NÃO estiver editando status
          if (isRealTimeActive) {
          realTimeInterval = setInterval(() => {
           if (!isEditingStatus) {
-            load({ silent: true });
+            load({ silent: true, append: false });
             // Não precisamos chamar fetchNewTrelloCards aqui, pois já temos um intervalo separado para isso
           }
          }, 2500);
@@ -1708,12 +1704,37 @@
          cache = next;
          }
          } else {
-         if (shouldDeferRender) {
-         pendingRenderData = { items, silent: true };
-         cache = items;
+         // Se o monitoramento em tempo real está ativo e já temos dados no cache,
+         // faz merge inteligente para preservar dados existentes
+         if (isRealTimeActive && cache.length > 0 && !append) {
+           // Cria um mapa dos IDs existentes para evitar duplicatas
+           const existingIds = new Set(cache.map(item => item.id));
+           // Adiciona apenas novos itens que não existem no cache
+           const newItems = items.filter(item => !existingIds.has(item.id));
+           // Atualiza itens existentes com dados mais recentes
+           const updatedCache = cache.map(cachedItem => {
+             const updatedItem = items.find(item => item.id === cachedItem.id);
+             return updatedItem || cachedItem;
+           });
+           // Combina dados atualizados com novos itens
+           const mergedItems = [...updatedCache, ...newItems];
+           
+           if (shouldDeferRender) {
+             pendingRenderData = { items: mergedItems, silent: true };
+             cache = mergedItems;
+           } else {
+             render(mergedItems, { silent });
+             cache = mergedItems;
+           }
          } else {
-         render(items, { silent });
-         cache = items;
+           // Comportamento normal quando não está em monitoramento ou cache vazio
+           if (shouldDeferRender) {
+             pendingRenderData = { items, silent: true };
+             cache = items;
+           } else {
+             render(items, { silent });
+             cache = items;
+           }
          }
          }
          
