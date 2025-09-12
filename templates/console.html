@@ -740,13 +740,10 @@
          function openWhatsApp(rawPhone, text){
            const phone = normalizeBRPhone(rawPhone);
            const q = text ? ('&text=' + encodeURIComponent(text)) : '';
-           const url = 'https://api.whatsapp.com/send?phone=' + phone + q;
-           try { 
-             window.open(url, '_blank'); 
-           } catch { 
-             window.location.href = url; 
-           }
-         }
+           const deepLink = 'whatsapp://send?phone=' + phone + q;
+
+// Abre o app via protocolo do WhatsApp; não cria nova aba do navegador
+         window.location.href = deepLink;
          window.openWhatsApp = openWhatsApp;
          
          
