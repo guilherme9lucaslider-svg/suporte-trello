@@ -1292,17 +1292,20 @@
          // limpa qualquer conexão/poll anterior
          cleanupRealTime();
          
-         // NÃO zera paginação nem cache — assim os itens antigos continuam visíveis
-         // page = 0;  ← NÃO FAZER
-         // cache permanece como está
+         // Aplica o filtro imediatamente após definir "Em aberto"
+         console.log('🔄 Aplicando filtro "Em aberto" e recarregando dados...');
+         page = 0; // Reset da paginação para aplicar o filtro corretamente
+         cache = []; // Limpa o cache para forçar nova busca com filtro
          
-         // 1) APENAS inicia o polling sem fazer load inicial
-         // Isso preserva os dados já carregados na tela
+         // Carrega os dados com o novo filtro aplicado
+         await load({ silent: false, append: false });
          
-         // 2) inicia o polling leve (a cada 2,5s). Só recarrega se NÃO estiver editando status
+         // inicia o polling leve (a cada 2,5s). Só recarrega se NÃO estiver editando status
          if (isRealTimeActive) {
+         console.log('✅ Iniciando monitoramento em tempo real...');
          realTimeInterval = setInterval(() => {
           if (!isEditingStatus) {
+            console.log('🔄 Polling automático - atualizando dados...');
             load({ silent: true, append: false });
             // Não precisamos chamar fetchNewTrelloCards aqui, pois já temos um intervalo separado para isso
           }
