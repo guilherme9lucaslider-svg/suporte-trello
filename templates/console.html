@@ -142,10 +142,6 @@
             max-width: 400px;
             width: 90vw;
             animation: notificationBounce 0.5s ease-out;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
          }
          
          .notification-icon {
@@ -156,7 +152,7 @@
          
          .notification-title {
             color: #fff;
-            font-size: 32px;
+            font-size: 28px;
             font-weight: 800;
             margin-bottom: 15px;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
@@ -870,14 +866,9 @@
              document.querySelector(btn.dataset.target).classList.add('active');
            }));
          
-           function initPainel(){
-             console.log('🏁 Iniciando função initPainel');
+           (function initPainel(){
              const painel = document.getElementById('painel');
-             if(!painel) {
-               console.error('❌ Elemento #painel não encontrado');
-               return;
-             }
-             console.log('✅ Elemento #painel encontrado');
+             if(!painel) return;
          
              const tbody = painel.querySelector('#tbody');
              const countBox = painel.querySelector('#countBox');
@@ -1010,7 +1001,22 @@
                 audio.play().catch(e => console.warn('Erro ao tocar som:', e));
               }
               
-              // Mostra modal centralizado como notificação principal
+              // Solicita permissão para notificação do navegador (backup)
+              if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+              }
+              
+              // Mostra notificação do navegador se permitido
+              if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('Novo Chamado!', {
+                  body: `Cliente: ${card.cliente || 'N/A'}\nRepresentante: ${card.representante || 'N/A'}`,
+                  icon: '/static/trello.png',
+                  tag: 'new-ticket',
+                  requireInteraction: true
+                });
+              }
+              
+              // Mostra modal centralizado
               const modal = document.getElementById('notificationModal');
               const message = document.getElementById('notificationMessage');
               const cardInfo = `Cliente: ${card.cliente || 'N/A'}\nRepresentante: ${card.representante || 'N/A'}\nSistema: ${card.sistema || 'N/A'}`;
@@ -1018,51 +1024,30 @@
               message.textContent = cardInfo;
               modal.style.display = 'flex';
               
-              // Garante que o modal está visível e centralizado
-              modal.style.zIndex = '10000';
-              document.body.style.overflow = 'hidden'; // Impede rolagem enquanto o modal estiver aberto
-              
-              // Tenta focar na janela para trazer o modal para frente
-              try {
-                window.focus();
-              } catch (e) {
-                console.log('Não foi possível focar na janela, mas o modal foi exibido');
+              // Remove notificação anterior se existir
+              if (window.activeNotification) {
+                window.activeNotification.close();
               }
               
-              // Apenas como backup, se o usuário tiver permitido notificações do navegador
-              // e o modal não for suficiente (janela minimizada), mostra uma notificação
-              // que, quando clicada, abrirá o modal
-              if ('Notification' in window) {
-                // Solicita permissão se ainda não foi decidido
-                if (Notification.permission === 'default') {
-                  Notification.requestPermission();
-                }
+              // Cria uma notificação persistente que, quando clicada, foca na janela
+              if ('Notification' in window && Notification.permission === 'granted') {
+                const notification = new Notification('Novo Chamado!', {
+                  body: `Cliente: ${card.cliente || 'N/A'}\nRepresentante: ${card.representante || 'N/A'}`+
+                        `\nClique para abrir o painel`,
+                  icon: '/static/trello.png',
+                  requireInteraction: true, // Mantém a notificação até o usuário interagir
+                  tag: 'new-ticket-' + Date.now() // Tag única para cada notificação
+                });
                 
-                // Remove notificação anterior se existir
-                if (window.activeNotification) {
-                  window.activeNotification.close();
-                }
+                // Armazena a notificação ativa para referência
+                window.activeNotification = notification;
                 
-                // Apenas mostra a notificação do navegador se permitido
-                 if (Notification.permission === 'granted') {
-                   const notification = new Notification('Novo Chamado!', {
-                     body: `Cliente: ${card.cliente || 'N/A'}\nRepresentante: ${card.representante || 'N/A'}\nClique para abrir o painel`,
-                     icon: '/static/trello.png',
-                     requireInteraction: true,
-                     tag: 'new-ticket-' + Date.now()
-                   });
-                  
-                  // Armazena a notificação ativa para referência
-                  window.activeNotification = notification;
-                  
-                  notification.onclick = function() {
-                    // Foca na janela quando a notificação é clicada
-                    window.focus();
-                    modal.style.display = 'flex'; // Garante que o modal está visível
-                    this.close();
-                  };
-                }
-              }
+                notification.onclick = function() {
+                  // Foca na janela quando a notificação é clicada
+                  window.focus();
+                  modal.style.display = 'flex'; // Garante que o modal está visível
+                  this.close();
+                };
               }
               
               // Tenta focar na janela (pode não funcionar se minimizada)
@@ -1076,14 +1061,12 @@
               const okBtn = document.getElementById('notificationOk');
               okBtn.onclick = () => {
                 modal.style.display = 'none';
-                document.body.style.overflow = ''; // Restaura o scroll
               };
               
               // Fecha automaticamente após 30 segundos (opcional)
               setTimeout(() => {
                 if (modal.style.display !== 'none') {
                   modal.style.display = 'none';
-                  document.body.style.overflow = ''; // Restaura o scroll
                 }
               }, 30000);
             }
@@ -1578,24 +1561,13 @@
              }
          
              function qs(){
-               console.log('🔍 Gerando query string');
-               const p=[]; 
-               // Verifica se os elementos existem antes de acessar suas propriedades
-               const rep = repSelect?.value?.trim() || '';
-               const st = statusSelect?.value?.trim() || '';
-               const de = deInput?.value || '';
-               const ate = ateInput?.value || '';
-               const q = qInput?.value?.trim() || '';
-               
+               const p=[]; const rep=repSelect.value.trim(), st=statusSelect.value.trim(), de=deInput.value, ate=ateInput.value, q=qInput.value.trim();
                if(rep) p.push('representante='+encodeURIComponent(rep));
                if(st)  p.push('status='+encodeURIComponent(st));
                if(de)  p.push('de='+encodeURIComponent(de));
                if(ate) p.push('ate='+encodeURIComponent(ate));
                if(q)   p.push('q='+encodeURIComponent(q));
-               
-               const result = p.length ? '?'+p.join('&') : '';
-               console.log('📝 Query string gerada:', result);
-               return result;
+               return p.length ? '?'+p.join('&') : '';
              }
          
              // Fetch com timeout e tratamento de retorno não-JSON
@@ -1610,28 +1582,6 @@
          return Promise.race([promise, timeout]).finally(() => clearTimeout(to));
          }
          function load({silent=false, append=false}={}) {
-         console.log('🔍 Iniciando função load', {silent, append, abortController});
-         
-         // Verifica se os elementos necessários existem
-         if (!tbody) {
-           console.error('❌ Elemento tbody não encontrado');
-           // Tenta obter o elemento novamente
-           const painel = document.getElementById('painel');
-           if (painel) {
-             const tbodyElement = painel.querySelector('#tbody');
-             if (tbodyElement) {
-               console.log('✅ Elemento tbody encontrado na verificação adicional');
-               window.tbody = tbodyElement; // Define globalmente
-             } else {
-               console.error('❌ Elemento tbody ainda não encontrado após verificação adicional');
-               return;
-             }
-           } else {
-             console.error('❌ Elemento painel não encontrado na verificação adicional');
-             return;
-           }
-         }
-         
          // 1) Se havia uma requisição anterior, aborta primeiro
          if (abortController) {
          try {
@@ -1642,6 +1592,7 @@
          
          // 2) Agora cria um NOVO controller para esta chamada
          abortController = new AbortController();
+         const { signal } = abortController;
          
          console.log('📥 Load chamado:', { silent, append, page, isRealTimeActive });
          
@@ -1657,14 +1608,14 @@
          const cacheBuster = Date.now();
          const url = '/api/chamados' + query + sep + 'offset=' + (page * pageSize) + '&limit=' + pageSize + '&_=' + cacheBuster;
          
-         const fetchPromise = fetch(url, {
-           signal: abortController.signal,
+         const fetchPromise = fetch(url, { signal: abortController.signal,
            cache: 'no-store',
            credentials: 'same-origin',
            headers: { 
              'Accept': 'application/json, text/plain;q=0.9, */*;q=0.8',
              'Cache-Control': 'no-cache'
-           }
+           },
+           signal
          });
          
          return withTimeout(fetchPromise, (isRealTimeActive ? 15000 : 45000), abortController)
@@ -1682,7 +1633,7 @@
              
              let data;
              try {
-               data = JSON.parse(text);
+               data = ct.includes('application/json') ? JSON.parse(text) : JSON.parse(text);
              } catch(e){
                throw new Error('Conteúdo não-JSON da API:\n' + text.slice(0,800));
              }
@@ -1810,13 +1761,7 @@
              });
              // Carga inicial
              load({silent:false});
-
-             // Garante que a carga inicial seja executada quando a página for carregada
-             document.addEventListener('DOMContentLoaded', () => {
-               console.log('🚀 DOMContentLoaded: Iniciando carregamento inicial');
-               load({silent:false});
-             });
-
+         
              // Garante que qualquer conexão SSE ou pesquisa em curso seja encerrada ao sair ou atualizar a página.
              window.addEventListener('beforeunload', () => {
          try { 
@@ -1828,21 +1773,7 @@
          }
          } catch(e){}
          });
-           };
-           
-           // Garante que initPainel seja chamado após o carregamento do DOM
-            document.addEventListener('DOMContentLoaded', () => {
-              console.log('🚀 DOMContentLoaded: Chamando initPainel');
-              // Adiciona um pequeno atraso para garantir que todos os elementos estejam carregados
-              setTimeout(() => {
-                initPainel();
-                // Força uma chamada direta à função load após a inicialização
-                console.log('🔄 Forçando carregamento inicial');
-                if (typeof load === 'function') {
-                  load({silent:false});
-                }
-              }, 100);
-            });
+           })();
       </script>
       <script>
          // ====== A4 Viewer State ======
