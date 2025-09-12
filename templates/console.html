@@ -142,6 +142,10 @@
             max-width: 400px;
             width: 90vw;
             animation: notificationBounce 0.5s ease-out;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
          }
          
          .notification-icon {
@@ -152,7 +156,7 @@
          
          .notification-title {
             color: #fff;
-            font-size: 28px;
+            font-size: 32px;
             font-weight: 800;
             margin-bottom: 15px;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
@@ -1001,22 +1005,7 @@
                 audio.play().catch(e => console.warn('Erro ao tocar som:', e));
               }
               
-              // Solicita permissão para notificação do navegador (backup)
-              if ('Notification' in window && Notification.permission === 'default') {
-                Notification.requestPermission();
-              }
-              
-              // Mostra notificação do navegador se permitido
-              if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification('Novo Chamado!', {
-                  body: `Cliente: ${card.cliente || 'N/A'}\nRepresentante: ${card.representante || 'N/A'}`,
-                  icon: '/static/trello.png',
-                  tag: 'new-ticket',
-                  requireInteraction: true
-                });
-              }
-              
-              // Mostra modal centralizado
+              // Mostra modal centralizado como notificação principal
               const modal = document.getElementById('notificationModal');
               const message = document.getElementById('notificationMessage');
               const cardInfo = `Cliente: ${card.cliente || 'N/A'}\nRepresentante: ${card.representante || 'N/A'}\nSistema: ${card.sistema || 'N/A'}`;
@@ -1024,30 +1013,51 @@
               message.textContent = cardInfo;
               modal.style.display = 'flex';
               
-              // Remove notificação anterior se existir
-              if (window.activeNotification) {
-                window.activeNotification.close();
+              // Garante que o modal está visível e centralizado
+              modal.style.zIndex = '10000';
+              document.body.style.overflow = 'hidden'; // Impede rolagem enquanto o modal estiver aberto
+              
+              // Tenta focar na janela para trazer o modal para frente
+              try {
+                window.focus();
+              } catch (e) {
+                console.log('Não foi possível focar na janela, mas o modal foi exibido');
               }
               
-              // Cria uma notificação persistente que, quando clicada, foca na janela
-              if ('Notification' in window && Notification.permission === 'granted') {
-                const notification = new Notification('Novo Chamado!', {
-                  body: `Cliente: ${card.cliente || 'N/A'}\nRepresentante: ${card.representante || 'N/A'}`+
-                        `\nClique para abrir o painel`,
-                  icon: '/static/trello.png',
-                  requireInteraction: true, // Mantém a notificação até o usuário interagir
-                  tag: 'new-ticket-' + Date.now() // Tag única para cada notificação
-                });
+              // Apenas como backup, se o usuário tiver permitido notificações do navegador
+              // e o modal não for suficiente (janela minimizada), mostra uma notificação
+              // que, quando clicada, abrirá o modal
+              if ('Notification' in window) {
+                // Solicita permissão se ainda não foi decidido
+                if (Notification.permission === 'default') {
+                  Notification.requestPermission();
+                }
                 
-                // Armazena a notificação ativa para referência
-                window.activeNotification = notification;
+                // Remove notificação anterior se existir
+                if (window.activeNotification) {
+                  window.activeNotification.close();
+                }
                 
-                notification.onclick = function() {
-                  // Foca na janela quando a notificação é clicada
-                  window.focus();
-                  modal.style.display = 'flex'; // Garante que o modal está visível
-                  this.close();
-                };
+                // Apenas mostra a notificação do navegador se permitido
+                 if (Notification.permission === 'granted') {
+                   const notification = new Notification('Novo Chamado!', {
+                     body: `Cliente: ${card.cliente || 'N/A'}\nRepresentante: ${card.representante || 'N/A'}\nClique para abrir o painel`,
+                     icon: '/static/trello.png',
+                     requireInteraction: true,
+                     tag: 'new-ticket-' + Date.now()
+                   });
+                  
+                  // Armazena a notificação ativa para referência
+                  window.activeNotification = notification;
+                  
+                  notification.onclick = function() {
+                    // Foca na janela quando a notificação é clicada
+                    window.focus();
+                    modal.style.display = 'flex'; // Garante que o modal está visível
+                    this.close();
+                  };
+                }
+              }
               }
               
               // Tenta focar na janela (pode não funcionar se minimizada)
@@ -1061,12 +1071,14 @@
               const okBtn = document.getElementById('notificationOk');
               okBtn.onclick = () => {
                 modal.style.display = 'none';
+                document.body.style.overflow = ''; // Restaura o scroll
               };
               
               // Fecha automaticamente após 30 segundos (opcional)
               setTimeout(() => {
                 if (modal.style.display !== 'none') {
                   modal.style.display = 'none';
+                  document.body.style.overflow = ''; // Restaura o scroll
                 }
               }, 30000);
             }
