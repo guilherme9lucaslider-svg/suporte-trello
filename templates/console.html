@@ -1054,14 +1054,40 @@
               showNewTicketNotification(testCard);
             }
             
-            // Disponibiliza função de teste globalmente
+            /**
+             * Função de teste para verificar se o monitoramento de novos chamados está funcionando
+             * independentemente do monitoramento em tempo real
+             */
+            function testNewTicketsMonitoring() {
+              console.log('🧪 Testando monitoramento de novos chamados...');
+              console.log('Status do monitoramento em tempo real:', isRealTimeActive ? 'ATIVO' : 'INATIVO');
+              console.log('Intervalo de novos chamados:', newTicketsInterval ? 'ATIVO' : 'INATIVO');
+              
+              // Simula a chegada de um novo chamado
+              const testCard = {
+                cliente: 'Cliente Teste Monitoramento',
+                representante: 'Teste Independente',
+                sistema: 'Sistema Teste'
+              };
+              
+              // Mostra a notificação diretamente
+              showNewTicketNotification(testCard);
+              
+              console.log('✅ Teste concluído. Uma notificação deve ter sido exibida.');
+              console.log('👉 Este teste simula apenas a exibição da notificação, não a detecção de novos chamados.');
+              console.log('👉 Para testar a detecção completa, é necessário criar um novo chamado no Trello.');
+            }
+            
+            // Disponibiliza funções de teste globalmente
             window.testNotification = showNewTicketNotificationTest;
+            window.testNewTicketsMonitoring = testNewTicketsMonitoring;
          
              /**
               * Encerra qualquer monitoramento em tempo real (SSE ou poll) e aborta requisições pendentes.
+              * Não afeta o monitoramento de novos chamados.
               */
              function cleanupRealTime(){
-         console.log('🧹 Iniciando cleanup...');
+         console.log('🧹 Iniciando cleanup do monitoramento em tempo real...');
          
          // Fecha SSE se aberto
          if(realtimeSource){
@@ -1089,10 +1115,45 @@
          } catch(e){}
          abortController = null;
          }
+         // Nota: Não interrompe o monitoramento de novos chamados (newTicketsInterval)
          }
          window.cleanupRealTime = cleanupRealTime;
          
          
+            // Variável para controlar o intervalo de verificação de novos chamados
+            let newTicketsInterval = null;
+            
+            /**
+             * Inicia o monitoramento de novos chamados independente do monitoramento em tempo real
+             */
+            function startNewTicketsMonitoring() {
+              // Limpa qualquer intervalo anterior
+              if (newTicketsInterval) {
+                clearInterval(newTicketsInterval);
+              }
+              
+              // Inicia um novo intervalo para verificar novos chamados a cada 10 segundos
+              newTicketsInterval = setInterval(() => {
+                fetchNewTrelloCards?.();
+              }, 10000);
+              
+              console.log('✅ Monitoramento de novos chamados iniciado');
+            }
+            
+            // Inicia o monitoramento de novos chamados ao carregar a página
+            document.addEventListener('DOMContentLoaded', () => {
+              startNewTicketsMonitoring();
+            });
+            
+            // Para o monitoramento de novos chamados quando a página for fechada
+            window.addEventListener('beforeunload', () => {
+              if (newTicketsInterval) {
+                clearInterval(newTicketsInterval);
+                newTicketsInterval = null;
+                console.log('✅ Monitoramento de novos chamados interrompido');
+              }
+            });
+            
             /**
              * Alterna o monitoramento em tempo real.
              * Esta versão replica a lógica do console_antigo.html utilizando um simples
@@ -1135,7 +1196,7 @@
          realTimeInterval = setInterval(() => {
           if (!isEditingStatus) {
             load({ silent: true });
-            fetchNewTrelloCards?.();
+            // Não precisamos chamar fetchNewTrelloCards aqui, pois já temos um intervalo separado para isso
           }
          }, 2500);
          }
