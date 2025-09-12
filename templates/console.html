@@ -2639,31 +2639,67 @@
          });
       </script>
       <script>
-         document.getElementById('btnPdfRel')?.addEventListener('click', () => {
-           const { jsPDF } = window.jspdf;
-           const doc = new jsPDF("p", "mm", "a4");
-         
-           // pega todas as páginas A4 que estão sendo exibidas
-           const pages = document.querySelectorAll('#a4-pages .a4-page');
+         document.getElementById('btnPdfRel')?.addEventListener('click', async () => {
+           try {
+             const { jsPDF } = window.jspdf;
+             const doc = new jsPDF("p", "mm", "a4");
            
-           let promises = [];
-         
-           pages.forEach((page, index) => {
-             promises.push(
-               html2canvas(page, { scale: 2 }).then(canvas => {
-                 const imgData = canvas.toDataURL("image/png");
+             // pega todas as páginas A4 que estão sendo exibidas
+             const pages = document.querySelectorAll('#a4-pages .a4-page');
+             
+             if (pages.length === 0) {
+               alert('Nenhuma página encontrada para exportar. Gere um relatório primeiro.');
+               return;
+             }
+             
+             console.log(`Iniciando exportação PDF de ${pages.length} página(s)...`);
+             
+             // Processa cada página individualmente para melhor controle de erro
+             for (let index = 0; index < pages.length; index++) {
+               const page = pages[index];
+               console.log(`Processando página ${index + 1}/${pages.length}...`);
+               
+               try {
+                 // Configurações otimizadas para html2canvas
+                 const canvas = await html2canvas(page, { 
+                   scale: 2,
+                   useCORS: true,
+                   allowTaint: true,
+                   backgroundColor: '#ffffff',
+                   logging: false,
+                   width: page.offsetWidth,
+                   height: page.offsetHeight
+                 });
+                 
+                 const imgData = canvas.toDataURL("image/png", 0.95);
                  const imgProps = doc.getImageProperties(imgData);
                  const pdfWidth = doc.internal.pageSize.getWidth();
                  const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                 
                  if (index > 0) doc.addPage();
                  doc.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-               })
-             );
-           });
-         
-           Promise.all(promises).then(() => {
-             doc.save("relatorio.pdf"); // aqui abre a janela para salvar
-           });
+                 
+                 console.log(`Página ${index + 1} processada com sucesso`);
+                 
+               } catch (pageError) {
+                 console.error(`Erro ao processar página ${index + 1}:`, pageError);
+                 
+                 // Adiciona uma página de erro para esta página específica
+                 if (index > 0) doc.addPage();
+                 doc.setFontSize(12);
+                 doc.text(`Erro ao processar página ${index + 1}`, 20, 50);
+                 doc.text('Esta página não pôde ser incluída no PDF.', 20, 70);
+               }
+             }
+             
+             console.log('Salvando PDF...');
+             doc.save("relatorio.pdf");
+             console.log('PDF exportado com sucesso!');
+             
+           } catch (error) {
+             console.error('Erro geral na exportação PDF:', error);
+             alert('Erro ao exportar PDF: ' + error.message + '\n\nVerifique o console para mais detalhes.');
+           }
          });
       </script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
