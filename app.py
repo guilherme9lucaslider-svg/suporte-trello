@@ -1437,9 +1437,9 @@ def salvar():
 def admin_login():
     if request.method == "GET":
         return render_template("admin_login.html", error=None)
-    u = request.form.get("username", "")
-    p = request.form.get("password", "")
-    if u == ADMIN_USER and p == ADMIN_PASS:
+    u = (request.form.get("username", "") or "").strip().upper()
+    p = (request.form.get("password", "") or "").strip()
+    if u == ADMIN_USER.upper() and p == ADMIN_PASS:
         session.clear()
         session["admin"] = True
         session["fresh_admin"] = True
