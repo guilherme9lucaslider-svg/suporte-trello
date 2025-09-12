@@ -1024,8 +1024,38 @@
               message.textContent = cardInfo;
               modal.style.display = 'flex';
               
-              // Foca na janela para garantir que seja visível
-              window.focus();
+              // Remove notificação anterior se existir
+              if (window.activeNotification) {
+                window.activeNotification.close();
+              }
+              
+              // Cria uma notificação persistente que, quando clicada, foca na janela
+              if ('Notification' in window && Notification.permission === 'granted') {
+                const notification = new Notification('Novo Chamado!', {
+                  body: `Cliente: ${card.cliente || 'N/A'}\nRepresentante: ${card.representante || 'N/A'}`+
+                        `\nClique para abrir o painel`,
+                  icon: '/static/trello.png',
+                  requireInteraction: true, // Mantém a notificação até o usuário interagir
+                  tag: 'new-ticket-' + Date.now() // Tag única para cada notificação
+                });
+                
+                // Armazena a notificação ativa para referência
+                window.activeNotification = notification;
+                
+                notification.onclick = function() {
+                  // Foca na janela quando a notificação é clicada
+                  window.focus();
+                  modal.style.display = 'flex'; // Garante que o modal está visível
+                  this.close();
+                };
+              }
+              
+              // Tenta focar na janela (pode não funcionar se minimizada)
+              try {
+                window.focus();
+              } catch (e) {
+                console.log('Não foi possível focar na janela, mas a notificação foi exibida');
+              }
               
               // Adiciona evento de fechamento
               const okBtn = document.getElementById('notificationOk');
@@ -1046,6 +1076,9 @@
              * Chame showNewTicketNotificationTest() no console para testar
              */
             function showNewTicketNotificationTest() {
+              console.log('🔔 Testando notificação de novo chamado...');
+              requestNotificationPermission(); // Garante que a permissão foi solicitada
+              
               const testCard = {
                 cliente: 'Cliente Teste',
                 representante: 'João Silva',
@@ -1140,8 +1173,26 @@
               console.log('✅ Monitoramento de novos chamados iniciado');
             }
             
+            /**
+             * Solicita permissão para notificações do navegador
+             */
+            function requestNotificationPermission() {
+                if ('Notification' in window) {
+                    if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+                        Notification.requestPermission().then(function(permission) {
+                            if (permission === 'granted') {
+                                console.log('✅ Permissão para notificações concedida!');
+                            }
+                        });
+                    }
+                }
+            }
+            
             // Inicia o monitoramento de novos chamados ao carregar a página
             document.addEventListener('DOMContentLoaded', () => {
+              // Solicita permissão para notificações ao carregar a página
+              requestNotificationPermission();
+              // Inicia o monitoramento de novos tickets
               startNewTicketsMonitoring();
             });
             
@@ -1153,6 +1204,31 @@
                 console.log('✅ Monitoramento de novos chamados interrompido');
               }
             });
+            
+            /**
+             * Função para testar notificação com janela minimizada
+             * Chame testNotificationMinimized() no console do navegador
+             */
+            function testNotificationMinimized() {
+              console.log('🔔 Testando notificação com janela minimizada...');
+              console.log('Minimize a janela agora e aguarde 3 segundos para a notificação aparecer');
+              
+              // Garante que a permissão foi solicitada
+              requestNotificationPermission();
+              
+              // Aguarda 3 segundos e então mostra a notificação
+              setTimeout(() => {
+                const testCard = {
+                  cliente: 'Cliente Teste Minimizado',
+                  representante: 'Teste Minimizado',
+                  sistema: 'Sistema de Teste'
+                };
+                showNewTicketNotification(testCard);
+              }, 3000);
+            }
+            
+            // Torna a função disponível globalmente
+            window.testNotificationMinimized = testNotificationMinimized;
             
             /**
              * Alterna o monitoramento em tempo real.
