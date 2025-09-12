@@ -870,9 +870,14 @@
              document.querySelector(btn.dataset.target).classList.add('active');
            }));
          
-           (function initPainel(){
+           function initPainel(){
+             console.log('🏁 Iniciando função initPainel');
              const painel = document.getElementById('painel');
-             if(!painel) return;
+             if(!painel) {
+               console.error('❌ Elemento #painel não encontrado');
+               return;
+             }
+             console.log('✅ Elemento #painel encontrado');
          
              const tbody = painel.querySelector('#tbody');
              const countBox = painel.querySelector('#countBox');
@@ -1573,13 +1578,24 @@
              }
          
              function qs(){
-               const p=[]; const rep=repSelect.value.trim(), st=statusSelect.value.trim(), de=deInput.value, ate=ateInput.value, q=qInput.value.trim();
+               console.log('🔍 Gerando query string');
+               const p=[]; 
+               // Verifica se os elementos existem antes de acessar suas propriedades
+               const rep = repSelect?.value?.trim() || '';
+               const st = statusSelect?.value?.trim() || '';
+               const de = deInput?.value || '';
+               const ate = ateInput?.value || '';
+               const q = qInput?.value?.trim() || '';
+               
                if(rep) p.push('representante='+encodeURIComponent(rep));
                if(st)  p.push('status='+encodeURIComponent(st));
                if(de)  p.push('de='+encodeURIComponent(de));
                if(ate) p.push('ate='+encodeURIComponent(ate));
                if(q)   p.push('q='+encodeURIComponent(q));
-               return p.length ? '?'+p.join('&') : '';
+               
+               const result = p.length ? '?'+p.join('&') : '';
+               console.log('📝 Query string gerada:', result);
+               return result;
              }
          
              // Fetch com timeout e tratamento de retorno não-JSON
@@ -1594,6 +1610,28 @@
          return Promise.race([promise, timeout]).finally(() => clearTimeout(to));
          }
          function load({silent=false, append=false}={}) {
+         console.log('🔍 Iniciando função load', {silent, append, abortController});
+         
+         // Verifica se os elementos necessários existem
+         if (!tbody) {
+           console.error('❌ Elemento tbody não encontrado');
+           // Tenta obter o elemento novamente
+           const painel = document.getElementById('painel');
+           if (painel) {
+             const tbodyElement = painel.querySelector('#tbody');
+             if (tbodyElement) {
+               console.log('✅ Elemento tbody encontrado na verificação adicional');
+               window.tbody = tbodyElement; // Define globalmente
+             } else {
+               console.error('❌ Elemento tbody ainda não encontrado após verificação adicional');
+               return;
+             }
+           } else {
+             console.error('❌ Elemento painel não encontrado na verificação adicional');
+             return;
+           }
+         }
+         
          // 1) Se havia uma requisição anterior, aborta primeiro
          if (abortController) {
          try {
@@ -1644,7 +1682,7 @@
              
              let data;
              try {
-               data = ct.includes('application/json') ? JSON.parse(text) : JSON.parse(text);
+               data = JSON.parse(text);
              } catch(e){
                throw new Error('Conteúdo não-JSON da API:\n' + text.slice(0,800));
              }
@@ -1772,7 +1810,13 @@
              });
              // Carga inicial
              load({silent:false});
-         
+
+             // Garante que a carga inicial seja executada quando a página for carregada
+             document.addEventListener('DOMContentLoaded', () => {
+               console.log('🚀 DOMContentLoaded: Iniciando carregamento inicial');
+               load({silent:false});
+             });
+
              // Garante que qualquer conexão SSE ou pesquisa em curso seja encerrada ao sair ou atualizar a página.
              window.addEventListener('beforeunload', () => {
          try { 
@@ -1784,7 +1828,21 @@
          }
          } catch(e){}
          });
-           })();
+           };
+           
+           // Garante que initPainel seja chamado após o carregamento do DOM
+            document.addEventListener('DOMContentLoaded', () => {
+              console.log('🚀 DOMContentLoaded: Chamando initPainel');
+              // Adiciona um pequeno atraso para garantir que todos os elementos estejam carregados
+              setTimeout(() => {
+                initPainel();
+                // Força uma chamada direta à função load após a inicialização
+                console.log('🔄 Forçando carregamento inicial');
+                if (typeof load === 'function') {
+                  load({silent:false});
+                }
+              }, 100);
+            });
       </script>
       <script>
          // ====== A4 Viewer State ======
