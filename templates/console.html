@@ -1604,7 +1604,6 @@
          
          // 2) Agora cria um NOVO controller para esta chamada
          abortController = new AbortController();
-         const { signal } = abortController;
          
          console.log('📥 Load chamado:', { silent, append, page, isRealTimeActive });
          
@@ -1620,14 +1619,14 @@
          const cacheBuster = Date.now();
          const url = '/api/chamados' + query + sep + 'offset=' + (page * pageSize) + '&limit=' + pageSize + '&_=' + cacheBuster;
          
-         const fetchPromise = fetch(url, { signal: abortController.signal,
+         const fetchPromise = fetch(url, {
+           signal: abortController.signal,
            cache: 'no-store',
            credentials: 'same-origin',
            headers: { 
              'Accept': 'application/json, text/plain;q=0.9, */*;q=0.8',
              'Cache-Control': 'no-cache'
-           },
-           signal
+           }
          });
          
          return withTimeout(fetchPromise, (isRealTimeActive ? 15000 : 45000), abortController)
