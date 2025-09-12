@@ -1019,9 +1019,14 @@
               // Mostra modal centralizado
               const modal = document.getElementById('notificationModal');
               const message = document.getElementById('notificationMessage');
-              const cardInfo = `Cliente: ${card.cliente || 'N/A'}\nRepresentante: ${card.representante || 'N/A'}\nSistema: ${card.sistema || 'N/A'}`;
               
-              message.textContent = cardInfo;
+              // Formata as informações do chamado com quebras de linha HTML
+              const cardInfo = `<strong>Cliente:</strong> ${card.cliente || 'N/A'}<br>
+                               <strong>Representante:</strong> ${card.representante || 'N/A'}<br>
+                               <strong>Sistema:</strong> ${card.sistema || 'N/A'}`;
+              
+              // Usa innerHTML para preservar as tags HTML
+              message.innerHTML = cardInfo;
               modal.style.display = 'flex';
               
               // Remove notificação anterior se existir
@@ -1031,9 +1036,17 @@
               
               // Cria uma notificação persistente que, quando clicada, foca na janela
               if ('Notification' in window && Notification.permission === 'granted') {
+                // Formata o texto da notificação para melhor legibilidade
+                const notificationBody = [
+                  `Cliente: ${card.cliente || 'N/A'}`,
+                  `Representante: ${card.representante || 'N/A'}`,
+                  `Sistema: ${card.sistema || 'N/A'}`,
+                  ``,
+                  `Clique para abrir o painel`
+                ].join('\n');
+                
                 const notification = new Notification('Novo Chamado!', {
-                  body: `Cliente: ${card.cliente || 'N/A'}\nRepresentante: ${card.representante || 'N/A'}`+
-                        `\nClique para abrir o painel`,
+                  body: notificationBody,
                   icon: '/static/trello.png',
                   requireInteraction: true, // Mantém a notificação até o usuário interagir
                   tag: 'new-ticket-' + Date.now() // Tag única para cada notificação
@@ -1063,12 +1076,8 @@
                 modal.style.display = 'none';
               };
               
-              // Fecha automaticamente após 30 segundos (opcional)
-              setTimeout(() => {
-                if (modal.style.display !== 'none') {
-                  modal.style.display = 'none';
-                }
-              }, 30000);
+              // Não fecha automaticamente - permanece aberto até o usuário fechar
+              // O fechamento automático foi removido a pedido do usuário
             }
             
             /**
@@ -1080,9 +1089,9 @@
               requestNotificationPermission(); // Garante que a permissão foi solicitada
               
               const testCard = {
-                cliente: 'Cliente Teste',
-                representante: 'João Silva',
-                sistema: 'Sistema ERP'
+                cliente: 'Cliente Teste com Nome Longo para Testar Formatação',
+                representante: 'João Silva - Representante Comercial',
+                sistema: 'Sistema ERP - Módulo Financeiro'
               };
               showNewTicketNotification(testCard);
             }
