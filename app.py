@@ -1283,11 +1283,20 @@ def api_trello_new_cards():
 
             list_name = id_to_list.get(c.get("idList"), "")
             status = LIST_STATUS_MAP.get(list_name, "Em aberto")
+            # Extrair informações do cliente, representante e sistema da descrição
+            desc = c.get("desc") or ""
+            cliente = _parse_cliente_from_desc(desc)
+            representante = _parse_rep_from_desc(desc)
+            sistema = _parse_sistema_from_desc(desc)
+            
             new_cards.append(
                 {
                     "id": cid,
                     "titulo": (c.get("name") or "").strip(),
-                    "descricao": c.get("desc") or "",
+                    "descricao": desc,
+                    "cliente": cliente,
+                    "representante": representante,
+                    "sistema": sistema,
                     "lista": list_name,
                     "status": status,
                     "url": c.get("shortUrl"),

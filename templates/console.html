@@ -1097,6 +1097,33 @@
             }
             
             /**
+             * Função de teste para simular um novo chamado vindo da API
+             * Chame testApiNotification() no console para testar
+             */
+            function testApiNotification() {
+              console.log('🔔 Testando notificação com formato da API...');
+              requestNotificationPermission(); // Garante que a permissão foi solicitada
+              
+              // Simula o formato exato que vem da API
+              const testCard = {
+                id: 'test123',
+                titulo: 'Chamado de Teste API',
+                descricao: '**Cliente:** Cliente API Teste\n**Representante:** Rep API Teste\n**Sistema:** Sistema API Teste',
+                cliente: 'Cliente API Teste',  // Campo adicionado na API
+                representante: 'Rep API Teste', // Campo adicionado na API
+                sistema: 'Sistema API Teste',   // Campo adicionado na API
+                lista: 'Em Andamento',
+                status: 'Em andamento',
+                url: '#',
+                ultima_atividade: new Date().toISOString(),
+                created_at: new Date().toISOString()
+              };
+              
+              console.log('Dados do cartão de teste:', testCard);
+              showNewTicketNotification(testCard);
+            }
+            
+            /**
              * Função de teste para verificar se o monitoramento de novos chamados está funcionando
              * independentemente do monitoramento em tempo real
              */
