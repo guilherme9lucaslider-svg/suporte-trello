@@ -2656,6 +2656,11 @@
                const page = pages[index];
                console.log(`Processando página ${index + 1}/${pages.length}...`);
                
+               // Pequeno delay para evitar problemas de renderização
+               if (index > 0) {
+                 await new Promise(resolve => setTimeout(resolve, 100));
+               }
+               
                try {
                  // Configurações otimizadas para html2canvas
                  const canvas = await html2canvas(page, { 
@@ -2665,11 +2670,31 @@
                    backgroundColor: '#ffffff',
                    logging: false,
                    width: page.offsetWidth,
-                   height: page.offsetHeight
+                   height: page.offsetHeight,
+                   // Configurações adicionais para melhor compatibilidade
+                   foreignObjectRendering: true,
+                   removeContainer: true
                  });
                  
+                 // Validação do canvas antes de processar
+                 if (!canvas || canvas.width === 0 || canvas.height === 0) {
+                   throw new Error('Canvas inválido gerado pelo html2canvas');
+                 }
+                 
                  const imgData = canvas.toDataURL("image/png", 0.95);
+                 
+                 // Validação da imagem gerada
+                 if (!imgData || imgData === 'data:,') {
+                   throw new Error('Falha ao gerar dados da imagem');
+                 }
+                 
                  const imgProps = doc.getImageProperties(imgData);
+                 
+                 // Validação das propriedades da imagem
+                 if (!imgProps || !imgProps.width || !imgProps.height) {
+                   throw new Error('Propriedades da imagem inválidas');
+                 }
+                 
                  const pdfWidth = doc.internal.pageSize.getWidth();
                  const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
                  
@@ -2681,7 +2706,48 @@
                } catch (pageError) {
                  console.error(`Erro ao processar página ${index + 1}:`, pageError);
                  
-                 // Adiciona uma página de erro para esta página específica
+                 // Tenta uma abordagem alternativa com configurações mais simples
+                 try {
+                   console.log(`Tentando abordagem alternativa para página ${index + 1}...`);
+                   
+                   const canvas = await html2canvas(page, { 
+                     scale: 1, // Escala menor para reduzir problemas
+                     useCORS: false,
+                     allowTaint: false,
+                     backgroundColor: '#ffffff',
+                     logging: false,
+                     // Configurações mais conservadoras
+                     ignoreElements: (element) => {
+                       // Ignora elementos que podem causar problemas
+                       return element.tagName === 'SCRIPT' || 
+                              element.tagName === 'STYLE' ||
+                              element.classList.contains('no-print');
+                     }
+                   });
+                   
+                   if (canvas && canvas.width > 0 && canvas.height > 0) {
+                     const imgData = canvas.toDataURL("image/jpeg", 0.8); // JPEG com qualidade menor
+                     
+                     if (imgData && imgData !== 'data:,') {
+                       const imgProps = doc.getImageProperties(imgData);
+                       
+                       if (imgProps && imgProps.width && imgProps.height) {
+                         const pdfWidth = doc.internal.pageSize.getWidth();
+                         const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                         
+                         if (index > 0) doc.addPage();
+                         doc.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight);
+                         
+                         console.log(`Página ${index + 1} processada com abordagem alternativa`);
+                         continue; // Pula para próxima página
+                       }
+                     }
+                   }
+                 } catch (alternativeError) {
+                   console.error(`Abordagem alternativa também falhou para página ${index + 1}:`, alternativeError);
+                 }
+                 
+                 // Se chegou aqui, ambas as abordagens falharam
                  if (index > 0) doc.addPage();
                  doc.setFontSize(12);
                  doc.text(`Erro ao processar página ${index + 1}`, 20, 50);
