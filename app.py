@@ -193,6 +193,32 @@ def _no_store(resp):
 ADMIN_USER = os.getenv("ADMIN_USER")
 ADMIN_PASS = os.getenv("ADMIN_PASS")
 
+# Aviso inicial caso credenciais de admin não estejam definidas (não quebra o app)
+if not ADMIN_USER or not ADMIN_PASS:
+    try:
+        print("[WARN] Variáveis ADMIN_USER/ADMIN_PASS não definidas; login admin indisponível.")
+    except Exception:
+        pass
+
+def _mask_secrets(text: str) -> str:
+    """Mascara valores sensíveis conhecidos em logs/erros."""
+    try:
+        if not text:
+            return text
+        s = str(text)
+        # Mascara valores específicos de env se existirem
+        for key in [
+            "TRELLO_KEY","TRELLO_TOKEN","APP_SECRET","DB_PASS","DATABASE_URL",
+        ]:
+            val = os.getenv(key)
+            if val:
+                s = s.replace(val, "***")
+        # Mascara sequências longas (tokens) genéricas
+        s = re.sub(r"[A-Za-z0-9_-]{24,}", "***", s)
+        return s
+    except Exception:
+        return "***"
+
 def _norm(s: str) -> str:
     s = s or ""
     s = unicodedata.normalize("NFD", s)
@@ -858,7 +884,7 @@ def api_diagnostico():
         diagnostics["lists_count"] = len(lists)
         diagnostics["list_names"] = [l.get("name") for l in lists]
     except Exception as e:
-        diagnostics["error"] = str(e)
+        diagnostics["error"] = _mask_secrets(str(e))
 
     return jsonify(diagnostics)
 
@@ -1277,8 +1303,7 @@ def api_trello_new_cards():
 
     except Exception as e:
         # Oculta tokens/chaves na mensagem
-        err_msg = str(e)
-        err_msg = re.sub(r"[A-Za-z0-9]{32,}", "***", err_msg)
+        err_msg = _mask_secrets(str(e))
         return (
             jsonify(
                 {
@@ -1436,9 +1461,7 @@ def salvar():
         return jsonify(success=True, message="Chamado criado com sucesso no Trello!")
     except Exception as e:
         # Erros de rede ou da API do Trello são capturados e exibidos de forma amigável.
-        err_msg = str(e)
-        # Remover partes sensíveis da mensagem que contenham tokens ou chaves.
-        err_msg = re.sub(r"[A-Za-z0-9]{32,}", "***", err_msg)
+        err_msg = _mask_secrets(str(e))
         return (
             jsonify(success=False, message=f"Falha ao criar o chamado: {err_msg}"),
             400,
@@ -1454,7 +1477,7 @@ def admin_login():
         return render_template("admin_login.html", error=None)
     u = (request.form.get("username", "") or "").strip().upper()
     p = (request.form.get("password", "") or "").strip()
-    if u == (ADMIN_USER or "").upper() and p == (ADMIN_PASS or ""):
+    if ADMIN_USER and ADMIN_PASS and u == (ADMIN_USER or "").upper() and p == (ADMIN_PASS or ""):
         session.clear()
         session["admin"] = True
         session["fresh_admin"] = True
@@ -1601,6 +1624,28 @@ def console_redirect():
 # -----------------------------------------------------------------------------
 # Main
 # -----------------------------------------------------------------------------
+@app.route("/health")
+def health():
+    return jsonify(status="ok")
+
+@app.route("/ready")
+def ready():
+    """Verifica dependências principais: DB e Trello (chamada simples)."""
+    checks = {"db": False, "trello": False}
+    # DB: tenta simples consulta a Representatives limit 1
+    try:
+        _ = Representative.query.limit(1).all()
+        checks["db"] = True
+    except Exception as e:
+        checks["db_error"] = _mask_secrets(str(e))
+    # Trello: tenta listar listas (usa cache helper)
+    try:
+        _ = cached_trello_get(f"/boards/{BOARD_ID}/lists", params={}, ttl=5)
+        checks["trello"] = True
+    except Exception as e:
+        checks["trello_error"] = _mask_secrets(str(e))
+    http = 200 if all(checks.get(k) for k in ("db", "trello")) else 503
+    return jsonify(checks), http
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
     # Ative debug=True em dev para ver os logs condicionais
