@@ -42,7 +42,7 @@ git remote add origin 'https://github.com/guilherme9lucaslider-svg/suporte-trell
 
 # Push
 Write-Host "Enviando para GitHub..." -ForegroundColor Yellow
-git push -u origin main --force 2>$null
+git push -u origin main --force
 
 Write-Host "Deploy concluido com sucesso!" -ForegroundColor Green
 
