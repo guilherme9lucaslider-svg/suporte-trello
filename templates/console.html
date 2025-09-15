@@ -1617,7 +1617,7 @@
                  if (item.images && item.images.length > 0) {
                    modalContent += '<hr style="margin: 20px 0; border: 1px solid #ddd;">';
                    modalContent += '<h4>📷 Imagens anexadas (' + item.images.length + '):</h4>';
-                   modalContent += '<div class="image-gallery" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 8px; margin-top: 15px; max-width: 100%;">';
+                   modalContent += '<div class="image-gallery" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); gap: 6px; margin-top: 15px; max-width: 100%;">';
                    
                    item.images.forEach((img, idx) => {
                      // Usar preview de melhor qualidade para miniaturas
@@ -1630,21 +1630,21 @@
                      }
                      
                      modalContent += `
-                       <div class="image-item" style="border: 1px solid #e2e8f0; border-radius: 4px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.1); background: white; width: 100%; position: relative; cursor: pointer; transition: transform 0.2s ease;" 
+                       <div class="image-item" style="border: 1px solid #e2e8f0; border-radius: 3px; overflow: hidden; box-shadow: 0 1px 1px rgba(0,0,0,0.08); background: white; width: 100%; position: relative; cursor: pointer; transition: transform 0.2s ease;" 
                             onclick="openImageViewer(${JSON.stringify(item.images).replace(/"/g, '&quot;')}, ${idx})" 
-                            onmouseover="this.style.transform='scale(1.05)'" 
+                            onmouseover="this.style.transform='scale(1.03)'" 
                             onmouseout="this.style.transform='scale(1)'">
-                          <div style="position: relative; width: 100%; padding-bottom: 60%; overflow: hidden; background: #f8fafc;">
+                          <div style="position: relative; width: 100%; padding-bottom: 50%; overflow: hidden; background: #f8fafc;">
                            <img src="${previewUrl}" alt="${img.name}" 
                                  style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; display: block;" 
                                  onload="this.parentElement.style.background='transparent';">
-                           <div style="position: absolute; bottom: 1px; right: 1px; background: rgba(0,0,0,0.8); color: white; padding: 1px 3px; border-radius: 2px; font-size: 7px; font-weight: 500;">
+                           <div style="position: absolute; bottom: 0px; right: 0px; background: rgba(0,0,0,0.7); color: white; padding: 1px 2px; border-radius: 1px; font-size: 6px; font-weight: 500;">
                              ${idx + 1}/${item.images.length}
                            </div>
                          </div>
-                         <div style="padding: 2px; background: white; border-top: 1px solid #f1f5f9;">
-                           <span style="font-size: 7px; color: #64748b; font-weight: 500; line-height: 1.1; word-break: break-word; display: block; text-align: center;">
-                             ${img.name.length > 10 ? img.name.substring(0, 8) + '...' : img.name}
+                         <div style="padding: 1px; background: white; border-top: 1px solid #f1f5f9;">
+                           <span style="font-size: 6px; color: #64748b; font-weight: 500; line-height: 1; word-break: break-word; display: block; text-align: center;">
+                             ${img.name.length > 8 ? img.name.substring(0, 6) + '...' : img.name}
                            </span>
                          </div>
                        </div>
