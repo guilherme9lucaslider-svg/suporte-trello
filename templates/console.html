@@ -874,13 +874,13 @@
              const imageUrl = img.url;
              
              overlay.innerHTML = `
-               <div style="position: relative; max-width: 90%; max-height: 90%; display: flex; align-items: center; justify-content: center;">
+               <div style="position: relative; display: inline-block;">
                  <img id="viewerImage" src="${imageUrl}" alt="${img.name}" 
-                      style="max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+                      style="max-width: 90vw; max-height: 80vh; width: auto; height: auto; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); display: block;">
                  
                  ${images.length > 1 ? `
-                   <button id="prevBtn" style="position: absolute; left: -60px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.9); border: none; border-radius: 50%; width: 50px; height: 50px; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3);" ${currentIdx === 0 ? 'disabled style="opacity: 0.5;"' : ''}>‹</button>
-                   <button id="nextBtn" style="position: absolute; right: -60px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.9); border: none; border-radius: 50%; width: 50px; height: 50px; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3);" ${currentIdx === images.length - 1 ? 'disabled style="opacity: 0.5;"' : ''}>›</button>
+                   <button id="prevBtn" style="position: absolute; left: -60px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.9); border: none; border-radius: 50%; width: 50px; height: 50px; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3); z-index: 10001;" ${currentIdx === 0 ? 'disabled style="opacity: 0.5;"' : ''}>‹</button>
+                   <button id="nextBtn" style="position: absolute; right: -60px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.9); border: none; border-radius: 50%; width: 50px; height: 50px; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3); z-index: 10001;" ${currentIdx === images.length - 1 ? 'disabled style="opacity: 0.5;"' : ''}>›</button>
                  ` : ''}
                </div>
                
@@ -889,7 +889,7 @@
                  <p style="margin: 0; opacity: 0.8; font-size: 14px;">${currentIdx + 1} de ${images.length}</p>
                </div>
                
-               <button id="closeViewer" style="position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.9); border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">×</button>
+               <button id="closeViewer" style="position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.9); border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3); z-index: 10001;">×</button>
              `;
              
              // Event listeners
