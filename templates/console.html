@@ -803,6 +803,8 @@
          }
          modal.style.display = 'none';
          }
+         window.openModal = openModal;
+         window.closeModal = closeModal;
          document.getElementById('btnFecharModal')?.addEventListener('click', closeModal);
          document.getElementById('modal')?.addEventListener('click', (e)=>{ if (e.target.id==='modal') closeModal(); });
          
@@ -824,6 +826,7 @@
            if (item && item.ultima_atividade) { try { return new Date(item.ultima_atividade); } catch(e){} }
            return null;
          }
+         window.inferCreatedAt = inferCreatedAt;
          
          // WhatsApp helpers (app desktop)
          function normalizeBRPhone(raw){
@@ -832,13 +835,113 @@
            return '55' + n;
          }
          function openWhatsApp(rawPhone, text){
+           console.log('📱 Abrindo WhatsApp para:', rawPhone);
            const phone = normalizeBRPhone(rawPhone);
            const q = text ? ('&text=' + encodeURIComponent(text)) : '';
            const deepLink = 'whatsapp://send?phone=' + phone + q;
+           console.log('🔗 Link do WhatsApp:', deepLink);
 
 // Abre o app via protocolo do WhatsApp; não cria nova aba do navegador
          window.location.href = deepLink;
+         }
          window.openWhatsApp = openWhatsApp;
+         
+         // Image Viewer
+         function openImageViewer(images, currentIndex) {
+           console.log('🖼️ Abrindo visualizador de imagens:', { images, currentIndex });
+           
+           // Criar overlay do visualizador
+           const overlay = document.createElement('div');
+           overlay.id = 'imageViewerOverlay';
+           overlay.style.cssText = `
+             position: fixed;
+             top: 0;
+             left: 0;
+             width: 100%;
+             height: 100%;
+             background: rgba(0, 0, 0, 0.9);
+             z-index: 10000;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             flex-direction: column;
+           `;
+           
+           let currentIdx = currentIndex || 0;
+           
+           function updateImage() {
+             const img = images[currentIdx];
+             const imageUrl = img.url;
+             
+             overlay.innerHTML = `
+               <div style="position: relative; max-width: 90%; max-height: 90%; display: flex; align-items: center; justify-content: center;">
+                 <img id="viewerImage" src="${imageUrl}" alt="${img.name}" 
+                      style="max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+                 
+                 ${images.length > 1 ? `
+                   <button id="prevBtn" style="position: absolute; left: -60px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.9); border: none; border-radius: 50%; width: 50px; height: 50px; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3);" ${currentIdx === 0 ? 'disabled style="opacity: 0.5;"' : ''}>‹</button>
+                   <button id="nextBtn" style="position: absolute; right: -60px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.9); border: none; border-radius: 50%; width: 50px; height: 50px; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3);" ${currentIdx === images.length - 1 ? 'disabled style="opacity: 0.5;"' : ''}>›</button>
+                 ` : ''}
+               </div>
+               
+               <div style="margin-top: 20px; text-align: center; color: white;">
+                 <h3 style="margin: 0 0 10px 0; font-size: 18px;">${img.name}</h3>
+                 <p style="margin: 0; opacity: 0.8; font-size: 14px;">${currentIdx + 1} de ${images.length}</p>
+               </div>
+               
+               <button id="closeViewer" style="position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.9); border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">×</button>
+             `;
+             
+             // Event listeners
+             const closeBtn = overlay.querySelector('#closeViewer');
+             closeBtn?.addEventListener('click', () => {
+               document.body.removeChild(overlay);
+             });
+             
+             if (images.length > 1) {
+               const prevBtn = overlay.querySelector('#prevBtn');
+               const nextBtn = overlay.querySelector('#nextBtn');
+               
+               prevBtn?.addEventListener('click', () => {
+                 if (currentIdx > 0) {
+                   currentIdx--;
+                   updateImage();
+                 }
+               });
+               
+               nextBtn?.addEventListener('click', () => {
+                 if (currentIdx < images.length - 1) {
+                   currentIdx++;
+                   updateImage();
+                 }
+               });
+             }
+           }
+           
+           // Fechar com ESC ou clique no fundo
+           overlay.addEventListener('click', (e) => {
+             if (e.target === overlay) {
+               document.body.removeChild(overlay);
+             }
+           });
+           
+           document.addEventListener('keydown', function escHandler(e) {
+             if (e.key === 'Escape') {
+               document.body.removeChild(overlay);
+               document.removeEventListener('keydown', escHandler);
+             } else if (e.key === 'ArrowLeft' && currentIdx > 0) {
+               currentIdx--;
+               updateImage();
+             } else if (e.key === 'ArrowRight' && currentIdx < images.length - 1) {
+               currentIdx++;
+               updateImage();
+             }
+           });
+           
+           updateImage();
+           document.body.appendChild(overlay);
+         }
+         window.openImageViewer = openImageViewer;
          
          
       </script>
@@ -1446,18 +1549,54 @@
              }
          
              tbody.addEventListener('click', (e) => {
+               console.log('🖱️ Click detectado no tbody:', e.target);
                const btn = e.target.closest('button[data-action]');
-               if (!btn) return;
+               if (!btn) {
+                 console.log('❌ Nenhum botão com data-action encontrado');
+                 return;
+               }
          
                const i = Number(btn.getAttribute('data-i'));
                const item = cache[i] || {};
                const action = btn.getAttribute('data-action');
+               
+               console.log('✅ Botão clicado:', { action, index: i, item, cacheLength: cache.length });
          
                if (action === 'ver') {
-                 openModal('📄 Descrição do chamado', (item.descricao || 'Nenhuma descrição disponível.').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'));
+                 console.log('👁️ Abrindo modal "Ver" para item:', item.titulo);
+                 
+                 let modalContent = (item.descricao || 'Nenhuma descrição disponível.').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                 
+                 // Adicionar galeria de imagens se houver
+                 if (item.images && item.images.length > 0) {
+                   modalContent += '<hr style="margin: 20px 0; border: 1px solid #ddd;">';
+                   modalContent += '<h4>📷 Imagens anexadas (' + item.images.length + '):</h4>';
+                   modalContent += '<div class="image-gallery" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px;">';
+                   
+                   item.images.forEach((img, idx) => {
+                     const previewUrl = img.previews && img.previews.length > 0 ? img.previews[0].url : img.url;
+                     modalContent += `
+                       <div class="image-item" style="cursor: pointer; border: 2px solid #ddd; border-radius: 8px; overflow: hidden; transition: transform 0.2s;" 
+                            onclick="openImageViewer(${JSON.stringify(item.images).replace(/"/g, '&quot;')}, ${idx})" 
+                            onmouseover="this.style.transform='scale(1.05)'" 
+                            onmouseout="this.style.transform='scale(1)'">
+                         <img src="${previewUrl}" alt="${img.name}" 
+                              style="width: 120px; height: 120px; object-fit: cover; display: block;">
+                         <div style="padding: 5px; font-size: 12px; text-align: center; background: #f5f5f5;">
+                           ${img.name}
+                         </div>
+                       </div>
+                     `;
+                   });
+                   
+                   modalContent += '</div>';
+                 }
+                 
+                 openModal('📄 Descrição do chamado', modalContent);
                  return;
                }
                if (action === 'detalhes') {
+                 console.log('📋 Abrindo modal "Detalhes" para item:', item.titulo);
                  const created = inferCreatedAt(item);
                  const lastAct = item.ultima_atividade ? new Date(item.ultima_atividade) : null;
                  const isLive  = /^(em aberto|em análise)$/i.test(item.status||'');

@@ -738,7 +738,7 @@ def api_chamados():
             f"/boards/{BOARD_ID}/cards",
             params={
                 "fields": "name,desc,idList,dateLastActivity,shortUrl,id",
-                "attachments": "false",
+                "attachments": "true",
                 "members": "false",
             },
         )
@@ -829,6 +829,19 @@ def api_chamados():
                 if created_date > f_ate_criacao:
                     continue
 
+        # Processar anexos (apenas imagens)
+        attachments = c.get("attachments", [])
+        images = []
+        if attachments:
+            for att in attachments:
+                if att.get("isUpload") and att.get("mimeType", "").startswith("image/"):
+                    images.append({
+                        "id": att.get("id"),
+                        "name": att.get("name"),
+                        "url": att.get("url"),
+                        "previews": att.get("previews", [])
+                    })
+
         items.append({
             "id": card_id,
             "titulo": titulo,
@@ -845,6 +858,7 @@ def api_chamados():
             "modulo": modulo or None,
             "ocorrencia": ocorrencia or None,
             "tipo": tipo or None,
+            "images": images,
         })
 
     # Ordena por última atividade em ordem decrescente (mais recentes primeiro)
