@@ -127,6 +127,16 @@ if not db_uri:
 if sslmode and "sslmode=" not in db_uri:
     db_uri += ("&" if "?" in db_uri else "?") + f"sslmode={sslmode}"
 app.config["SQLALCHEMY_DATABASE_URI"] = db_uri
+
+# Configurações de pool de conexão para resolver problemas de desconexão
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_size": 10,
+    "pool_timeout": 20,
+    "pool_recycle": 300,  # Recicla conexões a cada 5 minutos
+    "pool_pre_ping": True,  # Testa conexões antes de usar
+    "max_overflow": 20
+}
+
 db = SQLAlchemy(app)
 
 # -----------------------------------------------------------------------------
