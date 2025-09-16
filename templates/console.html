@@ -1624,10 +1624,12 @@
                      const fileExt = fileName.split('.').pop()?.toLowerCase() || '';
                      let iconPath = '/static/file.svg'; // ícone padrão
                      
+                     // Determinar se é imagem, vídeo ou outro tipo de arquivo
+                     const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt);
+                     const isVideo = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'].includes(fileExt);
+                     
                      // Determinar ícone baseado na extensão
-                     if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt)) {
-                       iconPath = '/static/file.svg'; // para imagens, usar ícone genérico por enquanto
-                     } else if (fileExt === 'pdf') {
+                     if (fileExt === 'pdf') {
                        iconPath = '/static/pdf.svg';
                      } else if (['doc', 'docx'].includes(fileExt)) {
                        iconPath = '/static/docx.svg';
@@ -1641,18 +1643,42 @@
                        iconPath = '/static/csv.svg';
                      }
                      
+                     let thumbnailHtml = '';
+                     if (isImage) {
+                       // Para imagens, usar preview ou URL original
+                       const previewUrl = (att.previews && att.previews.length > 0) ? 
+                         att.previews.find(p => p.width <= 70)?.url || att.previews[0]?.url || att.url : att.url;
+                       thumbnailHtml = `<img src="${previewUrl}" alt="${fileName}" style="width: 32px; height: 32px; margin-right: 6px; flex-shrink: 0; border-radius: 2px; object-fit: cover; border: 1px solid #ddd;">`;
+                     } else if (isVideo) {
+                       // Para vídeos, mostrar thumbnail com ícone de play
+                       thumbnailHtml = `
+                         <div style="position: relative; width: 32px; height: 32px; margin-right: 6px; flex-shrink: 0; background: #000; border-radius: 2px; display: flex; align-items: center; justify-content: center; border: 1px solid #ddd;">
+                           <video style="width: 100%; height: 100%; object-fit: cover; border-radius: 2px;" muted>
+                             <source src="${att.url}" type="video/${fileExt}">
+                           </video>
+                           <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; opacity: 0.8;">
+                             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                               <path d="M8 5v14l11-7z"/>
+                             </svg>
+                           </div>
+                         </div>`;
+                     } else {
+                       // Para outros arquivos, usar ícone
+                       thumbnailHtml = `<img src="${iconPath}" alt="${fileExt}" style="width: 16px; height: 16px; margin-right: 6px; flex-shrink: 0;">`;
+                     }
+                     
                      modalContent += `
-                       <div class="attachment-item" style="display: flex; align-items: center; padding: 8px 12px; margin-bottom: 4px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; cursor: pointer; transition: all 0.2s ease;" 
-                            onclick="window.open('${att.url}', '_blank')" 
+                       <div class="attachment-item" style="display: flex; align-items: center; padding: 4px 6px; margin-bottom: 2px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 3px; cursor: pointer; transition: all 0.2s ease;" 
+                            onclick="viewAttachment('${att.url}', '${fileName}', '${fileExt}')" 
                             onmouseover="this.style.backgroundColor='#e9ecef'; this.style.transform='translateY(-1px)';" 
                             onmouseout="this.style.backgroundColor='#f8f9fa'; this.style.transform='translateY(0)';">
-                         <img src="${iconPath}" alt="${fileExt}" style="width: 20px; height: 20px; margin-right: 10px; flex-shrink: 0;">
+                         ${thumbnailHtml}
                          <div style="flex: 1; min-width: 0;">
-                           <div style="font-weight: 500; font-size: 13px; color: #495057; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${fileName}</div>
-                           <div style="font-size: 11px; color: #6c757d; margin-top: 2px;">Adicionado há pouco</div>
+                           <div style="font-weight: 500; font-size: 12px; color: #495057; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${fileName}</div>
+                           <div style="font-size: 10px; color: #6c757d; margin-top: 1px;">Adicionado há pouco</div>
                          </div>
-                         <div style="margin-left: 8px; color: #6c757d; cursor: pointer;" onclick="event.stopPropagation(); /* menu de opções */">
-                           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                         <div style="margin-left: 4px; color: #6c757d; cursor: pointer;" onclick="event.stopPropagation(); /* menu de opções */">
+                           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                              <circle cx="12" cy="5" r="2"/>
                              <circle cx="12" cy="12" r="2"/>
                              <circle cx="12" cy="19" r="2"/>
@@ -1695,6 +1721,10 @@
                      const fileExt = fileName.split('.').pop()?.toLowerCase() || '';
                      let iconPath = '/static/file.svg';
                      
+                     // Determinar se é imagem, vídeo ou outro tipo de arquivo
+                     const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt);
+                     const isVideo = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'].includes(fileExt);
+                     
                      if (fileExt === 'pdf') iconPath = '/static/pdf.svg';
                      else if (['doc', 'docx'].includes(fileExt)) iconPath = '/static/docx.svg';
                      else if (['xls', 'xlsx'].includes(fileExt)) iconPath = '/static/xlsx.svg';
@@ -1702,12 +1732,36 @@
                      else if (fileExt === 'txt') iconPath = '/static/txt.svg';
                      else if (fileExt === 'csv') iconPath = '/static/csv.svg';
                      
+                     let thumbnailHtml = '';
+                     if (isImage) {
+                       // Para imagens, usar preview ou URL original
+                       const previewUrl = (att.previews && att.previews.length > 0) ? 
+                         att.previews.find(p => p.width <= 60)?.url || att.previews[0]?.url || att.url : att.url;
+                       thumbnailHtml = `<img src="${previewUrl}" alt="${fileName}" style="width: 24px; height: 24px; margin-right: 4px; flex-shrink: 0; border-radius: 2px; object-fit: cover; border: 1px solid #ddd;">`;
+                     } else if (isVideo) {
+                       // Para vídeos, mostrar thumbnail com ícone de play
+                       thumbnailHtml = `
+                         <div style="position: relative; width: 24px; height: 24px; margin-right: 4px; flex-shrink: 0; background: #000; border-radius: 2px; display: flex; align-items: center; justify-content: center; border: 1px solid #ddd;">
+                           <video style="width: 100%; height: 100%; object-fit: cover; border-radius: 2px;" muted>
+                             <source src="${att.url}" type="video/${fileExt}">
+                           </video>
+                           <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; opacity: 0.8;">
+                             <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
+                               <path d="M8 5v14l11-7z"/>
+                             </svg>
+                           </div>
+                         </div>`;
+                     } else {
+                       // Para outros arquivos, usar ícone
+                       thumbnailHtml = `<img src="${iconPath}" alt="${fileExt}" style="width: 14px; height: 14px; margin-right: 4px;">`;
+                     }
+                     
                      html += `
-                       <div class="attachment-item" style="display: flex; align-items: center; padding: 6px 8px; margin-bottom: 3px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px; cursor: pointer;" 
-                            onclick="window.open('${att.url}', '_blank')">
-                         <img src="${iconPath}" alt="${fileExt}" style="width: 16px; height: 16px; margin-right: 8px;">
-                         <div style="flex: 1; font-size: 12px; color: #495057;">${fileName}</div>
-                         <div style="font-size: 10px; color: #6c757d;">há pouco</div>
+                       <div class="attachment-item" style="display: flex; align-items: center; padding: 3px 4px; margin-bottom: 1px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 2px; cursor: pointer;" 
+                            onclick="viewAttachment('${att.url}', '${fileName}', '${fileExt}')">
+                         ${thumbnailHtml}
+                         <div style="flex: 1; font-size: 11px; color: #495057;">${fileName}</div>
+                         <div style="font-size: 9px; color: #6c757d;">há pouco</div>
                        </div>`;
                    });
                    
@@ -3324,6 +3378,98 @@
              currentImageIndex = (currentImageIndex + 1) % currentImages.length;
              updateViewerImage();
            }
+         }
+         
+         // Função para visualizar anexos
+         function viewAttachment(url, fileName, fileExt) {
+           const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt.toLowerCase());
+           const isVideo = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'].includes(fileExt.toLowerCase());
+           const isText = ['txt', 'csv'].includes(fileExt.toLowerCase());
+           const isPdf = fileExt.toLowerCase() === 'pdf';
+           
+           if (isImage) {
+             // Visualizar imagem em modal
+             const modalContent = `
+               <div style="text-align: center; max-width: 90vw; max-height: 90vh;">
+                 <h3 style="margin-bottom: 20px; color: #333;">${fileName}</h3>
+                 <img src="${url}" alt="${fileName}" style="max-width: 100%; max-height: 70vh; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                 <div style="margin-top: 20px;">
+                   <button onclick="window.open('${url}', '_blank')" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-right: 10px;">Abrir Original</button>
+                   <button onclick="downloadFile('${url}', '${fileName}')" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Salvar</button>
+                 </div>
+               </div>`;
+             openModal('Visualizar Imagem', modalContent);
+           } else if (isVideo) {
+             // Visualizar vídeo em modal
+             const modalContent = `
+               <div style="text-align: center; max-width: 90vw; max-height: 90vh;">
+                 <h3 style="margin-bottom: 20px; color: #333;">${fileName}</h3>
+                 <video controls style="max-width: 100%; max-height: 70vh; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                   <source src="${url}" type="video/${fileExt}">
+                   Seu navegador não suporta a reprodução de vídeo.
+                 </video>
+                 <div style="margin-top: 20px;">
+                   <button onclick="window.open('${url}', '_blank')" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-right: 10px;">Abrir Original</button>
+                   <button onclick="downloadFile('${url}', '${fileName}')" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Salvar</button>
+                 </div>
+               </div>`;
+             openModal('Visualizar Vídeo', modalContent);
+           } else if (isText) {
+             // Visualizar texto em modal
+             fetch(url)
+               .then(response => response.text())
+               .then(text => {
+                 const modalContent = `
+                   <div style="max-width: 90vw; max-height: 90vh;">
+                     <h3 style="margin-bottom: 20px; color: #333;">${fileName}</h3>
+                     <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 15px; max-height: 60vh; overflow-y: auto; font-family: monospace; white-space: pre-wrap; font-size: 14px;">${text}</div>
+                     <div style="margin-top: 20px; text-align: center;">
+                       <button onclick="window.open('${url}', '_blank')" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-right: 10px;">Abrir Original</button>
+                       <button onclick="downloadFile('${url}', '${fileName}')" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Salvar</button>
+                     </div>
+                   </div>`;
+                 openModal('Visualizar Arquivo', modalContent);
+               })
+               .catch(error => {
+                 console.error('Erro ao carregar arquivo:', error);
+                 showDownloadOnlyModal(url, fileName);
+               });
+           } else if (isPdf) {
+             // Visualizar PDF em modal
+             const modalContent = `
+               <div style="text-align: center; max-width: 95vw; max-height: 95vh;">
+                 <h3 style="margin-bottom: 20px; color: #333;">${fileName}</h3>
+                 <iframe src="${url}" style="width: 100%; height: 75vh; border: 1px solid #dee2e6; border-radius: 5px;"></iframe>
+                 <div style="margin-top: 20px;">
+                   <button onclick="window.open('${url}', '_blank')" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-right: 10px;">Abrir Original</button>
+                   <button onclick="downloadFile('${url}', '${fileName}')" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Salvar</button>
+                 </div>
+               </div>`;
+             openModal('Visualizar PDF', modalContent);
+           } else {
+             // Mostrar modal de download para outros tipos
+             showDownloadOnlyModal(url, fileName);
+           }
+         }
+         
+         function showDownloadOnlyModal(url, fileName) {
+           const modalContent = `
+             <div style="text-align: center; padding: 20px;">
+               <div style="font-size: 48px; margin-bottom: 20px;">📄</div>
+               <h3 style="margin-bottom: 15px; color: #333;">${fileName}</h3>
+               <p style="color: #666; margin-bottom: 25px;">Não há visualização disponível para este anexo</p>
+               <button onclick="downloadFile('${url}', '${fileName}')" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-size: 16px;">Salvar</button>
+             </div>`;
+           openModal('Anexo', modalContent);
+         }
+         
+         function downloadFile(url, fileName) {
+           const link = document.createElement('a');
+           link.href = url;
+           link.download = fileName;
+           document.body.appendChild(link);
+           link.click();
+           document.body.removeChild(link);
          }
          
          // Liga os botões quando a página carregar
