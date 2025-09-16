@@ -1613,76 +1613,46 @@
                  
                  let modalContent = (item.descricao || 'Nenhuma descrição disponível.').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
                  
-                 // Adicionar seção de anexos se houver (imagens e arquivos)
+                 // Adicionar seção de anexos se houver (imagens e arquivos) — layout estilo lista
                  if (item.attachments && item.attachments.length > 0) {
                    modalContent += '<hr style="margin: 20px 0; border: 1px solid #ddd;">';
-                   modalContent += '<h4>📎 Anexos (' + item.attachments.length + '):</h4>';
-                   modalContent += '<div class="attachments-list" style="margin-top: 15px;">';
+                   modalContent += '<h4 style="margin-bottom: 8px;">📎 Anexos (' + item.attachments.length + '):</h4>';
+                   modalContent += `
+                     <style>
+                       .attachments-list-modern { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+                       .attachment-row { display: flex; align-items: center; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 8px 10px; }
+                       .att-left { width: 44px; height: 44px; border-radius: 8px; background: #eef1f4; display:flex; align-items:center; justify-content:center; margin-right: 10px; overflow:hidden; }
+                       .att-left img { width: 100%; height: 100%; object-fit: cover; }
+                       .att-chip { font-size: 12px; font-weight: 700; color: #495057; background:#e9ecef; padding: 6px 8px; border-radius: 6px; }
+                       .att-center { flex: 1; min-width: 0; }
+                       .att-name { font-size: 13px; font-weight: 600; color: #2f3237; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                       .att-sub { font-size: 12px; color: #6c757d; margin-top: 2px; }
+                       .att-actions { display:flex; gap: 6px; margin-left: 10px; }
+                       .att-btn { border:none; background:#eef1f4; color:#495057; width:28px; height:28px; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+                       .att-btn:hover { background:#e1e6eb; }
+                     </style>
+                     <div class="attachments-list-modern">
+                   `;
                    
                    item.attachments.forEach((att, idx) => {
                      const fileName = att.name || 'Arquivo';
-                     const fileExt = fileName.split('.').pop()?.toLowerCase() || '';
-                     let iconPath = '/static/file.svg'; // ícone padrão
-                     
-                     // Determinar se é imagem, vídeo ou outro tipo de arquivo
+                     const fileExt = (fileName.split('.').pop() || '').toLowerCase();
                      const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt);
-                     const isVideo = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'].includes(fileExt);
-                     
-                     // Determinar ícone baseado na extensão
-                     if (fileExt === 'pdf') {
-                       iconPath = '/static/pdf.svg';
-                     } else if (['doc', 'docx'].includes(fileExt)) {
-                       iconPath = '/static/docx.svg';
-                     } else if (['xls', 'xlsx'].includes(fileExt)) {
-                       iconPath = '/static/xlsx.svg';
-                     } else if (['ppt', 'pptx'].includes(fileExt)) {
-                       iconPath = '/static/pptx.svg';
-                     } else if (fileExt === 'txt') {
-                       iconPath = '/static/txt.svg';
-                     } else if (fileExt === 'csv') {
-                       iconPath = '/static/csv.svg';
-                     }
-                     
-                     let thumbnailHtml = '';
-                     if (isImage) {
-                       // Para imagens, usar preview ou URL original
-                       const previewUrl = (att.previews && att.previews.length > 0) ? 
-                         att.previews.find(p => p.width <= 70)?.url || att.previews[0]?.url || att.url : att.url;
-                       thumbnailHtml = `<img src="${previewUrl}" alt="${fileName}" style="width: 32px; height: 32px; margin-right: 6px; flex-shrink: 0; border-radius: 2px; object-fit: cover; border: 1px solid #ddd;">`;
-                     } else if (isVideo) {
-                       // Para vídeos, mostrar thumbnail com ícone de play
-                       thumbnailHtml = `
-                         <div style="position: relative; width: 32px; height: 32px; margin-right: 6px; flex-shrink: 0; background: #000; border-radius: 2px; display: flex; align-items: center; justify-content: center; border: 1px solid #ddd;">
-                           <video style="width: 100%; height: 100%; object-fit: cover; border-radius: 2px;" muted>
-                             <source src="${att.url}" type="video/${fileExt}">
-                           </video>
-                           <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; opacity: 0.8;">
-                             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                               <path d="M8 5v14l11-7z"/>
-                             </svg>
-                           </div>
-                         </div>`;
-                     } else {
-                       // Para outros arquivos, usar ícone
-                       thumbnailHtml = `<img src="${iconPath}" alt="${fileExt}" style="width: 16px; height: 16px; margin-right: 6px; flex-shrink: 0;">`;
-                     }
+                     const chip = fileExt ? fileExt.toUpperCase() : 'FILE';
+                     const thumb = isImage
+                       ? (() => { const p = (att.previews && att.previews.length>0) ? (att.previews.find(p=>p.width<=200)?.url || att.previews[0]?.url || att.url) : att.url; return `<img src="${p}" alt="${fileName}">`; })()
+                       : `<span class=\"att-chip\">${chip}</span>`;
                      
                      modalContent += `
-                       <div class="attachment-item" style="display: flex; align-items: center; padding: 4px 6px; margin-bottom: 2px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 3px; cursor: pointer; transition: all 0.2s ease;" 
-                            onclick="viewAttachment('${att.url}', '${fileName}', '${fileExt}')" 
-                            onmouseover="this.style.backgroundColor='#e9ecef'; this.style.transform='translateY(-1px)';" 
-                            onmouseout="this.style.backgroundColor='#f8f9fa'; this.style.transform='translateY(0)';">
-                         ${thumbnailHtml}
-                         <div style="flex: 1; min-width: 0;">
-                           <div style="font-weight: 500; font-size: 12px; color: #495057; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${fileName}</div>
-                           <div style="font-size: 10px; color: #6c757d; margin-top: 1px;">Adicionado há pouco</div>
+                       <div class="attachment-row" onclick="viewAttachment('${att.url}', '${fileName}', '${fileExt}')">
+                         <div class="att-left">${thumb}</div>
+                         <div class="att-center">
+                           <div class="att-name" title="${fileName}">${fileName}</div>
+                           <div class="att-sub">Adicionado há pouco</div>
                          </div>
-                         <div style="margin-left: 4px; color: #6c757d; cursor: pointer;" onclick="event.stopPropagation(); /* menu de opções */">
-                           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                             <circle cx="12" cy="5" r="2"/>
-                             <circle cx="12" cy="12" r="2"/>
-                             <circle cx="12" cy="19" r="2"/>
-                           </svg>
+                         <div class="att-actions" onclick="event.stopPropagation();">
+                           <button class="att-btn" title="Abrir" onclick="window.open('${att.url}','_blank')">↗</button>
+                           <button class="att-btn" title="Copiar link" onclick="copyToClipboard('${att.url}')">⋯</button>
                          </div>
                        </div>
                      `;
@@ -3470,6 +3440,19 @@
            document.body.appendChild(link);
            link.click();
            document.body.removeChild(link);
+         }
+         
+         function copyToClipboard(text) {
+           if (navigator.clipboard && navigator.clipboard.writeText) {
+             navigator.clipboard.writeText(text).catch(() => {});
+           } else {
+             const ta = document.createElement('textarea');
+             ta.value = text;
+             document.body.appendChild(ta);
+             ta.select();
+             try { document.execCommand('copy'); } catch (e) {}
+             document.body.removeChild(ta);
+           }
          }
          
          // Liga os botões quando a página carregar
