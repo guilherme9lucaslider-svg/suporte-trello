@@ -1614,49 +1614,46 @@
                  // Adicionar seção de anexos se houver (imagens e arquivos) — layout estilo lista
                  if (item.attachments && item.attachments.length > 0) {
                    modalContent += '<hr style="margin: 20px 0; border: 1px solid #ddd;">';
-                   modalContent += '<h4 style="margin-bottom: 8px;">Arquivos (' + item.attachments.length + '):</h4>';
-                   modalContent += `
-                     <style>
-                       .attachments-list-modern { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
-                       .attachment-row { display: flex; align-items: center; background: #fff; border: 1px solid #e6e9ef; border-radius: 10px; padding: 6px 8px; }
-                       .att-left { width: 44px; height: 44px; border-radius: 10px; background: #eef2f7; display:flex; align-items:center; justify-content:center; margin-right: 10px; overflow:hidden; }
-                       .att-left img { width: 100%; height: 100%; object-fit: cover; }
-                       .att-chip { font-size: 12px; font-weight: 700; color: #495057; background:#f8fafc; padding: 6px 10px; border-radius: 8px; border: 1px solid #e1e6eb; }
-                       .att-center { flex: 1; min-width: 0; }
-                       .att-name { font-size: 13px; font-weight: 600; color: #2f3237; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-                       .att-sub { font-size: 12px; color: #6c757d; margin-top: 2px; }
-                       .att-actions { display:flex; gap: 6px; margin-left: 10px; }
-                       .att-btn { border:none; background:#f1f3f5; color:#495057; width:28px; height:28px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-                       .att-btn:hover { background:#e8ecef; }
-                     </style>
-                     <div class="attachments-list-modern">
-                   `;
-                   
-                   item.attachments.forEach((att, idx) => {
-                     const fileName = att.name || 'Arquivo';
-                     const fileExt = (fileName.split('.').pop() || '').toLowerCase();
-                     const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt);
-                     const chip = fileExt ? fileExt.toUpperCase() : 'FILE';
-                     const thumb = isImage
-                       ? (() => { const p = (att.previews && att.previews.length>0) ? (att.previews.find(p=>p.width<=200)?.url || att.previews[0]?.url || att.url) : att.url; return `<img src="${p}" alt="${fileName}">`; })()
-                       : `<span class=\"att-chip\">${chip}</span>`;
-                     
-                     modalContent += `
-                       <div class="attachment-row" onclick="viewAttachment('${att.url}', '${fileName}', '${fileExt}')">
-                         <div class="att-left">${thumb}</div>
-                         <div class="att-center">
-                           <div class="att-name" title="${fileName}">${fileName}</div>
-                           <div class="att-sub">Adicionado há pouco</div>
-                         </div>
-                         <div class="att-actions" onclick="event.stopPropagation();">
-                           <button class="att-btn" title="Abrir" onclick="window.open('${att.url}','_blank')">↗</button>
-                           <button class="att-btn" title="Copiar link" onclick="copyToClipboard('${att.url}')">⋯</button>
-                         </div>
-                       </div>
-                     `;
-                   });
-                   
-                   modalContent += '</div>';
+                  modalContent += '<h4 style="margin-bottom: 8px;">Arquivos (' + item.attachments.length + '):</h4>';
+                  modalContent += `
+                    <style>
+                      .attachments-list-modern { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
+                      .attachment-row { display: flex; align-items: center; background: #fff; border: 1px solid #e6e9ef; border-radius: 10px; padding: 6px 8px; }
+                      .att-left { width: 44px; height: 44px; border-radius: 10px; background: #eef2f7; display:flex; align-items:center; justify-content:center; margin-right: 10px; overflow:hidden; }
+                      .att-left img { width: 100%; height: 100%; object-fit: cover; }
+                      .att-chip { font-size: 12px; font-weight: 700; color: #495057; background:#f8fafc; padding: 6px 10px; border-radius: 8px; border: 1px solid #e1e6eb; }
+                      .att-center { flex: 1; min-width: 0; }
+                      .att-name { font-size: 13px; font-weight: 600; color: #2f3237; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                      .att-sub { font-size: 12px; color: #6c757d; margin-top: 2px; }
+                      .att-actions { display:flex; gap: 6px; margin-left: 10px; }
+                      .att-btn { border:none; background:#f1f3f5; color:#495057; width:28px; height:28px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+                      .att-btn:hover { background:#e8ecef; }
+                    </style>
+                    <div class="attachments-list-modern">
+                  `;
+                  
+                  item.attachments.forEach(att => {
+                    const fileName = att.name || 'Arquivo';
+                    const fileExt = (fileName.split('.').pop() || '').toLowerCase();
+                    const isImage = ['jpg','jpeg','png','gif','webp'].includes(fileExt);
+                    const chip = fileExt ? fileExt.toUpperCase() : 'FILE';
+                    const p = (att.previews && att.previews.length>0) ? (att.previews.find(p=>p.width<=200)?.url || att.previews[0]?.url || att.url) : att.url;
+                    const thumb = isImage ? `<img src="${p}" alt="${fileName}">` : `<span class="att-chip">${chip}</span>`;
+                    modalContent += `
+                      <div class="attachment-row" onclick="viewAttachment('${att.url}', '${fileName}', '${fileExt}')">
+                        <div class="att-left">${thumb}</div>
+                        <div class="att-center">
+                          <div class="att-name" title="${fileName}">${fileName}</div>
+                          <div class="att-sub">Adicionado há pouco</div>
+                        </div>
+                        <div class="att-actions" onclick="event.stopPropagation();">
+                          <button class="att-btn" title="Abrir" onclick="window.open('${att.url}','_blank')">↗</button>
+                          <button class="att-btn" title="Copiar link" onclick="copyToClipboard('${att.url}')">⋯</button>
+                        </div>
+                      </div>`;
+                  });
+                  
+                  modalContent += '</div>';
                  }
                  
                  openModal('📄 Descrição do chamado', modalContent);
