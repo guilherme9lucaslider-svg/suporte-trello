@@ -1613,34 +1613,50 @@
                  
                  let modalContent = (item.descricao || 'Nenhuma descrição disponível.').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
                  
-                 // Adicionar galeria de imagens se houver
-                 if (item.images && item.images.length > 0) {
+                 // Adicionar seção de anexos se houver (imagens e arquivos)
+                 if (item.attachments && item.attachments.length > 0) {
                    modalContent += '<hr style="margin: 20px 0; border: 1px solid #ddd;">';
-                   modalContent += '<h4>📷 Imagens anexadas (' + item.images.length + '):</h4>';
-                   modalContent += '<div class="image-gallery" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(40px, 1fr)); gap: 4px; margin-top: 15px; max-width: 100%;">';
+                   modalContent += '<h4>📎 Anexos (' + item.attachments.length + '):</h4>';
+                   modalContent += '<div class="attachments-list" style="margin-top: 15px;">';
                    
-                   item.images.forEach((img, idx) => {
-                     // Usar preview de melhor qualidade para miniaturas
-                     let previewUrl = img.url;
-                     if (img.previews && img.previews.length > 0) {
-                       // Para miniaturas, usar preview médio (não o menor nem o maior)
-                       const sortedPreviews = img.previews.sort((a, b) => (a.width || 0) - (b.width || 0));
-                       const midIndex = Math.floor(sortedPreviews.length / 2);
-                       previewUrl = sortedPreviews[midIndex]?.url || img.url;
+                   item.attachments.forEach((att, idx) => {
+                     const fileName = att.name || 'Arquivo';
+                     const fileExt = fileName.split('.').pop()?.toLowerCase() || '';
+                     let iconPath = '/static/file.svg'; // ícone padrão
+                     
+                     // Determinar ícone baseado na extensão
+                     if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt)) {
+                       iconPath = '/static/file.svg'; // para imagens, usar ícone genérico por enquanto
+                     } else if (fileExt === 'pdf') {
+                       iconPath = '/static/pdf.svg';
+                     } else if (['doc', 'docx'].includes(fileExt)) {
+                       iconPath = '/static/docx.svg';
+                     } else if (['xls', 'xlsx'].includes(fileExt)) {
+                       iconPath = '/static/xlsx.svg';
+                     } else if (['ppt', 'pptx'].includes(fileExt)) {
+                       iconPath = '/static/pptx.svg';
+                     } else if (fileExt === 'txt') {
+                       iconPath = '/static/txt.svg';
+                     } else if (fileExt === 'csv') {
+                       iconPath = '/static/csv.svg';
                      }
                      
                      modalContent += `
-                       <div class="image-item" style="border: 1px solid #ddd; border-radius: 2px; overflow: hidden; box-shadow: 0 1px 1px rgba(0,0,0,0.05); background: white; width: 100%; position: relative; cursor: pointer; transition: transform 0.15s ease;" 
-                            onclick="openImageViewer(${JSON.stringify(item.images).replace(/"/g, '&quot;')}, ${idx})" 
-                            onmouseover="this.style.transform='scale(1.02)'" 
-                            onmouseout="this.style.transform='scale(1)'">
-                          <div style="position: relative; width: 100%; padding-bottom: 40%; overflow: hidden; background: #f5f5f5;">
-                           <img src="${previewUrl}" alt="${img.name}" 
-                                 style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; display: block;" 
-                                 onload="this.parentElement.style.background='transparent';">
-                           <div style="position: absolute; bottom: 0px; right: 0px; background: rgba(0,0,0,0.6); color: white; padding: 0px 1px; font-size: 5px; font-weight: 500;">
-                             ${idx + 1}/${item.images.length}
-                           </div>
+                       <div class="attachment-item" style="display: flex; align-items: center; padding: 8px 12px; margin-bottom: 4px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; cursor: pointer; transition: all 0.2s ease;" 
+                            onclick="window.open('${att.url}', '_blank')" 
+                            onmouseover="this.style.backgroundColor='#e9ecef'; this.style.transform='translateY(-1px)';" 
+                            onmouseout="this.style.backgroundColor='#f8f9fa'; this.style.transform='translateY(0)';">
+                         <img src="${iconPath}" alt="${fileExt}" style="width: 20px; height: 20px; margin-right: 10px; flex-shrink: 0;">
+                         <div style="flex: 1; min-width: 0;">
+                           <div style="font-weight: 500; font-size: 13px; color: #495057; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${fileName}</div>
+                           <div style="font-size: 11px; color: #6c757d; margin-top: 2px;">Adicionado há pouco</div>
+                         </div>
+                         <div style="margin-left: 8px; color: #6c757d; cursor: pointer;" onclick="event.stopPropagation(); /* menu de opções */">
+                           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                             <circle cx="12" cy="5" r="2"/>
+                             <circle cx="12" cy="12" r="2"/>
+                             <circle cx="12" cy="19" r="2"/>
+                           </svg>
                          </div>
                        </div>
                      `;
@@ -1669,16 +1685,29 @@
                  html += `⏰ Última atividade: ${lastAct ? lastAct.toLocaleString('pt-BR') : '—'}<br><br>`;
                  html += `⏱ Duração ${isLive?'(contando)':'(fechada)'}: <span id="durSpan">calculando…</span>`;
                  
-                 // Adicionar seção de imagens se existirem
-                 if (item.images && item.images.length > 0) {
-                   html += `<br><br>📷 <strong>Imagens anexadas (${item.images.length}):</strong><br>`;
-                   html += `<div class="image-gallery" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">`;
+                 // Adicionar seção de anexos se existirem
+                 if (item.attachments && item.attachments.length > 0) {
+                   html += `<br><br>📎 <strong>Anexos (${item.attachments.length}):</strong><br>`;
+                   html += `<div class="attachments-list" style="margin-top: 10px;">`;
                    
-                   item.images.forEach((image, index) => {
+                   item.attachments.forEach((att, index) => {
+                     const fileName = att.name || 'Arquivo';
+                     const fileExt = fileName.split('.').pop()?.toLowerCase() || '';
+                     let iconPath = '/static/file.svg';
+                     
+                     if (fileExt === 'pdf') iconPath = '/static/pdf.svg';
+                     else if (['doc', 'docx'].includes(fileExt)) iconPath = '/static/docx.svg';
+                     else if (['xls', 'xlsx'].includes(fileExt)) iconPath = '/static/xlsx.svg';
+                     else if (['ppt', 'pptx'].includes(fileExt)) iconPath = '/static/pptx.svg';
+                     else if (fileExt === 'txt') iconPath = '/static/txt.svg';
+                     else if (fileExt === 'csv') iconPath = '/static/csv.svg';
+                     
                      html += `
-                       <div class="image-item" style="border: 2px solid #ddd; border-radius: 8px; overflow: hidden; width: 150px; aspect-ratio: 1;">
-                         <img src="${image.url}" alt="Anexo ${index + 1}" 
-                              style="width: 100%; height: 100%; object-fit: cover;">
+                       <div class="attachment-item" style="display: flex; align-items: center; padding: 6px 8px; margin-bottom: 3px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px; cursor: pointer;" 
+                            onclick="window.open('${att.url}', '_blank')">
+                         <img src="${iconPath}" alt="${fileExt}" style="width: 16px; height: 16px; margin-right: 8px;">
+                         <div style="flex: 1; font-size: 12px; color: #495057;">${fileName}</div>
+                         <div style="font-size: 10px; color: #6c757d;">há pouco</div>
                        </div>`;
                    });
                    

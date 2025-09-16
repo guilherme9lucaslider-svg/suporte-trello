@@ -839,18 +839,25 @@ def api_chamados():
                 if created_date > f_ate_criacao:
                     continue
 
-        # Processar anexos (apenas imagens)
-        attachments = c.get("attachments", [])
-        images = []
-        if attachments:
-            for att in attachments:
-                if att.get("isUpload") and att.get("mimeType", "").startswith("image/"):
-                    images.append({
+        # Processar todos os anexos (imagens e arquivos)
+        attachments_raw = c.get("attachments", [])
+        attachments = []
+        images = []  # manter compatibilidade com código existente
+        if attachments_raw:
+            for att in attachments_raw:
+                if att.get("isUpload"):
+                    attachment_data = {
                         "id": att.get("id"),
                         "name": att.get("name"),
                         "url": att.get("url"),
+                        "mimeType": att.get("mimeType", ""),
                         "previews": att.get("previews", [])
-                    })
+                    }
+                    attachments.append(attachment_data)
+                    
+                    # Manter lista de imagens separada para compatibilidade
+                    if att.get("mimeType", "").startswith("image/"):
+                        images.append(attachment_data)
 
         items.append({
             "id": card_id,
@@ -869,6 +876,7 @@ def api_chamados():
             "ocorrencia": ocorrencia or None,
             "tipo": tipo or None,
             "images": images,
+            "attachments": attachments,
         })
 
     # Ordena por última atividade em ordem decrescente (mais recentes primeiro)
