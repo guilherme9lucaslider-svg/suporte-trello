@@ -1658,6 +1658,50 @@ def admin_user_del(user_id):
 
 
 # -----------------------------------------------------------------------------
+# Proxy para arquivos do Trello (resolve problemas de CORS)
+# -----------------------------------------------------------------------------
+@app.route("/proxy/trello-file")
+def proxy_trello_file():
+    """Proxy para servir arquivos do Trello, resolvendo problemas de CORS."""
+    file_url = request.args.get('url')
+    if not file_url:
+        return jsonify({"error": "URL do arquivo não fornecida"}), 400
+    
+    # Verificar se é uma URL válida do Trello
+    if not file_url.startswith('https://trello-attachments.s3.amazonaws.com/'):
+        return jsonify({"error": "URL não autorizada"}), 403
+    
+    try:
+        # Fazer requisição para o arquivo
+        response = requests.get(file_url, stream=True, timeout=30)
+        response.raise_for_status()
+        
+        # Determinar o tipo de conteúdo
+        content_type = response.headers.get('Content-Type', 'application/octet-stream')
+        
+        # Criar resposta com headers apropriados
+        def generate():
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    yield chunk
+        
+        flask_response = Response(generate(), content_type=content_type)
+        
+        # Headers para permitir visualização inline
+        flask_response.headers['Access-Control-Allow-Origin'] = '*'
+        flask_response.headers['Access-Control-Allow-Methods'] = 'GET'
+        flask_response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        
+        # Para PDFs, forçar visualização inline
+        if content_type == 'application/pdf':
+            flask_response.headers['Content-Disposition'] = 'inline'
+        
+        return flask_response
+        
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"Erro ao buscar arquivo: {str(e)}"}), 500
+
+# -----------------------------------------------------------------------------
 # Compat / antigo /console -> agora redireciona para /admin
 # -----------------------------------------------------------------------------
 @app.route("/console")

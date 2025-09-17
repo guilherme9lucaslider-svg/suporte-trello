@@ -3467,19 +3467,24 @@
            const isText = ['txt', 'csv', 'log', 'md'].includes(fileExt);
            const isVideo = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'].includes(fileExt);
            
+           // Função para gerar URL do proxy
+           function getProxyUrl(originalUrl) {
+             return `/proxy/trello-file?url=${encodeURIComponent(originalUrl)}`;
+           }
+           
            if (isImage) {
              previewEl.innerHTML = `
-               <img src="${attachment.url}" 
+               <img src="${getProxyUrl(attachment.url)}" 
                     style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px;" 
                     alt="${attachment.name}"
                     onload="this.style.opacity='1'" 
                     style="opacity: 0; transition: opacity 0.3s ease;" />
              `;
            } else if (isPdf) {
-             // Visualização nativa de PDF usando iframe
+             // Visualização nativa de PDF usando iframe com proxy
              previewEl.innerHTML = `
                <div style="width: 100%; height: 100%; display: flex; flex-direction: column; background: #f8f9fa; border-radius: 8px; overflow: hidden;">
-                 <iframe src="${attachment.url}" 
+                 <iframe src="${getProxyUrl(attachment.url)}" 
                          style="width: 100%; height: 100%; border: none; border-radius: 8px;" 
                          title="Visualizador de PDF">
                    <p>Seu navegador não suporta a visualização de PDFs. 
@@ -3489,7 +3494,7 @@
                </div>
              `;
            } else if (isText) {
-             // Visualização nativa de arquivos de texto
+             // Visualização nativa de arquivos de texto usando proxy
              previewEl.innerHTML = `
                <div style="width: 100%; height: 100%; display: flex; flex-direction: column; background: #f8f9fa; border-radius: 8px; overflow: hidden;">
                  <div style="padding: 16px; background: #e4e6ea; border-bottom: 1px solid #ddd; font-weight: 600; color: #172b4d;">
@@ -3504,8 +3509,8 @@
                </div>
              `;
              
-             // Carregar conteúdo do arquivo de texto
-             fetch(attachment.url)
+             // Carregar conteúdo do arquivo de texto usando proxy
+             fetch(getProxyUrl(attachment.url))
                .then(response => {
                  if (!response.ok) {
                    throw new Error('Erro ao carregar arquivo');
@@ -3536,7 +3541,7 @@
            } else if (isVideo) {
              previewEl.innerHTML = `
                <video controls style="max-width: 100%; max-height: 100%; border-radius: 8px;">
-                 <source src="${attachment.url}" type="video/${fileExt}">
+                 <source src="${getProxyUrl(attachment.url)}" type="video/${fileExt}">
                  Seu navegador não suporta a reprodução de vídeo.
                </video>
              `;
