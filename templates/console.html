@@ -3240,6 +3240,59 @@
         </div>
       </div>
 
+      <!-- Modal Trello-Style Attachment Viewer -->
+      <div id="trelloAttachmentModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; justify-content: center; align-items: center; backdrop-filter: blur(2px);">
+        <div id="trelloAttachmentContainer" style="position: relative; max-width: 90vw; max-height: 90vh; display: flex; align-items: center; justify-content: center;">
+          
+          <!-- Botão Fechar -->
+          <button id="closeTrelloViewer" style="position: absolute; top: -50px; right: 0; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3); color: white; font-size: 20px; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10001; transition: all 0.2s ease; backdrop-filter: blur(10px);" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+          </button>
+          
+          <!-- Seta Anterior -->
+          <button id="prevTrelloAttachment" style="position: absolute; left: -70px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3); color: white; font-size: 24px; width: 54px; height: 54px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; backdrop-filter: blur(10px);" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+            </svg>
+          </button>
+          
+          <!-- Área de Conteúdo -->
+          <div id="trelloAttachmentContent" style="background: white; border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.3); overflow: hidden; max-width: 100%; max-height: 100%; display: flex; flex-direction: column;">
+            <!-- Cabeçalho -->
+            <div id="trelloAttachmentHeader" style="padding: 16px 20px; border-bottom: 1px solid #e4e6ea; background: #f8f9fa; display: flex; align-items: center; justify-content: space-between;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div id="trelloAttachmentIcon" style="width: 32px; height: 32px; border-radius: 6px; background: #ddd; display: flex; align-items: center; justify-content: center; font-size: 16px;"></div>
+                <div>
+                  <div id="trelloAttachmentName" style="font-weight: 600; color: #172b4d; font-size: 16px; margin-bottom: 2px;"></div>
+                  <div id="trelloAttachmentSize" style="font-size: 12px; color: #6b778c;"></div>
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button id="trelloOpenOriginal" style="background: #0079bf; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; transition: background 0.2s;" onmouseover="this.style.background='#005a8b'" onmouseout="this.style.background='#0079bf'">Abrir Original</button>
+                <button id="trelloDownload" style="background: #61bd4f; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; transition: background 0.2s;" onmouseover="this.style.background='#4f9a3e'" onmouseout="this.style.background='#61bd4f'">Salvar</button>
+              </div>
+            </div>
+            
+            <!-- Área de Preview -->
+            <div id="trelloAttachmentPreview" style="flex: 1; display: flex; align-items: center; justify-content: center; min-height: 400px; max-height: 70vh; overflow: hidden; position: relative;">
+              <!-- Conteúdo será inserido dinamicamente aqui -->
+            </div>
+          </div>
+          
+          <!-- Seta Próximo -->
+          <button id="nextTrelloAttachment" style="position: absolute; right: -70px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3); color: white; font-size: 24px; width: 54px; height: 54px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; backdrop-filter: blur(10px);" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+            </svg>
+          </button>
+          
+          <!-- Contador -->
+          <div id="trelloAttachmentCounter" style="position: absolute; bottom: -50px; left: 50%; transform: translateX(-50%); color: white; font-size: 14px; background: rgba(0,0,0,0.6); padding: 8px 16px; border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);"></div>
+        </div>
+      </div>
+
       <!-- Modal: Datas obrigatórias para relatório -->
       <div class="confirm-modal" id="requireDatesModal" style="display:none;">
          <div class="confirm__box">
@@ -3330,6 +3383,244 @@
          }
          
          
+         // Visualizador Trello-Style de Anexos
+         let currentTrelloAttachments = [];
+         let currentTrelloIndex = 0;
+         
+         function openTrelloAttachmentViewer(attachments, startIndex = 0) {
+           currentTrelloAttachments = attachments;
+           currentTrelloIndex = startIndex;
+           
+           const modal = document.getElementById('trelloAttachmentModal');
+           
+           updateTrelloAttachment();
+           modal.style.display = 'flex';
+           
+           // Adicionar event listeners se ainda não foram adicionados
+           if (!modal.hasAttribute('data-trello-listeners-added')) {
+             document.getElementById('closeTrelloViewer').addEventListener('click', closeTrelloViewer);
+             document.getElementById('prevTrelloAttachment').addEventListener('click', prevTrelloAttachment);
+             document.getElementById('nextTrelloAttachment').addEventListener('click', nextTrelloAttachment);
+             document.getElementById('trelloOpenOriginal').addEventListener('click', openTrelloOriginal);
+             document.getElementById('trelloDownload').addEventListener('click', downloadTrelloAttachment);
+             
+             // Fechar com ESC
+             document.addEventListener('keydown', function(e) {
+               if (e.key === 'Escape' && modal.style.display === 'flex') {
+                 closeTrelloViewer();
+               }
+             });
+             
+             // Navegação com setas
+             document.addEventListener('keydown', function(e) {
+               if (modal.style.display === 'flex') {
+                 if (e.key === 'ArrowLeft') prevTrelloAttachment();
+                 if (e.key === 'ArrowRight') nextTrelloAttachment();
+               }
+             });
+             
+             // Fechar clicando no fundo
+             modal.addEventListener('click', function(e) {
+               if (e.target === modal) {
+                 closeTrelloViewer();
+               }
+             });
+             
+             modal.setAttribute('data-trello-listeners-added', 'true');
+           }
+         }
+         
+         function updateTrelloAttachment() {
+           if (currentTrelloAttachments.length === 0) return;
+           
+           const attachment = currentTrelloAttachments[currentTrelloIndex];
+           const fileName = attachment.name || 'Arquivo';
+           const fileExt = fileName.split('.').pop()?.toLowerCase() || '';
+           const fileSize = attachment.size || 'Tamanho desconhecido';
+           
+           // Atualizar cabeçalho
+           document.getElementById('trelloAttachmentName').textContent = fileName;
+           document.getElementById('trelloAttachmentSize').textContent = typeof fileSize === 'number' ? formatFileSize(fileSize) : fileSize;
+           
+           // Atualizar ícone
+           const iconEl = document.getElementById('trelloAttachmentIcon');
+           iconEl.innerHTML = getTrelloFileIcon(fileExt);
+           iconEl.style.background = getTrelloFileColor(fileExt);
+           
+           // Atualizar contador
+           document.getElementById('trelloAttachmentCounter').textContent = `${currentTrelloIndex + 1} / ${currentTrelloAttachments.length}`;
+           
+           // Mostrar/ocultar botões de navegação
+           const prevBtn = document.getElementById('prevTrelloAttachment');
+           const nextBtn = document.getElementById('nextTrelloAttachment');
+           prevBtn.style.display = currentTrelloAttachments.length > 1 ? 'flex' : 'none';
+           nextBtn.style.display = currentTrelloAttachments.length > 1 ? 'flex' : 'none';
+           
+           // Atualizar área de preview
+           updateTrelloPreview(attachment, fileExt);
+         }
+         
+         function updateTrelloPreview(attachment, fileExt) {
+           const previewEl = document.getElementById('trelloAttachmentPreview');
+           const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(fileExt);
+           const isPdf = fileExt === 'pdf';
+           const isText = ['txt', 'csv', 'log', 'md'].includes(fileExt);
+           const isVideo = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'].includes(fileExt);
+           
+           if (isImage) {
+             previewEl.innerHTML = `
+               <img src="${attachment.url}" 
+                    style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px;" 
+                    alt="${attachment.name}"
+                    onload="this.style.opacity='1'" 
+                    style="opacity: 0; transition: opacity 0.3s ease;" />
+             `;
+           } else if (isPdf) {
+             previewEl.innerHTML = `
+               <iframe src="${attachment.url}#toolbar=0&navpanes=0&scrollbar=0" 
+                       style="width: 100%; height: 100%; border: none; border-radius: 8px;"
+                       title="${attachment.name}">
+               </iframe>
+             `;
+           } else if (isText) {
+             previewEl.innerHTML = `
+               <div style="width: 100%; height: 100%; padding: 20px; overflow: auto; background: #f8f9fa;">
+                 <div id="textPreviewContent" style="font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.5; color: #333; white-space: pre-wrap;">
+                   Carregando conteúdo...
+                 </div>
+               </div>
+             `;
+             
+             // Carregar conteúdo do arquivo de texto
+             fetch(attachment.url)
+               .then(response => response.text())
+               .then(text => {
+                 document.getElementById('textPreviewContent').textContent = text;
+               })
+               .catch(error => {
+                 document.getElementById('textPreviewContent').innerHTML = `
+                   <div style="color: #e74c3c; text-align: center; padding: 40px;">
+                     <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+                     <div>Erro ao carregar o arquivo</div>
+                     <div style="font-size: 12px; margin-top: 8px; opacity: 0.7;">${error.message}</div>
+                   </div>
+                 `;
+               });
+           } else if (isVideo) {
+             previewEl.innerHTML = `
+               <video controls style="max-width: 100%; max-height: 100%; border-radius: 8px;">
+                 <source src="${attachment.url}" type="video/${fileExt}">
+                 Seu navegador não suporta a reprodução de vídeo.
+               </video>
+             `;
+           } else {
+             // Arquivo não suportado - mostrar mensagem de download
+             previewEl.innerHTML = `
+               <div style="text-align: center; padding: 60px 40px; color: #6b778c;">
+                 <div style="font-size: 64px; margin-bottom: 24px; opacity: 0.5;">📄</div>
+                 <h3 style="margin-bottom: 16px; color: #172b4d; font-weight: 600;">Este tipo de arquivo não pode ser visualizado aqui</h3>
+                 <p style="margin-bottom: 32px; font-size: 14px; line-height: 1.5;">
+                   Arquivos do tipo .${fileExt.toUpperCase()} precisam ser abertos em um programa específico.
+                 </p>
+                 <div style="display: flex; gap: 12px; justify-content: center;">
+                   <button onclick="window.open('${attachment.url}', '_blank')" 
+                           style="background: #0079bf; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; transition: background 0.2s;"
+                           onmouseover="this.style.background='#005a8b'" 
+                           onmouseout="this.style.background='#0079bf'">
+                     Abrir Original
+                   </button>
+                   <button onclick="downloadFile('${attachment.url}', '${attachment.name}')" 
+                           style="background: #61bd4f; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; transition: background 0.2s;"
+                           onmouseover="this.style.background='#4f9a3e'" 
+                           onmouseout="this.style.background='#61bd4f'">
+                     Deseja baixar?
+                   </button>
+                 </div>
+               </div>
+             `;
+           }
+         }
+         
+         function getTrelloFileIcon(fileExt) {
+           const icons = {
+             // Imagens
+             'jpg': '🖼️', 'jpeg': '🖼️', 'png': '🖼️', 'gif': '🖼️', 'webp': '🖼️', 'bmp': '🖼️', 'svg': '🖼️',
+             // Documentos
+             'pdf': '📄', 'doc': '📝', 'docx': '📝', 'txt': '📄', 'md': '📄',
+             // Planilhas
+             'xls': '📊', 'xlsx': '📊', 'csv': '📊',
+             // Vídeos
+             'mp4': '🎬', 'avi': '🎬', 'mov': '🎬', 'wmv': '🎬', 'flv': '🎬', 'webm': '🎬', 'mkv': '🎬',
+             // Áudios
+             'mp3': '🎵', 'wav': '🎵', 'flac': '🎵', 'aac': '🎵',
+             // Arquivos
+             'zip': '📦', 'rar': '📦', '7z': '📦', 'tar': '📦',
+             // Código
+             'js': '💻', 'html': '💻', 'css': '💻', 'py': '💻', 'java': '💻', 'cpp': '💻'
+           };
+           return icons[fileExt] || '📄';
+         }
+         
+         function getTrelloFileColor(fileExt) {
+           const colors = {
+             // Imagens - azul
+             'jpg': '#0079bf', 'jpeg': '#0079bf', 'png': '#0079bf', 'gif': '#0079bf', 'webp': '#0079bf', 'bmp': '#0079bf', 'svg': '#0079bf',
+             // Documentos - cinza
+             'pdf': '#838c91', 'doc': '#838c91', 'docx': '#838c91', 'txt': '#838c91', 'md': '#838c91',
+             // Planilhas - verde
+             'xls': '#61bd4f', 'xlsx': '#61bd4f', 'csv': '#61bd4f',
+             // Vídeos - roxo
+             'mp4': '#c377e0', 'avi': '#c377e0', 'mov': '#c377e0', 'wmv': '#c377e0', 'flv': '#c377e0', 'webm': '#c377e0', 'mkv': '#c377e0',
+             // Áudios - laranja
+             'mp3': '#ff9f1a', 'wav': '#ff9f1a', 'flac': '#ff9f1a', 'aac': '#ff9f1a',
+             // Arquivos - amarelo
+             'zip': '#f2d600', 'rar': '#f2d600', '7z': '#f2d600', 'tar': '#f2d600',
+             // Código - vermelho
+             'js': '#eb5a46', 'html': '#eb5a46', 'css': '#eb5a46', 'py': '#eb5a46', 'java': '#eb5a46', 'cpp': '#eb5a46'
+           };
+           return colors[fileExt] || '#ddd';
+         }
+         
+         function formatFileSize(bytes) {
+           if (bytes === 0) return '0 Bytes';
+           const k = 1024;
+           const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+           const i = Math.floor(Math.log(bytes) / Math.log(k));
+           return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+         }
+         
+         function closeTrelloViewer() {
+           document.getElementById('trelloAttachmentModal').style.display = 'none';
+         }
+         
+         function prevTrelloAttachment() {
+           if (currentTrelloAttachments.length > 1) {
+             currentTrelloIndex = (currentTrelloIndex - 1 + currentTrelloAttachments.length) % currentTrelloAttachments.length;
+             updateTrelloAttachment();
+           }
+         }
+         
+         function nextTrelloAttachment() {
+           if (currentTrelloAttachments.length > 1) {
+             currentTrelloIndex = (currentTrelloIndex + 1) % currentTrelloAttachments.length;
+             updateTrelloAttachment();
+           }
+         }
+         
+         function openTrelloOriginal() {
+           if (currentTrelloAttachments.length > 0) {
+             const attachment = currentTrelloAttachments[currentTrelloIndex];
+             window.open(attachment.url, '_blank');
+           }
+         }
+         
+         function downloadTrelloAttachment() {
+           if (currentTrelloAttachments.length > 0) {
+             const attachment = currentTrelloAttachments[currentTrelloIndex];
+             downloadFile(attachment.url, attachment.name);
+           }
+         }
+
          // Visualizador de Documentos
          let currentDocuments = [];
          let currentDocumentIndex = 0;
@@ -3396,7 +3687,7 @@
                content.innerHTML = `
                  <div style="text-align: center; height: 100%;">
                    <h3 style="margin-bottom: 20px; color: #333; font-size: 18px;">${doc.name}</h3>
-                   <iframe src="${doc.url}" style="width: 100%; height: calc(100% - 60px); border: none; border-radius: 8px;"></iframe>
+                   <iframe src="${doc.url}#toolbar=0&navpanes=0&scrollbar=0" style="width: 100%; height: calc(100% - 60px); border: none; border-radius: 8px;" onload="this.style.opacity='1'" onerror="this.parentElement.innerHTML='<div style=\\'color: #dc3545; text-align: center; padding: 40px;\\'>Erro ao carregar PDF. <br><br><button onclick=\\'window.open(\\'${doc.url}\\', \\'_blank\\')\\' style=\\'background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;\\'>Abrir Original</button></div>'"></iframe>
                  </div>`;
              } else if (doc.type === 'txt') {
                content.innerHTML = `
@@ -3407,13 +3698,25 @@
                
                // Carregar conteúdo do arquivo de texto
                fetch(doc.url)
-                 .then(response => response.text())
+                 .then(response => {
+                   if (!response.ok) {
+                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                   }
+                   return response.text();
+                 })
                  .then(text => {
                    document.getElementById('textContent').textContent = text;
                  })
                  .catch(error => {
                    console.error('Erro ao carregar arquivo:', error);
-                   document.getElementById('textContent').innerHTML = '<div style="color: #dc3545; text-align: center; padding: 40px;">Erro ao carregar o arquivo. <br><br><button onclick="window.open(\'' + doc.url + '\', \'_blank\')" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Abrir Original</button></div>';
+                   document.getElementById('textContent').innerHTML = `
+                     <div style="color: #dc3545; text-align: center; padding: 40px;">
+                       <div style="font-size: 48px; margin-bottom: 20px;">📄</div>
+                       <h4 style="margin-bottom: 15px;">Erro ao carregar o arquivo</h4>
+                       <p style="color: #666; margin-bottom: 25px; font-size: 14px;">Não foi possível carregar o conteúdo do arquivo de texto.</p>
+                       <button onclick="window.open('${doc.url}', '_blank')" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-right: 10px;">Abrir Original</button>
+                       <button onclick="downloadFile('${doc.url}', '${doc.name}')" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Salvar</button>
+                     </div>`;
                  });
              }
            }
@@ -3532,108 +3835,35 @@
            }
          }
          
-         // Função para visualizar anexos
+         // Função para visualizar anexos - NOVA VERSÃO TRELLO-STYLE
          function viewAttachment(url, fileName, fileExt, attachmentsList = null) {
-           const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt.toLowerCase());
-           const isVideo = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'].includes(fileExt.toLowerCase());
-           const isText = ['txt', 'csv'].includes(fileExt.toLowerCase());
-           const isPdf = fileExt.toLowerCase() === 'pdf';
+           // Preparar lista de anexos para o visualizador Trello
+           let attachments = [];
+           let currentIndex = 0;
            
-           if (isImage) {
-             // Usar o visualizador de imagens existente
-             let images = [];
-             let currentIndex = 0;
+           if (attachmentsList && Array.isArray(attachmentsList)) {
+             // Converter todos os anexos para o formato esperado
+             attachments = attachmentsList.map(att => ({
+               url: att.url,
+               name: att.name || 'Arquivo',
+               size: att.size || null
+             }));
              
-             // Se temos uma lista de anexos, coletar todas as imagens
-             if (attachmentsList && Array.isArray(attachmentsList)) {
-               images = attachmentsList
-                 .filter(att => {
-                   const ext = (att.name || '').split('.').pop()?.toLowerCase() || '';
-                   return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
-                 })
-                 .map(att => ({
-                   url: att.url,
-                   name: att.name || 'Imagem'
-                 }));
-               
-               // Encontrar o índice da imagem atual
-               currentIndex = images.findIndex(img => img.url === url);
-               if (currentIndex === -1) {
-                 // Se não encontrou na lista, adicionar a imagem atual
-                 images.push({ url, name: fileName });
-                 currentIndex = images.length - 1;
-               }
-             } else {
-               // Se não temos lista, usar apenas a imagem atual
-               images = [{ url, name: fileName }];
-               currentIndex = 0;
+             // Encontrar o índice do anexo atual
+             currentIndex = attachments.findIndex(att => att.url === url);
+             if (currentIndex === -1) {
+               // Se não encontrou na lista, adicionar o anexo atual
+               attachments.push({ url, name: fileName, size: null });
+               currentIndex = attachments.length - 1;
              }
-             
-             // Abrir o visualizador de imagens
-             openImageViewer(images, currentIndex);
-           } else if (isVideo) {
-             // Visualizar vídeo em modal
-             const modalContent = `
-               <div style="text-align: center; max-width: 90vw; max-height: 90vh;">
-                 <h3 style="margin-bottom: 20px; color: #333;">${fileName}</h3>
-                 <video controls style="max-width: 100%; max-height: 70vh; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-                   <source src="${url}" type="video/${fileExt}">
-                   Seu navegador não suporta a reprodução de vídeo.
-                 </video>
-                 <div style="margin-top: 20px;">
-                   <button onclick="window.open('${url}', '_blank')" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-right: 10px;">Abrir Original</button>
-                   <button onclick="downloadFile('${url}', '${fileName}')" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Salvar</button>
-                 </div>
-               </div>`;
-             openModal('Visualizar Vídeo', modalContent);
-           } else if (isText || isPdf) {
-             // Usar o novo visualizador de documentos
-             let documents = [];
-             let currentIndex = 0;
-             
-             // Se temos uma lista de anexos, coletar todos os documentos (TXT, CSV, PDF)
-             if (attachmentsList && Array.isArray(attachmentsList)) {
-               documents = attachmentsList
-                 .filter(att => {
-                   const ext = (att.name || '').split('.').pop()?.toLowerCase() || '';
-                   return ['txt', 'csv', 'pdf'].includes(ext);
-                 })
-                 .map(att => {
-                   const ext = (att.name || '').split('.').pop()?.toLowerCase() || '';
-                   return {
-                     url: att.url,
-                     name: att.name || 'Documento',
-                     type: ext === 'pdf' ? 'pdf' : 'txt'
-                   };
-                 });
-               
-               // Encontrar o índice do documento atual
-               currentIndex = documents.findIndex(doc => doc.url === url);
-               if (currentIndex === -1) {
-                 // Se não encontrou na lista, adicionar o documento atual
-                 documents.push({ 
-                   url, 
-                   name: fileName, 
-                   type: isPdf ? 'pdf' : 'txt' 
-                 });
-                 currentIndex = documents.length - 1;
-               }
-             } else {
-               // Se não temos lista, usar apenas o documento atual
-               documents = [{ 
-                 url, 
-                 name: fileName, 
-                 type: isPdf ? 'pdf' : 'txt' 
-               }];
-               currentIndex = 0;
-             }
-             
-             // Abrir o visualizador de documentos
-             openDocumentViewer(documents, currentIndex);
            } else {
-             // Mostrar modal de download para outros tipos
-             showDownloadOnlyModal(url, fileName);
+             // Se não temos lista, usar apenas o anexo atual
+             attachments = [{ url, name: fileName, size: null }];
+             currentIndex = 0;
            }
+           
+           // Abrir o visualizador Trello
+           openTrelloAttachmentViewer(attachments, currentIndex);
          }
          
          function showDownloadOnlyModal(url, fileName) {
