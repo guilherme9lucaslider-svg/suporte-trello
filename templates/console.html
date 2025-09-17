@@ -1641,7 +1641,7 @@
                     const p = (att.previews && att.previews.length>0) ? (att.previews.find(p=>p.width<=200)?.url || att.previews[0]?.url || att.url) : att.url;
                     const thumb = isImage ? `<img src="${p}" alt="${fileName}">` : `<span class="att-chip">${chip}</span>`;
                     modalContent += `
-                      <div class="attachment-row" onclick="viewAttachment('${att.url}', '${fileName}', '${fileExt}')">
+                      <div class="attachment-row" onclick="viewAttachment('${att.url}', '${fileName}', '${fileExt}', ${JSON.stringify(item.attachments).replace(/"/g, '&quot;')})">
                         <div class="att-left">${thumb}</div>
                         <div class="att-center">
                           <div class="att-name" title="${fileName}">${fileName}</div>
@@ -1724,7 +1724,7 @@
                      
                      html += `
                        <div class="attachment-item" style="display: flex; align-items: center; padding: 3px 4px; margin-bottom: 1px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 2px; cursor: pointer;" 
-                            onclick="viewAttachment('${att.url}', '${fileName}', '${fileExt}')">
+                            onclick="viewAttachment('${att.url}', '${fileName}', '${fileExt}', ${JSON.stringify(item.attachments).replace(/"/g, '&quot;')})">
                          ${thumbnailHtml}
                          <div style="flex: 1; font-size: 11px; color: #495057;">${fileName}</div>
                          <div style="font-size: 9px; color: #6c757d;">há pouco</div>
@@ -3347,24 +3347,44 @@
          }
          
          // Função para visualizar anexos
-         function viewAttachment(url, fileName, fileExt) {
+         function viewAttachment(url, fileName, fileExt, attachmentsList = null) {
            const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt.toLowerCase());
            const isVideo = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'].includes(fileExt.toLowerCase());
            const isText = ['txt', 'csv'].includes(fileExt.toLowerCase());
            const isPdf = fileExt.toLowerCase() === 'pdf';
            
            if (isImage) {
-             // Visualizar imagem em modal
-             const modalContent = `
-               <div style="text-align: center; max-width: 90vw; max-height: 90vh;">
-                 <h3 style="margin-bottom: 20px; color: #333;">${fileName}</h3>
-                 <img src="${url}" alt="${fileName}" style="max-width: 100%; max-height: 70vh; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-                 <div style="margin-top: 20px;">
-                   <button onclick="window.open('${url}', '_blank')" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-right: 10px;">Abrir Original</button>
-                   <button onclick="downloadFile('${url}', '${fileName}')" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Salvar</button>
-                 </div>
-               </div>`;
-             openModal('Visualizar Imagem', modalContent);
+             // Usar o visualizador de imagens existente
+             let images = [];
+             let currentIndex = 0;
+             
+             // Se temos uma lista de anexos, coletar todas as imagens
+             if (attachmentsList && Array.isArray(attachmentsList)) {
+               images = attachmentsList
+                 .filter(att => {
+                   const ext = (att.name || '').split('.').pop()?.toLowerCase() || '';
+                   return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
+                 })
+                 .map(att => ({
+                   url: att.url,
+                   name: att.name || 'Imagem'
+                 }));
+               
+               // Encontrar o índice da imagem atual
+               currentIndex = images.findIndex(img => img.url === url);
+               if (currentIndex === -1) {
+                 // Se não encontrou na lista, adicionar a imagem atual
+                 images.push({ url, name: fileName });
+                 currentIndex = images.length - 1;
+               }
+             } else {
+               // Se não temos lista, usar apenas a imagem atual
+               images = [{ url, name: fileName }];
+               currentIndex = 0;
+             }
+             
+             // Abrir o visualizador de imagens
+             openImageViewer(images, currentIndex);
            } else if (isVideo) {
              // Visualizar vídeo em modal
              const modalContent = `
