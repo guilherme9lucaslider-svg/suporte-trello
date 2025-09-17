@@ -3476,46 +3476,63 @@
                     style="opacity: 0; transition: opacity 0.3s ease;" />
              `;
            } else if (isPdf) {
-             // Para PDFs, usar uma abordagem que evita download automático
+             // Visualização nativa de PDF usando iframe
              previewEl.innerHTML = `
-               <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f8f9fa; border-radius: 8px;">
-                 <div style="text-align: center; padding: 40px;">
-                   <div style="font-size: 64px; margin-bottom: 24px; color: #838c91;">📄</div>
-                   <h3 style="margin-bottom: 16px; color: #172b4d; font-weight: 600;">Visualização de PDF</h3>
-                   <p style="margin-bottom: 32px; font-size: 14px; line-height: 1.5; color: #6b778c;">
-                     Para visualizar este PDF, clique em "Abrir Original" para abrir em uma nova aba.
+               <div style="width: 100%; height: 100%; display: flex; flex-direction: column; background: #f8f9fa; border-radius: 8px; overflow: hidden;">
+                 <iframe src="${attachment.url}" 
+                         style="width: 100%; height: 100%; border: none; border-radius: 8px;" 
+                         title="Visualizador de PDF">
+                   <p>Seu navegador não suporta a visualização de PDFs. 
+                      <a href="${attachment.url}" target="_blank">Clique aqui para abrir o PDF</a>
                    </p>
-                   <div style="display: flex; gap: 12px; justify-content: center;">
-                     <button onclick="window.open('${attachment.url}', '_blank')" 
-                             style="background: #0079bf; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; transition: background 0.2s;"
-                             onmouseover="this.style.background='#005a8b'" 
-                             onmouseout="this.style.background='#0079bf'">
-                       Abrir PDF
-                     </button>
-                   </div>
-                 </div>
+                 </iframe>
                </div>
              `;
            } else if (isText) {
+             // Visualização nativa de arquivos de texto
              previewEl.innerHTML = `
-               <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f8f9fa; border-radius: 8px;">
-                 <div style="text-align: center; padding: 40px;">
-                   <div style="font-size: 64px; margin-bottom: 24px; color: #838c91;">📄</div>
-                   <h3 style="margin-bottom: 16px; color: #172b4d; font-weight: 600;">Arquivo de Texto</h3>
-                   <p style="margin-bottom: 32px; font-size: 14px; line-height: 1.5; color: #6b778c;">
-                     Para visualizar o conteúdo deste arquivo de texto, clique em "Abrir Original".
-                   </p>
-                   <div style="display: flex; gap: 12px; justify-content: center;">
-                     <button onclick="window.open('${attachment.url}', '_blank')" 
-                             style="background: #0079bf; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; transition: background 0.2s;"
-                             onmouseover="this.style.background='#005a8b'" 
-                             onmouseout="this.style.background='#0079bf'">
-                       Abrir Arquivo
-                     </button>
+               <div style="width: 100%; height: 100%; display: flex; flex-direction: column; background: #f8f9fa; border-radius: 8px; overflow: hidden;">
+                 <div style="padding: 16px; background: #e4e6ea; border-bottom: 1px solid #ddd; font-weight: 600; color: #172b4d;">
+                   📄 ${attachment.name}
+                 </div>
+                 <div id="textContent-${currentTrelloIndex}" style="flex: 1; padding: 20px; overflow: auto; background: white; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.4;">
+                   <div style="text-align: center; padding: 40px; color: #6b778c;">
+                     <div style="font-size: 24px; margin-bottom: 16px;">⏳</div>
+                     <p>Carregando conteúdo...</p>
                    </div>
                  </div>
                </div>
              `;
+             
+             // Carregar conteúdo do arquivo de texto
+             fetch(attachment.url)
+               .then(response => {
+                 if (!response.ok) {
+                   throw new Error('Erro ao carregar arquivo');
+                 }
+                 return response.text();
+               })
+               .then(text => {
+                 const contentEl = document.getElementById(`textContent-${currentTrelloIndex}`);
+                 if (contentEl) {
+                   contentEl.innerHTML = `<pre style="margin: 0; white-space: pre-wrap; word-wrap: break-word;">${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`;
+                 }
+               })
+               .catch(error => {
+                 const contentEl = document.getElementById(`textContent-${currentTrelloIndex}`);
+                 if (contentEl) {
+                   contentEl.innerHTML = `
+                     <div style="text-align: center; padding: 40px; color: #de350b;">
+                       <div style="font-size: 24px; margin-bottom: 16px;">⚠️</div>
+                       <p>Erro ao carregar o arquivo de texto.</p>
+                       <button onclick="window.open('${attachment.url}', '_blank')" 
+                               style="background: #0079bf; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 16px;">
+                         Abrir em Nova Aba
+                       </button>
+                     </div>
+                   `;
+                 }
+               });
            } else if (isVideo) {
              previewEl.innerHTML = `
                <video controls style="max-width: 100%; max-height: 100%; border-radius: 8px;">
