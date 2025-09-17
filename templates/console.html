@@ -3346,63 +3346,50 @@
            }
          }
          
-         // Visualizador Universal de Anexos
-         let currentAttachments = [];
-         let currentAttachmentIndex = 0;
-         
-         function openUniversalViewer(attachments, startIndex = 0) {
-           currentAttachments = attachments;
-           currentAttachmentIndex = startIndex;
-           
-           updateUniversalViewer();
-         }
-         
-         function updateUniversalViewer() {
-           if (currentAttachments.length === 0) return;
-           
-           const attachment = currentAttachments[currentAttachmentIndex];
-           const fileName = attachment.name || 'Arquivo';
-           const fileExt = (fileName.split('.').pop() || '').toLowerCase();
-           const url = attachment.url;
-           
-           const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt);
-           const isVideo = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'].includes(fileExt);
-           const isText = ['txt', 'csv'].includes(fileExt);
-           const isPdf = fileExt === 'pdf';
-           const canPreview = isImage || isVideo || isText || isPdf;
-           
-           let modalContent = '';
-           
-           // Cabeçalho com navegação
-           const navButtons = currentAttachments.length > 1 ? `
-             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-               <button onclick="prevAttachment()" style="background: rgba(0,0,0,0.1); border: none; color: #333; font-size: 24px; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">‹</button>
-               <div style="text-align: center;">
-                 <h3 style="margin: 0; color: #333;">${fileName}</h3>
-                 <small style="color: #666;">${currentAttachmentIndex + 1} de ${currentAttachments.length}</small>
-               </div>
-               <button onclick="nextAttachment()" style="background: rgba(0,0,0,0.1); border: none; color: #333; font-size: 24px; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">›</button>
-             </div>
-           ` : `
-             <div style="text-align: center; margin-bottom: 20px;">
-               <h3 style="margin: 0; color: #333;">${fileName}</h3>
-             </div>
-           `;
+         // Função para visualizar anexos
+         function viewAttachment(url, fileName, fileExt, attachmentsList = null) {
+           const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt.toLowerCase());
+           const isVideo = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'].includes(fileExt.toLowerCase());
+           const isText = ['txt', 'csv'].includes(fileExt.toLowerCase());
+           const isPdf = fileExt.toLowerCase() === 'pdf';
            
            if (isImage) {
-             modalContent = `
-               <div style="max-width: 90vw; max-height: 90vh; text-align: center;">
-                 ${navButtons}
-                 <img src="${url}" style="max-width: 100%; max-height: 70vh; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
-                 <div style="margin-top: 20px;">
-                   <button onclick="window.open('${url}', '_blank')" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-right: 10px;">Abrir Original</button>
-                   <button onclick="downloadFile('${url}', '${fileName}')" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Salvar</button>
-                 </div>
-               </div>`;
+             // Usar o visualizador de imagens existente
+             let images = [];
+             let currentIndex = 0;
+             
+             // Se temos uma lista de anexos, coletar todas as imagens
+             if (attachmentsList && Array.isArray(attachmentsList)) {
+               images = attachmentsList
+                 .filter(att => {
+                   const ext = (att.name || '').split('.').pop()?.toLowerCase() || '';
+                   return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
+                 })
+                 .map(att => ({
+                   url: att.url,
+                   name: att.name || 'Imagem'
+                 }));
+               
+               // Encontrar o índice da imagem atual
+               currentIndex = images.findIndex(img => img.url === url);
+               if (currentIndex === -1) {
+                 // Se não encontrou na lista, adicionar a imagem atual
+                 images.push({ url, name: fileName });
+                 currentIndex = images.length - 1;
+               }
+             } else {
+               // Se não temos lista, usar apenas a imagem atual
+               images = [{ url, name: fileName }];
+               currentIndex = 0;
+             }
+             
+             // Abrir o visualizador de imagens
+             openImageViewer(images, currentIndex);
            } else if (isVideo) {
-             modalContent = `
-               <div style="max-width: 90vw; max-height: 90vh; text-align: center;">
-                 ${navButtons}
+             // Visualizar vídeo em modal
+             const modalContent = `
+               <div style="text-align: center; max-width: 90vw; max-height: 90vh;">
+                 <h3 style="margin-bottom: 20px; color: #333;">${fileName}</h3>
                  <video controls style="max-width: 100%; max-height: 70vh; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
                    <source src="${url}" type="video/${fileExt}">
                    Seu navegador não suporta a reprodução de vídeo.
@@ -3412,134 +3399,43 @@
                    <button onclick="downloadFile('${url}', '${fileName}')" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Salvar</button>
                  </div>
                </div>`;
+             openModal('Visualizar Vídeo', modalContent);
            } else if (isText) {
-             // Carregar conteúdo do arquivo de texto
+             // Visualizar texto em modal
              fetch(url)
                .then(response => response.text())
                .then(text => {
-                 const textModalContent = `
+                 const modalContent = `
                    <div style="max-width: 90vw; max-height: 90vh;">
-                     ${navButtons}
-                     <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 15px; max-height: 60vh; overflow-y: auto; font-family: monospace; white-space: pre-wrap; font-size: 14px; text-align: left;">${text}</div>
+                     <h3 style="margin-bottom: 20px; color: #333;">${fileName}</h3>
+                     <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 15px; max-height: 60vh; overflow-y: auto; font-family: monospace; white-space: pre-wrap; font-size: 14px;">${text}</div>
                      <div style="margin-top: 20px; text-align: center;">
                        <button onclick="window.open('${url}', '_blank')" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-right: 10px;">Abrir Original</button>
                        <button onclick="downloadFile('${url}', '${fileName}')" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Salvar</button>
                      </div>
                    </div>`;
-                 openModal('Visualizar Arquivo', textModalContent);
-                 setupUniversalViewerKeyboard();
+                 openModal('Visualizar Arquivo', modalContent);
                })
                .catch(error => {
                  console.error('Erro ao carregar arquivo:', error);
-                 showUniversalDownloadModal(attachment);
+                 showDownloadOnlyModal(url, fileName);
                });
-             return; // Sair aqui pois o fetch é assíncrono
            } else if (isPdf) {
-             modalContent = `
-               <div style="max-width: 95vw; max-height: 95vh; text-align: center;">
-                 ${navButtons}
+             // Visualizar PDF em modal
+             const modalContent = `
+               <div style="text-align: center; max-width: 95vw; max-height: 95vh;">
+                 <h3 style="margin-bottom: 20px; color: #333;">${fileName}</h3>
                  <iframe src="${url}" style="width: 100%; height: 75vh; border: 1px solid #dee2e6; border-radius: 5px;"></iframe>
                  <div style="margin-top: 20px;">
                    <button onclick="window.open('${url}', '_blank')" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-right: 10px;">Abrir Original</button>
                    <button onclick="downloadFile('${url}', '${fileName}')" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Salvar</button>
                  </div>
                </div>`;
+             openModal('Visualizar PDF', modalContent);
            } else {
-             // Arquivo não visualizável - mostrar mensagem de download
-             showUniversalDownloadModal(attachment);
-             return;
+             // Mostrar modal de download para outros tipos
+             showDownloadOnlyModal(url, fileName);
            }
-           
-           openModal('Visualizar Anexo', modalContent);
-           setupUniversalViewerKeyboard();
-         }
-         
-         function showUniversalDownloadModal(attachment) {
-           const fileName = attachment.name || 'Arquivo';
-           const url = attachment.url;
-           
-           const navButtons = currentAttachments.length > 1 ? `
-             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-               <button onclick="prevAttachment()" style="background: rgba(0,0,0,0.1); border: none; color: #333; font-size: 24px; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">‹</button>
-               <div style="text-align: center;">
-                 <small style="color: #666;">${currentAttachmentIndex + 1} de ${currentAttachments.length}</small>
-               </div>
-               <button onclick="nextAttachment()" style="background: rgba(0,0,0,0.1); border: none; color: #333; font-size: 24px; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">›</button>
-             </div>
-           ` : '';
-           
-           const modalContent = `
-             <div style="text-align: center; padding: 20px; max-width: 400px;">
-               ${navButtons}
-               <div style="font-size: 48px; margin-bottom: 20px;">📄</div>
-               <h3 style="margin-bottom: 15px; color: #333;">${fileName}</h3>
-               <p style="color: #666; margin-bottom: 25px;">Não há visualização disponível para este anexo</p>
-               <button onclick="downloadFile('${url}', '${fileName}')" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-size: 16px;">Salvar</button>
-             </div>`;
-           openModal('Anexo', modalContent);
-           setupUniversalViewerKeyboard();
-         }
-         
-         function setupUniversalViewerKeyboard() {
-           // Remover listeners anteriores
-           document.removeEventListener('keydown', universalViewerKeyHandler);
-           // Adicionar novo listener
-           document.addEventListener('keydown', universalViewerKeyHandler);
-         }
-         
-         function universalViewerKeyHandler(e) {
-           if (document.querySelector('.modal').style.display === 'block') {
-             if (e.key === 'ArrowLeft') {
-               e.preventDefault();
-               prevAttachment();
-             } else if (e.key === 'ArrowRight') {
-               e.preventDefault();
-               nextAttachment();
-             }
-           }
-         }
-         
-         function prevAttachment() {
-           if (currentAttachments.length > 1) {
-             currentAttachmentIndex = (currentAttachmentIndex - 1 + currentAttachments.length) % currentAttachments.length;
-             updateUniversalViewer();
-           }
-         }
-         
-         function nextAttachment() {
-           if (currentAttachments.length > 1) {
-             currentAttachmentIndex = (currentAttachmentIndex + 1) % currentAttachments.length;
-             updateUniversalViewer();
-           }
-         }
-         
-         // Função para visualizar anexos - agora usa o visualizador universal
-         function viewAttachment(url, fileName, fileExt, attachmentsList = null) {
-           let attachments = [];
-           let currentIndex = 0;
-           
-           // Se temos uma lista de anexos, usar todos
-           if (attachmentsList && Array.isArray(attachmentsList)) {
-             attachments = attachmentsList.map(att => ({
-               url: att.url,
-               name: att.name || 'Arquivo'
-             }));
-             
-             // Encontrar o índice do anexo atual
-             currentIndex = attachments.findIndex(att => att.url === url);
-             if (currentIndex === -1) {
-               // Se não encontrou na lista, adicionar o anexo atual
-               attachments.push({ url, name: fileName });
-               currentIndex = attachments.length - 1;
-             }
-           } else {
-             // Se não temos lista, usar apenas o anexo atual
-             attachments = [{ url, name: fileName }];
-             currentIndex = 0;
-           }
-           
-           // Abrir o visualizador universal
-           openUniversalViewer(attachments, currentIndex);
          }
          
          function showDownloadOnlyModal(url, fileName) {
