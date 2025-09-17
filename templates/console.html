@@ -1704,7 +1704,51 @@
                        const previewUrl = (att.previews && att.previews.length > 0) ? 
                          att.previews.find(p => p.width <= 60)?.url || att.previews[0]?.url || att.url : att.url;
                        thumbnailHtml = `<img src="${previewUrl}" alt="${fileName}" style="width: 24px; height: 24px; margin-right: 4px; flex-shrink: 0; border-radius: 2px; object-fit: cover; border: 1px solid #ddd;">`;
-                     } else if (isVideo) {
+                     } else if (isText || isPdf) {
+             // Usar o novo visualizador de documentos
+             let documents = [];
+             let currentIndex = 0;
+             
+             // Se temos uma lista de anexos, coletar todos os documentos (TXT, CSV, PDF)
+             if (attachmentsList && Array.isArray(attachmentsList)) {
+               documents = attachmentsList
+                 .filter(att => {
+                   const ext = (att.name || '').split('.').pop()?.toLowerCase() || '';
+                   return ['txt', 'csv', 'pdf'].includes(ext);
+                 })
+                 .map(att => {
+                   const ext = (att.name || '').split('.').pop()?.toLowerCase() || '';
+                   return {
+                     url: att.url,
+                     name: att.name || 'Documento',
+                     type: ext === 'pdf' ? 'pdf' : 'txt'
+                   };
+                 });
+               
+               // Encontrar o índice do documento atual
+               currentIndex = documents.findIndex(doc => doc.url === url);
+               if (currentIndex === -1) {
+                 // Se não encontrou na lista, adicionar o documento atual
+                 documents.push({ 
+                   url, 
+                   name: fileName, 
+                   type: isPdf ? 'pdf' : 'txt' 
+                 });
+                 currentIndex = documents.length - 1;
+               }
+             } else {
+               // Se não temos lista, usar apenas o documento atual
+               documents = [{ 
+                 url, 
+                 name: fileName, 
+                 type: isPdf ? 'pdf' : 'txt' 
+               }];
+               currentIndex = 0;
+             }
+             
+             // Abrir o visualizador de documentos
+             openDocumentViewer(documents, currentIndex);
+           } else if (isVideo) {
                        // Para vídeos, mostrar thumbnail com ícone de play
                        thumbnailHtml = `
                          <div style="position: relative; width: 24px; height: 24px; margin-right: 4px; flex-shrink: 0; background: #000; border-radius: 2px; display: flex; align-items: center; justify-content: center; border: 1px solid #ddd;">
@@ -3176,6 +3220,26 @@
         </div>
       </div>
       
+      <!-- Modal do Visualizador de Documentos (TXT/PDF) -->
+      <div id="documentViewerModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; justify-content: center; align-items: center;">
+        <div style="position: relative; max-width: 85%; max-height: 85%; display: flex; align-items: center; justify-content: center; background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);">
+          <button id="closeDocumentViewer" style="position: absolute; top: -40px; right: 0; background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10001;">×</button>
+          
+          <button id="prevDocument" style="position: absolute; left: -60px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">‹</button>
+          
+          <div id="documentContent" style="width: 100%; height: 80vh; padding: 20px; overflow: auto; border-radius: 12px;"></div>
+          
+          <button id="nextDocument" style="position: absolute; right: -60px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">›</button>
+          
+          <div id="documentCounter" style="position: absolute; bottom: -40px; left: 50%; transform: translateX(-50%); color: white; font-size: 14px; background: rgba(0,0,0,0.5); padding: 8px 16px; border-radius: 20px;"></div>
+          
+          <div id="documentActions" style="position: absolute; top: -40px; left: 0; display: flex; gap: 10px;">
+            <button id="openDocumentOriginal" style="background: rgba(0,123,255,0.8); border: none; color: white; font-size: 12px; padding: 8px 12px; border-radius: 20px; cursor: pointer;">Abrir Original</button>
+            <button id="downloadDocument" style="background: rgba(40,167,69,0.8); border: none; color: white; font-size: 12px; padding: 8px 12px; border-radius: 20px; cursor: pointer;">Salvar</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Modal: Datas obrigatórias para relatório -->
       <div class="confirm-modal" id="requireDatesModal" style="display:none;">
          <div class="confirm__box">
@@ -3265,6 +3329,128 @@
            window.open(url, '_blank');
          }
          
+         
+         // Visualizador de Documentos
+         let currentDocuments = [];
+         let currentDocumentIndex = 0;
+         
+         function openDocumentViewer(documents, startIndex = 0) {
+           currentDocuments = documents;
+           currentDocumentIndex = startIndex;
+           
+           const modal = document.getElementById('documentViewerModal');
+           
+           updateViewerDocument();
+           modal.style.display = 'flex';
+           
+           // Adicionar event listeners se ainda não foram adicionados
+           if (!modal.hasAttribute('data-listeners-added')) {
+             document.getElementById('closeDocumentViewer').addEventListener('click', closeDocumentViewer);
+             document.getElementById('prevDocument').addEventListener('click', prevDocument);
+             document.getElementById('nextDocument').addEventListener('click', nextDocument);
+             document.getElementById('openDocumentOriginal').addEventListener('click', openDocumentOriginal);
+             document.getElementById('downloadDocument').addEventListener('click', downloadCurrentDocument);
+             
+             // Fechar com ESC
+             document.addEventListener('keydown', function(e) {
+               if (e.key === 'Escape' && modal.style.display === 'flex') {
+                 closeDocumentViewer();
+               }
+             });
+             
+             // Navegação com setas
+             document.addEventListener('keydown', function(e) {
+               if (modal.style.display === 'flex') {
+                 if (e.key === 'ArrowLeft') prevDocument();
+                 if (e.key === 'ArrowRight') nextDocument();
+               }
+             });
+             
+             // Fechar clicando no fundo
+             modal.addEventListener('click', function(e) {
+               if (e.target === modal) {
+                 closeDocumentViewer();
+               }
+             });
+             
+             modal.setAttribute('data-listeners-added', 'true');
+           }
+         }
+         
+         function updateViewerDocument() {
+           const content = document.getElementById('documentContent');
+           const counter = document.getElementById('documentCounter');
+           const prevBtn = document.getElementById('prevDocument');
+           const nextBtn = document.getElementById('nextDocument');
+           
+           if (currentDocuments.length > 0) {
+             const doc = currentDocuments[currentDocumentIndex];
+             counter.textContent = `${currentDocumentIndex + 1} / ${currentDocuments.length}`;
+             
+             // Mostrar/ocultar botões de navegação
+             prevBtn.style.display = currentDocuments.length > 1 ? 'flex' : 'none';
+             nextBtn.style.display = currentDocuments.length > 1 ? 'flex' : 'none';
+             
+             // Carregar conteúdo baseado no tipo
+             if (doc.type === 'pdf') {
+               content.innerHTML = `
+                 <div style="text-align: center; height: 100%;">
+                   <h3 style="margin-bottom: 20px; color: #333; font-size: 18px;">${doc.name}</h3>
+                   <iframe src="${doc.url}" style="width: 100%; height: calc(100% - 60px); border: none; border-radius: 8px;"></iframe>
+                 </div>`;
+             } else if (doc.type === 'txt') {
+               content.innerHTML = `
+                 <div style="height: 100%;">
+                   <h3 style="margin-bottom: 20px; color: #333; font-size: 18px; text-align: center;">${doc.name}</h3>
+                   <div id="textContent" style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; height: calc(100% - 60px); overflow-y: auto; font-family: 'Courier New', monospace; white-space: pre-wrap; font-size: 14px; line-height: 1.5;">Carregando...</div>
+                 </div>`;
+               
+               // Carregar conteúdo do arquivo de texto
+               fetch(doc.url)
+                 .then(response => response.text())
+                 .then(text => {
+                   document.getElementById('textContent').textContent = text;
+                 })
+                 .catch(error => {
+                   console.error('Erro ao carregar arquivo:', error);
+                   document.getElementById('textContent').innerHTML = '<div style="color: #dc3545; text-align: center; padding: 40px;">Erro ao carregar o arquivo. <br><br><button onclick="window.open(\'' + doc.url + '\', \'_blank\')" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Abrir Original</button></div>';
+                 });
+             }
+           }
+         }
+         
+         function closeDocumentViewer() {
+           document.getElementById('documentViewerModal').style.display = 'none';
+         }
+         
+         function prevDocument() {
+           if (currentDocuments.length > 1) {
+             currentDocumentIndex = (currentDocumentIndex - 1 + currentDocuments.length) % currentDocuments.length;
+             updateViewerDocument();
+           }
+         }
+         
+         function nextDocument() {
+           if (currentDocuments.length > 1) {
+             currentDocumentIndex = (currentDocumentIndex + 1) % currentDocuments.length;
+             updateViewerDocument();
+           }
+         }
+         
+         function openDocumentOriginal() {
+           if (currentDocuments.length > 0) {
+             const doc = currentDocuments[currentDocumentIndex];
+             window.open(doc.url, '_blank');
+           }
+         }
+         
+         function downloadCurrentDocument() {
+           if (currentDocuments.length > 0) {
+             const doc = currentDocuments[currentDocumentIndex];
+             downloadFile(doc.url, doc.name);
+           }
+         }
+
          // Visualizador de Imagens
          let currentImages = [];
          let currentImageIndex = 0;
@@ -3400,38 +3586,50 @@
                  </div>
                </div>`;
              openModal('Visualizar Vídeo', modalContent);
-           } else if (isText) {
-             // Visualizar texto em modal
-             fetch(url)
-               .then(response => response.text())
-               .then(text => {
-                 const modalContent = `
-                   <div style="max-width: 90vw; max-height: 90vh;">
-                     <h3 style="margin-bottom: 20px; color: #333;">${fileName}</h3>
-                     <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 15px; max-height: 60vh; overflow-y: auto; font-family: monospace; white-space: pre-wrap; font-size: 14px;">${text}</div>
-                     <div style="margin-top: 20px; text-align: center;">
-                       <button onclick="window.open('${url}', '_blank')" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-right: 10px;">Abrir Original</button>
-                       <button onclick="downloadFile('${url}', '${fileName}')" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Salvar</button>
-                     </div>
-                   </div>`;
-                 openModal('Visualizar Arquivo', modalContent);
-               })
-               .catch(error => {
-                 console.error('Erro ao carregar arquivo:', error);
-                 showDownloadOnlyModal(url, fileName);
-               });
-           } else if (isPdf) {
-             // Visualizar PDF em modal
-             const modalContent = `
-               <div style="text-align: center; max-width: 95vw; max-height: 95vh;">
-                 <h3 style="margin-bottom: 20px; color: #333;">${fileName}</h3>
-                 <iframe src="${url}" style="width: 100%; height: 75vh; border: 1px solid #dee2e6; border-radius: 5px;"></iframe>
-                 <div style="margin-top: 20px;">
-                   <button onclick="window.open('${url}', '_blank')" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-right: 10px;">Abrir Original</button>
-                   <button onclick="downloadFile('${url}', '${fileName}')" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Salvar</button>
-                 </div>
-               </div>`;
-             openModal('Visualizar PDF', modalContent);
+           } else if (isText || isPdf) {
+             // Usar o novo visualizador de documentos
+             let documents = [];
+             let currentIndex = 0;
+             
+             // Se temos uma lista de anexos, coletar todos os documentos (TXT, CSV, PDF)
+             if (attachmentsList && Array.isArray(attachmentsList)) {
+               documents = attachmentsList
+                 .filter(att => {
+                   const ext = (att.name || '').split('.').pop()?.toLowerCase() || '';
+                   return ['txt', 'csv', 'pdf'].includes(ext);
+                 })
+                 .map(att => {
+                   const ext = (att.name || '').split('.').pop()?.toLowerCase() || '';
+                   return {
+                     url: att.url,
+                     name: att.name || 'Documento',
+                     type: ext === 'pdf' ? 'pdf' : 'txt'
+                   };
+                 });
+               
+               // Encontrar o índice do documento atual
+               currentIndex = documents.findIndex(doc => doc.url === url);
+               if (currentIndex === -1) {
+                 // Se não encontrou na lista, adicionar o documento atual
+                 documents.push({ 
+                   url, 
+                   name: fileName, 
+                   type: isPdf ? 'pdf' : 'txt' 
+                 });
+                 currentIndex = documents.length - 1;
+               }
+             } else {
+               // Se não temos lista, usar apenas o documento atual
+               documents = [{ 
+                 url, 
+                 name: fileName, 
+                 type: isPdf ? 'pdf' : 'txt' 
+               }];
+               currentIndex = 0;
+             }
+             
+             // Abrir o visualizador de documentos
+             openDocumentViewer(documents, currentIndex);
            } else {
              // Mostrar modal de download para outros tipos
              showDownloadOnlyModal(url, fileName);
