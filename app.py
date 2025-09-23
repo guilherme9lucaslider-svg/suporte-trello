@@ -360,6 +360,21 @@ ALLOWED_EXT = {
     "zip",
     "rar",
     "7z",
+    # Vídeos
+    "mp4",
+    "avi",
+    "mov",
+    "wmv",
+    "flv",
+    "webm",
+    "mkv",
+    # Áudios
+    "mp3",
+    "wav",
+    "flac",
+    "aac",
+    "ogg",
+    "m4a",
 }
 
 LIST_STATUS_MAP = {
@@ -1667,13 +1682,56 @@ def proxy_trello_file():
     if not file_url:
         return jsonify({"error": "URL do arquivo não fornecida"}), 400
     
-    # Verificar se é uma URL válida do Trello
-    if not file_url.startswith('https://trello-attachments.s3.amazonaws.com/'):
+    # Verificar se é uma URL válida do Trello (múltiplos domínios possíveis)
+    allowed_domains = [
+        'https://trello-attachments.s3.amazonaws.com/',
+        'https://trello.com/',
+        'https://api.trello.com/',
+        'https://trello-members.s3.amazonaws.com/',
+        'https://trello-boards.s3.amazonaws.com/',
+        'https://trello-cards.s3.amazonaws.com/',
+        'https://attachments.trello.com/',
+        'https://cdn.trello.com/',
+        # Domínios adicionais para diferentes tipos de anexos
+        'https://trello-logos.s3.amazonaws.com/',
+        'https://trello-backgrounds.s3.amazonaws.com/',
+        'https://webassets.trello.com/',
+        'https://d2k1ftgv7pobq7.cloudfront.net/',  # CloudFront CDN do Trello
+        'https://trello-card-images.s3.amazonaws.com/',
+        'https://trello-card-files.s3.amazonaws.com/',
+        # Suporte para URLs diretas do Trello sem subdomínio específico
+        'https://s3.amazonaws.com/trello-',
+        'https://trello'  # Permite qualquer subdomínio do Trello
+    ]
+    
+    # Verificação mais flexível para URLs do Trello
+    is_trello_url = any(file_url.startswith(domain) for domain in allowed_domains)
+    
+    # Verificação adicional para URLs que contêm 'trello' no domínio
+    if not is_trello_url and 'trello' in file_url.lower():
+        # Permite URLs que contenham 'trello' no domínio e sejam HTTPS
+        if file_url.startswith('https://') and 'trello' in file_url.split('/')[2]:
+            is_trello_url = True
+    
+    if not is_trello_url:
+        error_msg = f"URL não autorizada: {file_url[:100]}..."
+        print(f"[PROXY REJECT] {error_msg}")
         return jsonify({"error": "URL não autorizada"}), 403
     
     try:
-        # Fazer requisição para o arquivo
-        response = requests.get(file_url, stream=True, timeout=30)
+        # Fazer requisição para o arquivo com headers apropriados
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': '*/*',
+            'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Sec-Fetch-Dest': 'image',
+            'Sec-Fetch-Mode': 'no-cors',
+            'Sec-Fetch-Site': 'cross-site'
+        }
+        
+        response = requests.get(file_url, stream=True, timeout=30, headers=headers)
         response.raise_for_status()
         
         # Determinar o tipo de conteúdo
@@ -1687,10 +1745,17 @@ def proxy_trello_file():
         
         flask_response = Response(generate(), content_type=content_type)
         
-        # Headers para permitir visualização inline
+        # Headers para permitir visualização inline e resolver CORS
         flask_response.headers['Access-Control-Allow-Origin'] = '*'
-        flask_response.headers['Access-Control-Allow-Methods'] = 'GET'
-        flask_response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        flask_response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+        flask_response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+        flask_response.headers['Access-Control-Expose-Headers'] = 'Content-Length, Content-Type'
+        flask_response.headers['Cross-Origin-Resource-Policy'] = 'cross-origin'
+        flask_response.headers['Cross-Origin-Embedder-Policy'] = 'unsafe-none'
+        
+        # Cache headers para melhor performance
+        flask_response.headers['Cache-Control'] = 'public, max-age=3600'
+        flask_response.headers['Expires'] = 'Thu, 31 Dec 2037 23:55:55 GMT'
         
         # Para PDFs, forçar visualização inline
         if content_type == 'application/pdf':
@@ -1699,7 +1764,25 @@ def proxy_trello_file():
         return flask_response
         
     except requests.exceptions.RequestException as e:
-        return jsonify({"error": f"Erro ao buscar arquivo: {str(e)}"}), 500
+        error_msg = f"Erro ao buscar arquivo: {str(e)}"
+        print(f"[PROXY ERROR] {error_msg} - URL: {file_url}")
+        return jsonify({"error": error_msg}), 500
+    except Exception as e:
+        error_msg = f"Erro interno do proxy: {str(e)}"
+        print(f"[PROXY ERROR] {error_msg} - URL: {file_url}")
+        return jsonify({"error": error_msg}), 500
+
+
+# Adicionar rota OPTIONS para CORS preflight
+@app.route("/proxy/trello-file", methods=['OPTIONS'])
+def proxy_trello_file_options():
+    """Handle CORS preflight requests for the proxy endpoint."""
+    response = make_response()
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+    response.headers['Access-Control-Max-Age'] = '86400'  # 24 hours
+    return response
 
 # -----------------------------------------------------------------------------
 # Compat / antigo /console -> agora redireciona para /admin

@@ -1687,9 +1687,10 @@
                      const fileExt = fileName.split('.').pop()?.toLowerCase() || '';
                      let iconPath = '/static/file.svg';
                      
-                     // Determinar se é imagem, vídeo ou outro tipo de arquivo
+                     // Determinar se é imagem, vídeo, áudio ou outro tipo de arquivo
                      const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt);
-                     const isVideo = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'].includes(fileExt);
+                     const isVideo = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'].includes(fileExt);
+                     const isAudio = ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'].includes(fileExt);
                      
                      if (fileExt === 'pdf') iconPath = '/static/pdf.svg';
                      else if (['doc', 'docx'].includes(fileExt)) iconPath = '/static/docx.svg';
@@ -1760,6 +1761,14 @@
                                <path d="M8 5v14l11-7z"/>
                              </svg>
                            </div>
+                         </div>`;
+           } else if (isAudio) {
+                       // Para áudios, mostrar ícone de música
+                       thumbnailHtml = `
+                         <div style="width: 24px; height: 24px; margin-right: 4px; flex-shrink: 0; background: linear-gradient(135deg, #ff9f1a, #ff6b1a); border-radius: 2px; display: flex; align-items: center; justify-content: center; border: 1px solid #ddd;">
+                           <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
+                             <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                           </svg>
                          </div>`;
                      } else {
                        // Para outros arquivos, usar ícone
@@ -3466,6 +3475,7 @@
            const isPdf = fileExt === 'pdf';
            const isText = ['txt', 'csv', 'log', 'md'].includes(fileExt);
            const isVideo = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'].includes(fileExt);
+           const isAudio = ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'].includes(fileExt);
            
            // Função para gerar URL do proxy
            function getProxyUrl(originalUrl) {
@@ -3545,6 +3555,24 @@
                  Seu navegador não suporta a reprodução de vídeo.
                </video>
              `;
+           } else if (isAudio) {
+             previewEl.innerHTML = `
+               <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: linear-gradient(135deg, #ff9f1a, #ff6b1a); border-radius: 8px; color: white; text-align: center;">
+                 <div style="margin-bottom: 24px;">
+                   <svg width="64" height="64" viewBox="0 0 24 24" fill="white" style="opacity: 0.9;">
+                     <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                   </svg>
+                 </div>
+                 <h3 style="margin-bottom: 16px; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">${attachment.name}</h3>
+                 <audio controls style="width: 80%; max-width: 400px; margin-bottom: 16px;" preload="metadata">
+                   <source src="${getProxyUrl(attachment.url)}" type="audio/${fileExt}">
+                   Seu navegador não suporta a reprodução de áudio.
+                 </audio>
+                 <p style="font-size: 14px; opacity: 0.9; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">
+                   Arquivo de áudio • .${fileExt.toUpperCase()}
+                 </p>
+               </div>
+             `;
            } else {
              // Arquivo não suportado - mostrar mensagem de download
              previewEl.innerHTML = `
@@ -3585,7 +3613,7 @@
              // Vídeos
              'mp4': '🎬', 'avi': '🎬', 'mov': '🎬', 'wmv': '🎬', 'flv': '🎬', 'webm': '🎬', 'mkv': '🎬',
              // Áudios
-             'mp3': '🎵', 'wav': '🎵', 'flac': '🎵', 'aac': '🎵',
+             'mp3': '🎵', 'wav': '🎵', 'flac': '🎵', 'aac': '🎵', 'ogg': '🎵', 'm4a': '🎵',
              // Arquivos
              'zip': '📦', 'rar': '📦', '7z': '📦', 'tar': '📦',
              // Código
@@ -3605,7 +3633,7 @@
              // Vídeos - roxo
              'mp4': '#c377e0', 'avi': '#c377e0', 'mov': '#c377e0', 'wmv': '#c377e0', 'flv': '#c377e0', 'webm': '#c377e0', 'mkv': '#c377e0',
              // Áudios - laranja
-             'mp3': '#ff9f1a', 'wav': '#ff9f1a', 'flac': '#ff9f1a', 'aac': '#ff9f1a',
+             'mp3': '#ff9f1a', 'wav': '#ff9f1a', 'flac': '#ff9f1a', 'aac': '#ff9f1a', 'ogg': '#ff9f1a', 'm4a': '#ff9f1a',
              // Arquivos - amarelo
              'zip': '#f2d600', 'rar': '#f2d600', '7z': '#f2d600', 'tar': '#f2d600',
              // Código - vermelho
