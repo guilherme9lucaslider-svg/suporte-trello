@@ -43,6 +43,12 @@
          font-weight: 900;
          font-display: swap;
          }
+         
+         /* Animação de loading */
+         @keyframes spin {
+           0% { transform: rotate(0deg); }
+           100% { transform: rotate(360deg); }
+         }
          .header{background:var(--gradient-primary);color:#fff;padding:32px 40px}
          .header h1{
          font-family:'MinhaFonte','Inter',sans-serif;font-size:36px;font-weight:900;
@@ -1692,12 +1698,18 @@
                      const isVideo = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'].includes(fileExt);
                      const isAudio = ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'].includes(fileExt);
                      
+                     // Definir ícones específicos para cada tipo de arquivo
                      if (fileExt === 'pdf') iconPath = '/static/pdf.svg';
                      else if (['doc', 'docx'].includes(fileExt)) iconPath = '/static/docx.svg';
                      else if (['xls', 'xlsx'].includes(fileExt)) iconPath = '/static/xlsx.svg';
                      else if (['ppt', 'pptx'].includes(fileExt)) iconPath = '/static/pptx.svg';
                      else if (fileExt === 'txt') iconPath = '/static/txt.svg';
                      else if (fileExt === 'csv') iconPath = '/static/csv.svg';
+                     else if (['jpg', 'jpeg'].includes(fileExt)) iconPath = '/static/jpg.svg';
+                     else if (fileExt === 'png') iconPath = '/static/png.svg';
+                     else if (['zip', 'rar', '7z'].includes(fileExt)) iconPath = '/static/zip.svg';
+                     else if (['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'].includes(fileExt)) iconPath = '/static/mp3.svg';
+                     else if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'].includes(fileExt)) iconPath = '/static/mp4.svg';
                      
                      let thumbnailHtml = '';
                      if (isImage) {
@@ -1771,8 +1783,9 @@
                            </svg>
                          </div>`;
                      } else {
-                       // Para outros arquivos, usar ícone
-                       thumbnailHtml = `<img src="${iconPath}" alt="${fileExt}" style="width: 14px; height: 14px; margin-right: 4px;">`;
+                       // Para outros arquivos, usar ícone específico ou padrão
+                       const finalIconPath = iconPath || '/static/file.svg';
+                       thumbnailHtml = `<img src="${finalIconPath}" alt="${fileExt}" style="width: 14px; height: 14px; margin-right: 4px;">`;
                      }
                      
                      html += `
@@ -3484,11 +3497,17 @@
            
            if (isImage) {
              previewEl.innerHTML = `
-               <img src="${getProxyUrl(attachment.url)}" 
-                    style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px;" 
-                    alt="${attachment.name}"
-                    onload="this.style.opacity='1'" 
-                    style="opacity: 0; transition: opacity 0.3s ease;" />
+               <div style="position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                 <div id="imageLoader" style="display: flex; align-items: center; color: #666; font-size: 14px;">
+                   <div style="width: 20px; height: 20px; border: 2px solid #ddd; border-top: 2px solid #007bff; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 10px;"></div>
+                   Carregando imagem...
+                 </div>
+                 <img id="previewImage" src="${getProxyUrl(attachment.url)}" 
+                      style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; display: none;" 
+                      alt="${attachment.name}"
+                      onload="document.getElementById('imageLoader').style.display='none'; this.style.display='block';" 
+                      onerror="handleImageError(this, '${attachment.url}')" />
+               </div>
              `;
            } else if (isPdf) {
              // Visualização nativa de PDF usando iframe com proxy
@@ -3894,6 +3913,32 @@
              currentImageIndex = (currentImageIndex + 1) % currentImages.length;
              updateViewerImage();
            }
+         }
+         
+         // Função para tratar erro de carregamento de imagem
+         function handleImageError(imgElement, originalUrl) {
+           console.log('Erro ao carregar imagem via proxy, tentando URL direta:', originalUrl);
+           
+           // Tentar carregar diretamente do Trello
+           imgElement.src = originalUrl;
+           imgElement.onerror = function() {
+             console.log('Erro ao carregar imagem diretamente, mostrando placeholder');
+             // Se ainda falhar, mostrar placeholder
+             const loader = document.getElementById('imageLoader');
+             if (loader) {
+               loader.innerHTML = `
+                 <div style="text-align: center; color: #666;">
+                   <div style="font-size: 48px; margin-bottom: 10px;">🖼️</div>
+                   <div>Não foi possível carregar a imagem</div>
+                   <button onclick="window.open('${originalUrl}', '_blank')" 
+                           style="margin-top: 10px; padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                     Abrir Original
+                   </button>
+                 </div>
+               `;
+               loader.style.display = 'flex';
+             }
+           };
          }
          
          // Função para visualizar anexos - NOVA VERSÃO TRELLO-STYLE
