@@ -1757,24 +1757,65 @@ def proxy_trello_file():
                 print(f"[PROXY AUTH] URL já contém autenticação: {file_url[:100]}...")
         
         try:
+            print(f"[PROXY REQUEST] Tentando buscar arquivo: {file_url[:100]}...")
             response = requests.get(file_url, stream=True, timeout=30, headers=headers)
+            print(f"[PROXY REQUEST] Status code: {response.status_code}")
             response.raise_for_status()
+            print(f"[PROXY REQUEST] Sucesso! Content-Type: {response.headers.get('Content-Type', 'N/A')}")
         except requests.exceptions.HTTPError as e:
+            print(f"[PROXY ERROR] HTTPError {e.response.status_code}: {str(e)}")
             # Se der erro 401 (Unauthorized), tentar URL original sem autenticação
             if e.response.status_code == 401:
                 print(f"[PROXY FALLBACK] Erro 401 com autenticação, tentando URL original: {original_url[:100]}...")
                 try:
                     response = requests.get(original_url, stream=True, timeout=30, headers=headers)
+                    print(f"[PROXY FALLBACK] Status code da URL original: {response.status_code}")
                     response.raise_for_status()
-                    print(f"[PROXY FALLBACK] Sucesso com URL original!")
+                    print(f"[PROXY FALLBACK] Sucesso com URL original! Content-Type: {response.headers.get('Content-Type', 'N/A')}")
                 except Exception as fallback_error:
                     print(f"[PROXY FALLBACK] Falha também com URL original: {str(fallback_error)}")
-                    raise e  # Re-raise o erro original
+                    # Retornar erro mais específico em vez de 500
+                    return jsonify({
+                        "error": "Arquivo não acessível",
+                        "details": f"Erro de autenticação (401) e fallback falhou: {str(fallback_error)}"
+                    }), 403
             else:
-                raise e
+                # Para outros códigos de erro HTTP, retornar erro específico
+                return jsonify({
+                    "error": f"Erro HTTP {e.response.status_code}",
+                    "details": str(e)
+                }), e.response.status_code if e.response.status_code < 500 else 502
+        except requests.exceptions.Timeout:
+            print(f"[PROXY ERROR] Timeout ao buscar arquivo: {file_url[:100]}...")
+            return jsonify({
+                "error": "Timeout ao buscar arquivo",
+                "details": "O servidor demorou muito para responder"
+            }), 504
+        except requests.exceptions.ConnectionError as e:
+            print(f"[PROXY ERROR] Erro de conexão: {str(e)}")
+            return jsonify({
+                "error": "Erro de conexão",
+                "details": "Não foi possível conectar ao servidor do arquivo"
+            }), 502
         
         # Determinar o tipo de conteúdo
         content_type = response.headers.get('Content-Type', 'application/octet-stream')
+        print(f"[PROXY CONTENT] Content-Type original: {content_type}")
+        
+        # Melhorar detecção de Content-Type baseado na extensão se necessário
+        if content_type == 'application/octet-stream' or 'text/html' in content_type:
+            file_ext = file_url.split('.')[-1].lower() if '.' in file_url else ''
+            if file_ext == 'pdf':
+                content_type = 'application/pdf'
+            elif file_ext in ['mp4', 'webm', 'mov', 'avi']:
+                content_type = f'video/{file_ext}'
+            elif file_ext in ['mp3', 'wav', 'ogg', 'm4a']:
+                content_type = f'audio/{file_ext}'
+            elif file_ext in ['jpg', 'jpeg']:
+                content_type = 'image/jpeg'
+            elif file_ext == 'png':
+                content_type = 'image/png'
+            print(f"[PROXY CONTENT] Content-Type corrigido: {content_type}")
         
         # Criar resposta com headers apropriados
         def generate():
@@ -1792,13 +1833,26 @@ def proxy_trello_file():
         flask_response.headers['Cross-Origin-Resource-Policy'] = 'cross-origin'
         flask_response.headers['Cross-Origin-Embedder-Policy'] = 'unsafe-none'
         
+        # Headers específicos para diferentes tipos de arquivo
+        if 'pdf' in content_type:
+            # Para PDFs, forçar visualização inline
+            flask_response.headers['Content-Disposition'] = 'inline'
+            flask_response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+            print(f"[PROXY PDF] Headers PDF configurados")
+        elif 'video/' in content_type:
+            # Para vídeos, permitir range requests
+            flask_response.headers['Accept-Ranges'] = 'bytes'
+            flask_response.headers['Content-Disposition'] = 'inline'
+            print(f"[PROXY VIDEO] Headers vídeo configurados")
+        elif 'audio/' in content_type:
+            # Para áudios, permitir range requests
+            flask_response.headers['Accept-Ranges'] = 'bytes'
+            flask_response.headers['Content-Disposition'] = 'inline'
+            print(f"[PROXY AUDIO] Headers áudio configurados")
+        
         # Cache headers para melhor performance
         flask_response.headers['Cache-Control'] = 'public, max-age=3600'
         flask_response.headers['Expires'] = 'Thu, 31 Dec 2037 23:55:55 GMT'
-        
-        # Para PDFs, forçar visualização inline
-        if content_type == 'application/pdf':
-            flask_response.headers['Content-Disposition'] = 'inline'
         
         return flask_response
         
