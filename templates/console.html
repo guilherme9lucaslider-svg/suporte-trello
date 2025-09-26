@@ -3510,16 +3510,32 @@
                </div>
              `;
            } else if (isPdf) {
-             // Visualização nativa de PDF usando iframe com proxy
+             // Visualização nativa de PDF usando iframe com proxy e fallback
              previewEl.innerHTML = `
                <div style="width: 100%; height: 100%; display: flex; flex-direction: column; background: #f8f9fa; border-radius: 8px; overflow: hidden;">
-                 <iframe src="${getProxyUrl(attachment.url)}" 
-                         style="width: 100%; height: 100%; border: none; border-radius: 8px;" 
-                         title="Visualizador de PDF">
-                   <p>Seu navegador não suporta a visualização de PDFs. 
-                      <a href="${attachment.url}" target="_blank">Clique aqui para abrir o PDF</a>
-                   </p>
+                 <div id="pdfLoader-${currentTrelloIndex}" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; color: #666; font-size: 14px; z-index: 10;">
+                   <div style="width: 20px; height: 20px; border: 2px solid #ddd; border-top: 2px solid #007bff; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 10px;"></div>
+                   Carregando PDF...
+                 </div>
+                 <iframe id="pdfFrame-${currentTrelloIndex}" src="${getProxyUrl(attachment.url)}" 
+                         style="width: 100%; height: 100%; border: none; border-radius: 8px; display: none;" 
+                         title="Visualizador de PDF"
+                         onload="handlePdfLoad(${currentTrelloIndex})"
+                         onerror="handlePdfError(${currentTrelloIndex}, '${attachment.url}', '${attachment.name}')">
                  </iframe>
+                 <div id="pdfError-${currentTrelloIndex}" style="display: none; text-align: center; padding: 40px; color: #666;">
+                   <div style="font-size: 48px; margin-bottom: 20px;">📄</div>
+                   <h3 style="margin-bottom: 15px; color: #333;">Erro ao carregar PDF</h3>
+                   <p style="margin-bottom: 25px;">Não foi possível exibir o PDF no navegador.</p>
+                   <button onclick="window.open('${attachment.url}', '_blank')" 
+                           style="background: #007bff; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-size: 16px; margin-right: 10px;">
+                     Abrir Original
+                   </button>
+                   <button onclick="downloadTrelloAttachment()" 
+                           style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-size: 16px;">
+                     Baixar PDF
+                   </button>
+                 </div>
                </div>
              `;
            } else if (isText) {
@@ -3569,25 +3585,82 @@
                });
            } else if (isVideo) {
              previewEl.innerHTML = `
-               <video controls style="max-width: 100%; max-height: 100%; border-radius: 8px;">
-                 <source src="${getProxyUrl(attachment.url)}" type="video/${fileExt}">
-                 Seu navegador não suporta a reprodução de vídeo.
-               </video>
+               <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: linear-gradient(135deg, #c377e0, #8e44ad); border-radius: 12px; color: white; text-align: center; padding: 20px; box-shadow: 0 4px 20px rgba(195, 119, 224, 0.3);">
+                 <div style="margin-bottom: 24px; position: relative;">
+                   <svg width="80" height="80" viewBox="0 0 24 24" fill="white" style="opacity: 0.9; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
+                     <path d="M8 5v14l11-7z"/>
+                   </svg>
+                 </div>
+                 <h3 style="margin-bottom: 20px; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.3); font-size: 18px; max-width: 90%; word-break: break-word;">${attachment.name}</h3>
+                 
+                 <!-- Loading indicator -->
+                 <div id="video-loading-${attachment.id}" style="display: flex; align-items: center; margin-bottom: 16px;">
+                   <div class="spinner" style="width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.3); border-top: 2px solid white; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px;"></div>
+                   <span style="font-size: 14px; opacity: 0.9;">Carregando vídeo...</span>
+                 </div>
+                 
+                 <!-- Video player -->
+                 <video id="video-player-${attachment.id}" controls style="width: 95%; max-width: 800px; height: auto; min-height: 300px; max-height: 500px; border-radius: 12px; background: rgba(0,0,0,0.3); box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: none;" preload="metadata" onloadstart="handleVideoLoadStart('${attachment.id}')" oncanplay="handleVideoLoad('${attachment.id}')" onerror="handleVideoError('${attachment.id}', '${attachment.url}', '${attachment.name}')">
+                   <source src="${getProxyUrl(attachment.url)}" type="video/${fileExt}">
+                   Seu navegador não suporta a reprodução de vídeo.
+                 </video>
+                 
+                 <!-- Error fallback (hidden by default) -->
+                 <div id="video-error-${attachment.id}" style="display: none; text-align: center; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 8px; margin-bottom: 16px;">
+                   <div style="font-size: 24px; margin-bottom: 12px;">⚠️</div>
+                   <p style="margin-bottom: 16px; font-size: 14px; opacity: 0.9;">Não foi possível carregar o vídeo</p>
+                   <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                     <button onclick="window.open('${attachment.url}', '_blank')" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                       🔗 Abrir Original
+                     </button>
+                     <button onclick="downloadFile('${attachment.url}', '${attachment.name}')" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                       💾 Download
+                     </button>
+                   </div>
+                 </div>
+                 
+                 <p style="font-size: 14px; opacity: 0.8; text-shadow: 0 1px 2px rgba(0,0,0,0.3); margin-top: auto;">
+                   Arquivo de vídeo • .${fileExt.toUpperCase()}
+                 </p>
+               </div>
              `;
            } else if (isAudio) {
              previewEl.innerHTML = `
-               <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: linear-gradient(135deg, #ff9f1a, #ff6b1a); border-radius: 8px; color: white; text-align: center;">
-                 <div style="margin-bottom: 24px;">
-                   <svg width="64" height="64" viewBox="0 0 24 24" fill="white" style="opacity: 0.9;">
+               <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: linear-gradient(135deg, #ff9f1a, #ff6b1a); border-radius: 12px; color: white; text-align: center; padding: 20px; box-shadow: 0 4px 20px rgba(255, 159, 26, 0.3);">
+                 <div style="margin-bottom: 24px; position: relative;">
+                   <svg width="80" height="80" viewBox="0 0 24 24" fill="white" style="opacity: 0.9; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
                      <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
                    </svg>
                  </div>
-                 <h3 style="margin-bottom: 16px; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">${attachment.name}</h3>
-                 <audio controls style="width: 80%; max-width: 400px; margin-bottom: 16px;" preload="metadata">
+                 <h3 style="margin-bottom: 20px; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.3); font-size: 18px; max-width: 90%; word-break: break-word;">${attachment.name}</h3>
+                 
+                 <!-- Loading indicator -->
+                 <div id="audio-loading-${attachment.id}" style="display: flex; align-items: center; margin-bottom: 16px;">
+                   <div class="spinner" style="width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.3); border-top: 2px solid white; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px;"></div>
+                   <span style="font-size: 14px; opacity: 0.9;">Carregando áudio...</span>
+                 </div>
+                 
+                 <!-- Audio player -->
+                 <audio id="audio-player-${attachment.id}" controls style="width: 90%; max-width: 450px; margin-bottom: 16px; border-radius: 8px; background: rgba(255,255,255,0.1); display: none;" preload="metadata" onloadstart="handleAudioLoadStart('${attachment.id}')" oncanplay="handleAudioLoad('${attachment.id}')" onerror="handleAudioError('${attachment.id}', '${attachment.url}', '${attachment.name}')">
                    <source src="${getProxyUrl(attachment.url)}" type="audio/${fileExt}">
                    Seu navegador não suporta a reprodução de áudio.
                  </audio>
-                 <p style="font-size: 14px; opacity: 0.9; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">
+                 
+                 <!-- Error fallback (hidden by default) -->
+                 <div id="audio-error-${attachment.id}" style="display: none; text-align: center; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 8px; margin-bottom: 16px;">
+                   <div style="font-size: 24px; margin-bottom: 12px;">⚠️</div>
+                   <p style="margin-bottom: 16px; font-size: 14px; opacity: 0.9;">Não foi possível carregar o áudio</p>
+                   <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                     <button onclick="window.open('${attachment.url}', '_blank')" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                       🔗 Abrir Original
+                     </button>
+                     <button onclick="downloadFile('${attachment.url}', '${attachment.name}')" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                       💾 Download
+                     </button>
+                   </div>
+                 </div>
+                 
+                 <p style="font-size: 14px; opacity: 0.8; text-shadow: 0 1px 2px rgba(0,0,0,0.3); margin-top: auto;">
                    Arquivo de áudio • .${fileExt.toUpperCase()}
                  </p>
                </div>
@@ -3939,6 +4012,131 @@
                loader.style.display = 'flex';
              }
            };
+         }
+         
+         // Função para tratar carregamento bem-sucedido de PDF
+         function handlePdfLoad(index) {
+           const loader = document.getElementById(`pdfLoader-${index}`);
+           const frame = document.getElementById(`pdfFrame-${index}`);
+           
+           if (loader) loader.style.display = 'none';
+           if (frame) frame.style.display = 'block';
+         }
+         
+         // Função para tratar erro de carregamento de PDF
+         function handlePdfError(index, originalUrl, fileName) {
+           console.log('Erro ao carregar PDF via proxy:', originalUrl);
+           
+           const loader = document.getElementById(`pdfLoader-${index}`);
+           const frame = document.getElementById(`pdfFrame-${index}`);
+           const errorDiv = document.getElementById(`pdfError-${index}`);
+           
+           if (loader) loader.style.display = 'none';
+           if (frame) frame.style.display = 'none';
+           if (errorDiv) errorDiv.style.display = 'block';
+         }
+         
+         // Função para tratar início do carregamento de vídeo
+         function handleVideoLoadStart(attachmentId) {
+           console.log('Iniciando carregamento de vídeo:', attachmentId);
+           const loader = document.getElementById(`video-loading-${attachmentId}`);
+           const player = document.getElementById(`video-player-${attachmentId}`);
+           
+           if (loader) loader.style.display = 'flex';
+           if (player) player.style.display = 'none';
+         }
+         
+         // Função para tratar carregamento bem-sucedido de vídeo
+         function handleVideoLoad(attachmentId) {
+           console.log('Vídeo carregado com sucesso:', attachmentId);
+           const loader = document.getElementById(`video-loading-${attachmentId}`);
+           const player = document.getElementById(`video-player-${attachmentId}`);
+           const errorDiv = document.getElementById(`video-error-${attachmentId}`);
+           
+           if (loader) loader.style.display = 'none';
+           if (player) player.style.display = 'block';
+           if (errorDiv) errorDiv.style.display = 'none';
+         }
+         
+         // Função para tratar erro de carregamento de vídeo
+         function handleVideoError(attachmentId, originalUrl, fileName) {
+           console.log('Erro ao carregar vídeo via proxy, tentando URL direta:', originalUrl);
+           
+           const loader = document.getElementById(`video-loading-${attachmentId}`);
+           const player = document.getElementById(`video-player-${attachmentId}`);
+           const errorDiv = document.getElementById(`video-error-${attachmentId}`);
+           
+           // Tentar carregar diretamente do Trello
+           if (player) {
+             const source = player.querySelector('source');
+             if (source && source.src !== originalUrl) {
+               source.src = originalUrl;
+               player.load(); // Recarregar o player com a nova URL
+               return; // Dar uma chance para a URL direta
+             }
+           }
+           
+           // Se ainda falhar, mostrar erro
+           if (loader) loader.style.display = 'none';
+           if (player) player.style.display = 'none';
+           if (errorDiv) errorDiv.style.display = 'block';
+         }
+         
+         // Função para tratar início do carregamento de áudio
+         function handleAudioLoadStart(attachmentId) {
+           console.log('Iniciando carregamento de áudio:', attachmentId);
+           const loader = document.getElementById(`audio-loading-${attachmentId}`);
+           const player = document.getElementById(`audio-player-${attachmentId}`);
+           
+           if (loader) loader.style.display = 'flex';
+           if (player) player.style.display = 'none';
+         }
+         
+         // Função para tratar carregamento bem-sucedido de áudio
+         function handleAudioLoad(attachmentId) {
+           console.log('Áudio carregado com sucesso:', attachmentId);
+           const loader = document.getElementById(`audio-loading-${attachmentId}`);
+           const player = document.getElementById(`audio-player-${attachmentId}`);
+           const errorDiv = document.getElementById(`audio-error-${attachmentId}`);
+           
+           if (loader) loader.style.display = 'none';
+           if (player) player.style.display = 'block';
+           if (errorDiv) errorDiv.style.display = 'none';
+         }
+         
+         // Função para tratar erro de carregamento de áudio
+         function handleAudioError(attachmentId, originalUrl, fileName) {
+           console.log('Erro ao carregar áudio via proxy, tentando URL direta:', originalUrl);
+           
+           const loader = document.getElementById(`audio-loading-${attachmentId}`);
+           const player = document.getElementById(`audio-player-${attachmentId}`);
+           const errorDiv = document.getElementById(`audio-error-${attachmentId}`);
+           
+           // Tentar carregar diretamente do Trello
+           if (player) {
+             const source = player.querySelector('source');
+             if (source && source.src !== originalUrl) {
+               source.src = originalUrl;
+               player.load(); // Recarregar o player com a nova URL
+               return; // Dar uma chance para a URL direta
+             }
+           }
+           
+           // Se ainda falhar, mostrar erro
+           if (loader) loader.style.display = 'none';
+           if (player) player.style.display = 'none';
+           if (errorDiv) errorDiv.style.display = 'block';
+         }
+         
+         // Função para download de arquivo
+         function downloadFile(url, filename) {
+           const link = document.createElement('a');
+           link.href = url;
+           link.download = filename;
+           link.target = '_blank';
+           document.body.appendChild(link);
+           link.click();
+           document.body.removeChild(link);
          }
          
          // Função para visualizar anexos - NOVA VERSÃO TRELLO-STYLE

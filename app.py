@@ -1731,6 +1731,13 @@ def proxy_trello_file():
             'Sec-Fetch-Site': 'cross-site'
         }
         
+        # Para URLs de download do Trello (que requerem autenticação), adicionar key e token
+        if '/download/' in file_url and 'trello.com' in file_url:
+            # Adicionar parâmetros de autenticação para URLs de download
+            separator = '&' if '?' in file_url else '?'
+            file_url = f"{file_url}{separator}key={API_KEY}&token={TOKEN}"
+            print(f"[PROXY AUTH] Adicionando autenticação para URL de download: {file_url[:100]}...")
+        
         response = requests.get(file_url, stream=True, timeout=30, headers=headers)
         response.raise_for_status()
         
