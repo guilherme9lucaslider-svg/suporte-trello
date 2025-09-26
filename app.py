@@ -1735,6 +1735,11 @@ def proxy_trello_file():
         if '/download/' in file_url and 'trello.com' in file_url:
             # Verificar se a URL já contém parâmetros de autenticação
             if 'key=' not in file_url or 'token=' not in file_url:
+                # Verificar se temos as credenciais necessárias
+                if not API_KEY or not TOKEN:
+                    print(f"[PROXY ERROR] API_KEY ou TOKEN não configurados para URL de download: {file_url[:100]}...")
+                    return jsonify({"error": "Credenciais do Trello não configuradas"}), 500
+                
                 # Adicionar parâmetros de autenticação apenas se não existirem
                 separator = '&' if '?' in file_url else '?'
                 auth_params = []
