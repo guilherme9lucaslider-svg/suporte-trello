@@ -3600,7 +3600,7 @@
                  </div>
                  
                  <!-- Video player -->
-                 <video id="video-player-${attachment.id}" controls style="width: 95%; max-width: 800px; height: auto; min-height: 300px; max-height: 500px; border-radius: 12px; background: rgba(0,0,0,0.3); box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: none;" preload="metadata" onloadstart="handleVideoLoadStart('${attachment.id}')" oncanplay="handleVideoLoad('${attachment.id}')" onerror="handleVideoError('${attachment.id}', '${attachment.url}', '${attachment.name}')">
+                 <video id="video-player-${attachment.id}" controls style="width: 95%; max-width: 800px; height: auto; min-height: 300px; max-height: 500px; border-radius: 12px; background: rgba(0,0,0,0.3); box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: none;" preload="metadata" onloadstart="handleVideoLoadStart('${attachment.id}')" onloadeddata="handleVideoLoad('${attachment.id}')" onerror="handleVideoError('${attachment.id}', '${attachment.url}', '${attachment.name}')">
                    <source src="${getProxyUrl(attachment.url)}" type="video/${fileExt}">
                    Seu navegador não suporta a reprodução de vídeo.
                  </video>
@@ -3641,7 +3641,7 @@
                  </div>
                  
                  <!-- Audio player -->
-                 <audio id="audio-player-${attachment.id}" controls style="width: 90%; max-width: 450px; margin-bottom: 16px; border-radius: 8px; background: rgba(255,255,255,0.1); display: none;" preload="metadata" onloadstart="handleAudioLoadStart('${attachment.id}')" oncanplay="handleAudioLoad('${attachment.id}')" onerror="handleAudioError('${attachment.id}', '${attachment.url}', '${attachment.name}')">
+                 <audio id="audio-player-${attachment.id}" controls style="width: 90%; max-width: 450px; margin-bottom: 16px; border-radius: 8px; background: rgba(255,255,255,0.1); display: none;" preload="metadata" onloadstart="handleAudioLoadStart('${attachment.id}')" onloadeddata="handleAudioLoad('${attachment.id}')" onerror="handleAudioError('${attachment.id}', '${attachment.url}', '${attachment.name}')">
                    <source src="${getProxyUrl(attachment.url)}" type="audio/${fileExt}">
                    Seu navegador não suporta a reprodução de áudio.
                  </audio>
