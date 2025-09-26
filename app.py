@@ -1682,6 +1682,9 @@ def proxy_trello_file():
     if not file_url:
         return jsonify({"error": "URL do arquivo não fornecida"}), 400
     
+    # Guardar URL original para fallback em caso de erro de autenticação
+    original_url = file_url
+    
     # Verificar se é uma URL válida do Trello (múltiplos domínios possíveis)
     allowed_domains = [
         'https://trello-attachments.s3.amazonaws.com/',
@@ -1753,8 +1756,22 @@ def proxy_trello_file():
             else:
                 print(f"[PROXY AUTH] URL já contém autenticação: {file_url[:100]}...")
         
-        response = requests.get(file_url, stream=True, timeout=30, headers=headers)
-        response.raise_for_status()
+        try:
+            response = requests.get(file_url, stream=True, timeout=30, headers=headers)
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            # Se der erro 401 (Unauthorized), tentar URL original sem autenticação
+            if e.response.status_code == 401:
+                print(f"[PROXY FALLBACK] Erro 401 com autenticação, tentando URL original: {original_url[:100]}...")
+                try:
+                    response = requests.get(original_url, stream=True, timeout=30, headers=headers)
+                    response.raise_for_status()
+                    print(f"[PROXY FALLBACK] Sucesso com URL original!")
+                except Exception as fallback_error:
+                    print(f"[PROXY FALLBACK] Falha também com URL original: {str(fallback_error)}")
+                    raise e  # Re-raise o erro original
+            else:
+                raise e
         
         # Determinar o tipo de conteúdo
         content_type = response.headers.get('Content-Type', 'application/octet-stream')
