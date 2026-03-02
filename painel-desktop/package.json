@@ -1,0 +1,24 @@
+{
+  "name": "painel-chamados",
+  "version": "1.0.0",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "electron-store": "^9.0.0",
+    "node-fetch": "^3.3.2",
+    "auto-launch": "^5.0.6"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.seuapp.painelchamados",
+    "win": { "target": "nsis" }
+  }
+}
